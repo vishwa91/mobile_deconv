@@ -1,0 +1,6 @@
+This folder contains all the reference papers for the project. Broadly, there are three projects, hence three folders.
+1. Detecting motion blur using inertial sensors
+2. Extracting motion blur information from motion blur itself. (Clarity necessary)
+3. Working on coded aperture.
+
+Along with each paper, there should be a text/docx file containing the gist and the necessary comprehensible information extracted from the corresponding paper. 

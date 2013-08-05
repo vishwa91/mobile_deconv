@@ -1,0 +1,15 @@
+Notes:
+1. Points spread function is impulse response.
+2. Inertial sensors in itself will create a lot of noisy data over time. Hence hardware alone is not enough.
+3. 3 axis of acceleration is not enough, since rotation is a significant part of the motion blur.
+4. Camera matrix is a projection matrix which maps the points in 3D space to a point on the 2D screen.
+5. Integration of the projection matrices over time is what creates the blur. This does seem logical. In a more simple language, "sum" of instantaneous images over time gives rise to blur. If the camera were still, then all the images would be the same, giving rise to no blur.
+6. As it seems, the Intrinsics matrix is the matrix completely related to the camera. It gives information about the image size and the focal distance etc. On the other hand, extrinsics matrix is something like an affine matrix. Gives the translation and rotation with respect to?
+7. Given the homography matrix, it is easy to understand that any subsequent point will be H * P0, where P0 is the initial projection of the 3D space at t=0. What is interesting is that H(d) is a time varying homography matrix.
+
+Questions:
+1. Spacially invariant blur?
+2. Does spacially invariant blur mean that the blur kernel is independent of the actual picture?
+3. Is canonical perspective matrix the 3x4 matrix which projects 3D world space to 2D camera screen space?
+4. How did the homography matrix H(d) in equation (5) come about?
+
