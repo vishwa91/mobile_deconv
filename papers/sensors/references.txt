@@ -1,0 +1,5 @@
+1. http://www.owlnet.rice.edu/~elec539/Projects99/BACH/proj2/intro.html
+   Gives some good information about image restoration.
+2. http://www.umiacs.umd.edu/~aagrawal/
+   Has umpteen publications. 
+

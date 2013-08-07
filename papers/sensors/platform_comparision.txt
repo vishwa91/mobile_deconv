@@ -1,0 +1,30 @@
+Android:
+1. Very popular.
+2. Development can be done in Linux/Windows.
+3. Has a linux shell, which I am conversant with
+4. Gives raw data as output
+5. Free software
+6. Programming in Java. No experience. But seems close to C++. Android NDK can be coded in C++.
+7. Bluetooth can be used for data transmission.
+
+Windows phone 8:
+1. New platform
+2. Development only in Windows 8(May need to use my computer or install windows 8 in one of the systems).
+3. Freeware
+4. Gives raw data as well as polished data
+5. Programming in C#. No stark differences between C# and C++. I am conversant with C++.
+6. Not sure about USB but Socket communication is possible.
+
+Resources:
+>> Android
+1. http://mobile.tutsplus.com/tutorials/android/android-barometer-logger-acquiring-sensor-data/
+2. http://developer.android.com/reference/android/hardware/Sensor.html
+3. http://www.ece.ncsu.edu/wireless/MadeInWALAN/AndroidTutorial/OtherResources/AndroidHowTo.pdf
+4. http://stackoverflow.com/questions/6004087/send-data-from-android-bluetooth-to-pc-with-bluecove
+
+>> Windows phone 8
+1. http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202968%28v=vs.105%29.aspx
+2. http://www.geekchamp.com/articles/getting-started-with-bluetooth-in-windows-phone-8
+3. http://stackoverflow.com/questions/14993821/how-do-you-make-a-socket-connection-and-transfer-data-between-windows-phone-8-an
+4. http://code.msdn.microsoft.com/wpapps/Basic-Camera-Sample-52dae359
+5. http://code.msdn.microsoft.com/wpapps/Raw-Sensor-Data-Sample-d84e124d
