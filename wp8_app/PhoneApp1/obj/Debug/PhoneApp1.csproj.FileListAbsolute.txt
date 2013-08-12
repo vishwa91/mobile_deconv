@@ -16,3 +16,10 @@ c:\users\vishwanath\documents\visual studio 2012\Projects\PhoneApp1\PhoneApp1\ob
 c:\users\vishwanath\documents\visual studio 2012\Projects\PhoneApp1\PhoneApp1\obj\Debug\PhoneApp1.dll
 c:\users\vishwanath\documents\visual studio 2012\Projects\PhoneApp1\PhoneApp1\obj\Debug\PhoneApp1.pdb
 c:\users\vishwanath\documents\visual studio 2012\Projects\PhoneApp1\PhoneApp1\obj\Debug\XapCacheFile.xml
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\App.g.cs
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\MainPage.g.cs
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.g.resources
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.Resources.AppResources.resources
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.csproj.GenerateResource.Cache
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.dll
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.pdb
