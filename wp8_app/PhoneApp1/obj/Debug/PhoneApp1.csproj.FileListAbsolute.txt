@@ -23,3 +23,14 @@ C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.R
 C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.csproj.GenerateResource.Cache
 C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.dll
 C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\PhoneApp1.pdb
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\Assets\ApplicationIcon.png
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\Assets\Tiles\FlipCycleTileLarge.png
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\Assets\Tiles\FlipCycleTileMedium.png
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\Assets\Tiles\FlipCycleTileSmall.png
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\Assets\Tiles\IconicTileMediumLarge.png
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\Assets\Tiles\IconicTileSmall.png
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\PhoneApp1.dll
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\PhoneApp1.pdb
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\AppManifest.xaml
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\Bin\Debug\PhoneApp1_Debug_AnyCPU.xap
+C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\PhoneApp1\obj\Debug\XapCacheFile.xml

@@ -71,8 +71,86 @@ namespace PhoneApp1
             CameraButtons.ShutterKeyReleased += OnButtonRelease;
         }
         
+        // Define the camera event handlers
+        void cam_initialized(object sender, Microsoft.Devices.CameraOperationCompletedEventArgs e)
+        {
+            // Check if the initialization has succeeded.
+            if (e.Succeeded)
+            {
+                // A delegate is like a functional pointer. 
+                this.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtDebug.Text = "Camera initialized.";
+                    // We are not dealing with any flash stuff.
+                });
+            }
+        }
+        void cam_captured(object sender, CameraOperationCompletedEventArgs e)
+        {
+            // Nothing to do here. Sending data over bluetooth will be later taken 
+            // care in the CaptureImage Available function.
+        }
+        void cam_available(object sender, Microsoft.Devices.ContentReadyEventArgs e)
+        {
+            // We will need to send the image over bluetooth later. As of now, just save.
+            try
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtDebug.Text = "Saving image";
+                });
+                // Save picture to camera roll.
+                photo_library.SavePictureToCameraRoll("savefig.jpg", e.ImageStream);
+                // Done saving.
+                Deployment.Current.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtDebug.Text = "Done saving";
+                });
+                e.ImageStream.Seek(0, SeekOrigin.Begin);
+                // No saving to isolated store right now.
+            }
+            finally
+            {
+                // Close the image stream.
+                e.ImageStream.Close();
+            }
+        }
+        public void cam_thumbnail(object sender, ContentReadyEventArgs e)
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate()
+            {
+                txtDebug.Text = "Got a thumbnail. Ignoring.";
+            });
+            e.ImageStream.Close();
+        }
+        void cam_autofocus(object sender, CameraOperationCompletedEventArgs e)
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate()
+            {
+                txtDebug.Text = "Autofocus complete";
+            });
+            // This is where we start our data aquisition from the accelerometer.
+            // Every, say 20ms, we need to poll the sensor, save the data in an
+            // array and send the data along with the image.
+        }
 
         // Button gestures
+        // Function from XAML script. Not sure of it's functionality
+        private void ShutterButton(object sender, RoutedEventArgs e)
+        {
+            if (app_camera != null)
+            {
+                // Try an image capture
+                try
+                {
+                    app_camera.CaptureImage();
+                }
+                catch (Exception ex)
+                {
+                    // Do nothing as of now.
+                }
+            }
+        }
         private void OnButtonPress(object sender, EventArgs e)
         {
             // When button is pressed, focus first and then take a snap.
