@@ -15,3 +15,4 @@ All the necessary code examples are easily available in the following links.
 3. http://stackoverflow.com/questions/14993821/how-do-you-make-a-socket-connection-and-transfer-data-between-windows-phone-8-an
 4. http://code.msdn.microsoft.com/wpapps/Basic-Camera-Sample-52dae359
 5. http://code.msdn.microsoft.com/wpapps/Raw-Sensor-Data-Sample-d84e124d
+6. http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202858(v=vs.105).aspx
