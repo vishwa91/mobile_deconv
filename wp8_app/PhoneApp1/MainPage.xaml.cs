@@ -57,18 +57,25 @@ namespace PhoneApp1
             if (PhotoCamera.IsCameraTypeSupported(CameraType.Primary) == true)
             {
                 app_camera = new Microsoft.Devices.PhotoCamera(CameraType.Primary);
-            }
-            // Attach event handlers.
-            app_camera.Initialized += new EventHandler<CameraOperationCompletedEventArgs>(cam_initialized); // Initialized.
-            app_camera.CaptureCompleted += new EventHandler<CameraOperationCompletedEventArgs>(cam_captured); // Captured.
-            app_camera.CaptureImageAvailable += new EventHandler<ContentReadyEventArgs>(cam_available);   // Picture available.
-            app_camera.CaptureThumbnailAvailable += new EventHandler<ContentReadyEventArgs>(cam_thumbnail); // Thumbnail available.
-            app_camera.AutoFocusCompleted += new EventHandler<CameraOperationCompletedEventArgs>(cam_autofocus); // Autofocus.
+                // Attach event handlers.
+                app_camera.Initialized += new EventHandler<CameraOperationCompletedEventArgs>(cam_initialized); // Initialized.
+                app_camera.CaptureCompleted += new EventHandler<CameraOperationCompletedEventArgs>(cam_captured); // Captured.
+                app_camera.CaptureImageAvailable += new EventHandler<ContentReadyEventArgs>(cam_available);   // Picture available.
+                app_camera.CaptureThumbnailAvailable += new EventHandler<ContentReadyEventArgs>(cam_thumbnail); // Thumbnail available.
+                app_camera.AutoFocusCompleted += new EventHandler<CameraOperationCompletedEventArgs>(cam_autofocus); // Autofocus.
 
-            // Instead of using a button, we need to figure out a way to send a remote request from the PC
-            // But currently, just use a button
-            CameraButtons.ShutterKeyPressed += OnButtonPress;
-            CameraButtons.ShutterKeyReleased += OnButtonRelease;
+                // Instead of using a button, we need to figure out a way to send a remote request from the PC
+                // But currently, just use a button
+                CameraButtons.ShutterKeyPressed += OnButtonPress;
+                CameraButtons.ShutterKeyReleased += OnButtonRelease;
+            }
+            else
+            {
+                this.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtDebug.Text = "Camera not available.";
+                });
+            }
         }
         
         // Define the camera event handlers
@@ -143,7 +150,9 @@ namespace PhoneApp1
                 // Try an image capture
                 try
                 {
+                    txtDebug.Text = "Trying to get an image.";
                     app_camera.CaptureImage();
+                    txtDebug.Text = "Got an image.";
                 }
                 catch (Exception ex)
                 {
@@ -178,5 +187,7 @@ namespace PhoneApp1
                 app_camera.CancelFocus();
             }
         }
+
+
     }
 }

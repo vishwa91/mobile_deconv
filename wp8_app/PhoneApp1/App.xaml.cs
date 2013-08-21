@@ -89,6 +89,8 @@ namespace PhoneApp1
                 // A navigation has failed; break into the debugger
                 Debugger.Break();
             }
+            MessageBox.Show(string.Format("Page {0} failed to load with error: {1}", e.Uri.ToString(), e.Exception.StackTrace));
+            e.Handled = true;
         }
 
         // Code to execute on Unhandled Exceptions
@@ -99,6 +101,7 @@ namespace PhoneApp1
                 // An unhandled exception has occurred; break into the debugger
                 Debugger.Break();
             }
+          
         }
 
         #region Phone application initialization
