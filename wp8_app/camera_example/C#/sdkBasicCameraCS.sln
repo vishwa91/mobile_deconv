@@ -1,20 +1,36 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2012 for Windows Phone
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sdkBasicCameraCS", "sdkBasicCameraCS\sdkBasicCameraCS.csproj", "{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|ARM = Debug|ARM
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|ARM = Release|ARM
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|ARM.ActiveCfg = Debug|ARM
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|ARM.Build.0 = Debug|ARM
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|ARM.Deploy.0 = Debug|ARM
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|x86.ActiveCfg = Debug|x86
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|x86.Build.0 = Debug|x86
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Debug|x86.Deploy.0 = Debug|x86
 		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|ARM.ActiveCfg = Release|ARM
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|ARM.Build.0 = Release|ARM
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|ARM.Deploy.0 = Release|ARM
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|x86.ActiveCfg = Release|x86
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|x86.Build.0 = Release|x86
+		{FF13A88C-D451-4E5A-A8C3-E2D12B1DC61C}.Release|x86.Deploy.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

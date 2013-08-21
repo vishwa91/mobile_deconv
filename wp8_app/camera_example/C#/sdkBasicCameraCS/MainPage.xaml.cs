@@ -116,7 +116,7 @@ namespace sdkBasicCameraCS
             }
         }
 
-        protected override void OnNavigatingFrom(System.Windows.Navigation.NavigatingCancelEventArgs e)
+        protected override void OnNavigatedFrom(System.Windows.Navigation.NavigationEventArgs e)
         {
             if (cam != null)
             {

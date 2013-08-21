@@ -21,7 +21,11 @@ using System.IO;                // From camera app
 using System.IO.IsolatedStorage;// From camera app
 using Microsoft.Xna.Framework.Media; // From camera app
 
-
+enum UpdateType
+{
+    Information,
+    DebugSection
+}
 namespace PhoneApp1
 {
     public partial class MainPage : PhoneApplicationPage
@@ -54,10 +58,13 @@ namespace PhoneApp1
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
         {
             // Check if we have a camera at the back. Ignore any front cameras.
+           
             if (PhotoCamera.IsCameraTypeSupported(CameraType.Primary) == true)
             {
+                update_info("Got a working camera. Initializing.", UpdateType.DebugSection);
                 app_camera = new Microsoft.Devices.PhotoCamera(CameraType.Primary);
                 // Attach event handlers.
+                update_info("Attaching event handlers.", UpdateType.DebugSection);
                 app_camera.Initialized += new EventHandler<CameraOperationCompletedEventArgs>(cam_initialized); // Initialized.
                 app_camera.CaptureCompleted += new EventHandler<CameraOperationCompletedEventArgs>(cam_captured); // Captured.
                 app_camera.CaptureImageAvailable += new EventHandler<ContentReadyEventArgs>(cam_available);   // Picture available.
@@ -68,6 +75,8 @@ namespace PhoneApp1
                 // But currently, just use a button
                 CameraButtons.ShutterKeyPressed += OnButtonPress;
                 CameraButtons.ShutterKeyReleased += OnButtonRelease;
+                // Set the source for the view finder canvas
+                viewfinderBrush.SetSource(app_camera);
             }
             else
             {
@@ -75,21 +84,44 @@ namespace PhoneApp1
                 {
                     txtDebug.Text = "Camera not available.";
                 });
+                ShutterButton.IsEnabled = false;
             }
+            
+        }
+
+        protected override void OnNavigatingFrom(System.Windows.Navigation.NavigatingCancelEventArgs e)
+        {
+            this.Dispatcher.BeginInvoke(delegate()
+            {
+                txtDebug.Text = "Navigating away from the main page.";
+            });
         }
         
+        // Method for easy printing to screen
+        void update_info(string str, UpdateType update_type)
+        {
+            if (update_type == UpdateType.DebugSection)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtDebug.Text = str;
+                });
+            }
+            else
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtInfo.Text = str;
+                });
+            }
+        }
         // Define the camera event handlers
         void cam_initialized(object sender, Microsoft.Devices.CameraOperationCompletedEventArgs e)
         {
             // Check if the initialization has succeeded.
             if (e.Succeeded)
             {
-                // A delegate is like a functional pointer. 
-                this.Dispatcher.BeginInvoke(delegate()
-                {
-                    txtDebug.Text = "Camera initialized.";
-                    // We are not dealing with any flash stuff.
-                });
+               update_info("Camera initialized.", UpdateType.DebugSection);
             }
         }
         void cam_captured(object sender, CameraOperationCompletedEventArgs e)
@@ -102,17 +134,11 @@ namespace PhoneApp1
             // We will need to send the image over bluetooth later. As of now, just save.
             try
             {
-                Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                {
-                    txtDebug.Text = "Saving image";
-                });
+                update_info("Saving image.", UpdateType.DebugSection);
                 // Save picture to camera roll.
                 photo_library.SavePictureToCameraRoll("savefig.jpg", e.ImageStream);
                 // Done saving.
-                Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                {
-                    txtDebug.Text = "Done saving";
-                });
+                update_info("Image saved.", UpdateType.DebugSection);
                 e.ImageStream.Seek(0, SeekOrigin.Begin);
                 // No saving to isolated store right now.
             }
@@ -124,18 +150,12 @@ namespace PhoneApp1
         }
         public void cam_thumbnail(object sender, ContentReadyEventArgs e)
         {
-            Deployment.Current.Dispatcher.BeginInvoke(delegate()
-            {
-                txtDebug.Text = "Got a thumbnail. Ignoring.";
-            });
+            update_info("Ignoring thumbnail.", UpdateType.DebugSection);
             e.ImageStream.Close();
         }
         void cam_autofocus(object sender, CameraOperationCompletedEventArgs e)
         {
-            Deployment.Current.Dispatcher.BeginInvoke(delegate()
-            {
-                txtDebug.Text = "Autofocus complete";
-            });
+           update_info("Autofocus complete.", UpdateType.DebugSection);
             // This is where we start our data aquisition from the accelerometer.
             // Every, say 20ms, we need to poll the sensor, save the data in an
             // array and send the data along with the image.
@@ -143,7 +163,7 @@ namespace PhoneApp1
 
         // Button gestures
         // Function from XAML script. Not sure of it's functionality
-        private void ShutterButton(object sender, RoutedEventArgs e)
+        private void ShutterButtonClick(object sender, RoutedEventArgs e)
         {
             if (app_camera != null)
             {

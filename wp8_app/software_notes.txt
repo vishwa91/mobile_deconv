@@ -1,0 +1,17 @@
+This document contains notes regarding the windows phone 8 sdk
+
+Installation:
+1. Download only the full installer from dream spark. Though visual studio express is free, download from dreamspark will ensure that you can also deploy the application on the mobile without paying 99$ fee.
+
+Important instructions:
+1. If ACCESS_DENIED error pops up, permissions can be changed in WMAppManifest.xml file.
+2. A delegate() is like a function pointer.
+3. Accessing UI elements directly is not allowed. A call should be done using this.Dispatcher.BeginInvoke(action)
+
+Useful links:
+All the necessary code examples are easily available in the following links.
+1. http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202968%28v=vs.105%29.aspx
+2. http://www.geekchamp.com/articles/getting-started-with-bluetooth-in-windows-phone-8
+3. http://stackoverflow.com/questions/14993821/how-do-you-make-a-socket-connection-and-transfer-data-between-windows-phone-8-an
+4. http://code.msdn.microsoft.com/wpapps/Basic-Camera-Sample-52dae359
+5. http://code.msdn.microsoft.com/wpapps/Raw-Sensor-Data-Sample-d84e124d

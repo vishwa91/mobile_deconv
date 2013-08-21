@@ -6,55 +6,36 @@
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
+    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="480"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
     FontSize="{StaticResource PhoneFontSizeNormal}"
     Foreground="{StaticResource PhoneForegroundBrush}"
-    SupportedOrientations="Landscape" Orientation="Portrait"
-    shell:SystemTray.IsVisible="True">
+    SupportedOrientations="Landscape" Orientation="Landscape"
+    shell:SystemTray.IsVisible="False">
 
     <!--LayoutRoot is the root grid where all page content is placed-->
     <Grid x:Name="LayoutRoot" Background="Transparent">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="640"/>
+            <ColumnDefinition Width="160"/>
+        </Grid.ColumnDefinitions>
 
-        <!-- LOCALIZATION NOTE:
-            To localize the displayed strings copy their values to appropriately named
-            keys in the app's neutral language resource file (AppResources.resx) then
-            replace the hard-coded text value between the attributes' quotation marks
-            with the binding clause whose path points to that string name.
 
-            For example:
-
-                Text="{Binding Path=LocalizedResources.ApplicationTitle, Source={StaticResource LocalizedStrings}}"
-
-            This binding points to the template's string resource named "ApplicationTitle".
-
-            Adding supported languages in the Project Properties tab will create a
-            new resx file per language that can carry the translated values of your
-            UI strings. The binding in these examples will cause the value of the
-            attributes to be drawn from the .resx file that matches the
-            CurrentUICulture of the app at run time.
-         -->
+        <Canvas x:Name="viewfinderCanvas" HorizontalAlignment="Left" Height="480" Margin="10,10,0,0" VerticalAlignment="Top" Width="640">
+            <Canvas.Background>
+                <VideoBrush x:Name="viewfinderBrush"></VideoBrush>
+            </Canvas.Background>
+        </Canvas>
 
         <!--TitlePanel contains the name of the application and page title-->
         <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
             <TextBlock Text="IIT MADRAS IPCV" Style="{StaticResource PhoneTextNormalStyle}" Margin="12,0"/>
             <TextBlock Text="Camera App" Margin="9,-7,0,0" Style="{StaticResource PhoneTextTitle1Style}"/>
+            <Button x:Name="ShutterButton" Content="Click" Margin="10,232,453,10" Click="ShutterButtonClick"/>
         </StackPanel>
 
-        <!--ContentPanel - place additional content here-->
-        <Grid x:Name="ContentPanel" Margin="0,138,24,23" Grid.RowSpan="2">
-            <Button Content="Click" Margin="10,232,575,10" Click="ShutterButton"/>
-            <Canvas HorizontalAlignment="Left" Height="309" Margin="10,10,0,0" VerticalAlignment="Top" Width="694">
-                <TextBlock Canvas.Left="10" TextWrapping="Wrap" Text="Debug Section" Name="txtDebug" RenderTransformOrigin="0.463,0.481" Width="285"/>
-                <Button Content="Click" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.535,0.524" Canvas.Top="318" Click="ShutterButton"/>
-            </Canvas>
-
-        </Grid>
-
+        <TextBlock Canvas.Left="10" TextWrapping="Wrap" Text="Debug Section" Name="txtDebug" RenderTransformOrigin="0.463,0.481" Margin="10,327,10,10" Grid.Column="1"/>
+        <TextBlock Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Name="txtInfo" Text="Information block" VerticalAlignment="Top" Height="288" Width="140"/>
         <!--Uncomment to see an alignment grid to help ensure your controls are
             aligned on common boundaries.  The image has a top margin of -32px to
             account for the System Tray. Set this to 0 (or remove the margin altogether)
