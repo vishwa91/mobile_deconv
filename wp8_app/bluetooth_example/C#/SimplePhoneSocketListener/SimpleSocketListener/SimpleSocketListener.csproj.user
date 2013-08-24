@@ -30,6 +30,7 @@
         <SilverlightMobileCSProjectFlavor>
           <FullDeploy>True</FullDeploy>
           <DebuggerType>Native</DebuggerType>
+          <DebuggerAgentType>Managed</DebuggerAgentType>
           <Tombstone>False</Tombstone>
         </SilverlightMobileCSProjectFlavor>
       </FlavorProperties>
