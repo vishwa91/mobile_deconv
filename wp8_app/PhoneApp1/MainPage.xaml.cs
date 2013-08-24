@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Main source file.
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -49,6 +50,10 @@ namespace PhoneApp1
         // A bool variable to check if data is valid
         bool isDataValid;
         // Constructor
+
+        // Create an information and debugger logger
+        Logger dbglog = new Logger(txtDebug);
+        Logger infolob = new Logger(txtInfo);
         public MainPage()
         {
             InitializeComponent();
@@ -115,6 +120,8 @@ namespace PhoneApp1
                 });
             }
         }
+        // Clear information screen
+        void 
         // Define the camera event handlers
         void cam_initialized(object sender, Microsoft.Devices.CameraOperationCompletedEventArgs e)
         {
@@ -207,7 +214,42 @@ namespace PhoneApp1
                 app_camera.CancelFocus();
             }
         }
+       
+        private void SocketConn_Click(object sender, RoutedEventArgs e)
+        {
 
+        }
+
+        private void RemoteTest_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+
+    }
+    class Logger
+    {
+        // Member data. When creating a logger instance, the _textblock will point to the corresponding TextBlock.
+        TextBlock _textblock = null;
+        public Logger(TextBlock txtBlock)
+        {
+            // Point our textblock to txtBlock
+            _textblock = txtBlock;
+        }
+        public void clear()
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate()
+            {
+                _textblock.Text = "";
+            });
+        }
+        public void write(string text)
+        {
+            Deployment.Current.Dispatcher.BeginInvoke(delegate()
+            {
+                _textblock.Text += text;
+            });
+        }
 
     }
 }
