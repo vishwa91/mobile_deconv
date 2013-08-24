@@ -35,11 +35,12 @@
 
         <TextBlock Canvas.Left="10" TextWrapping="Wrap" Text="Debug Section" Name="txtDebug" RenderTransformOrigin="0.463,0.481" Margin="8,259,12,185" Grid.Column="1"/>
         <TextBlock Canvas.Left ="10" Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" Name="txtInfo" Text="Information block" VerticalAlignment="Top" Height="243" Width="136"/>
-        <Button x:Name="ShutterButton" Content="Click" Margin="633,294,0,114" Click="ShutterButtonClick" Grid.ColumnSpan="2"/>
-        <Border BorderBrush="White" BorderThickness="1" HorizontalAlignment="Left" Height="248" VerticalAlignment="Top" Width="145" Grid.Column="1" Margin="5,5,0,0"/>
-        <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" HorizontalAlignment="Left" Height="36" Margin="5,258,0,0" VerticalAlignment="Top" Width="145"/>
-        <Button Content="Socketconn" HorizontalAlignment="Left" Margin="633,350,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="SocketConn_Click"/>
-        <Button Content="RemoteTest" HorizontalAlignment="Left" Margin="633,408,0,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="RemoteTest_Click"/>
+        <Button x:Name="ShutterButton" Content="Click" Margin="638,294,-5,114" Click="ShutterButtonClick" Grid.ColumnSpan="2"/>
+        <Border BorderBrush="White" BorderThickness="1" HorizontalAlignment="Left" Height="248" VerticalAlignment="Top" Width="145" Grid.Column="1" Margin="7,5,0,0"/>
+        <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" HorizontalAlignment="Left" Height="36" Margin="7,258,0,0" VerticalAlignment="Top" Width="145">
+            <TextBox Name="txtHostName" TextWrapping="Wrap" Text="" Margin="-84,149,-7,-187"/>
+        </Border>
+        <Button Content="Socketconn" HorizontalAlignment="Left" Margin="638,350,-5,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="SocketConn_Click"/>
         <!--Uncomment to see an alignment grid to help ensure your controls are
             aligned on common boundaries.  The image has a top margin of -32px to
             account for the System Tray. Set this to 0 (or remove the margin altogether)

@@ -12,6 +12,8 @@ namespace PhoneApp1.modules
 {
     class ComSocket
     {
+        // Socket object
+        Socket _socket = null;
         static ManualResetEvent _clientDone = new ManualResetEvent(false);  //Notifies completion of asynchronous call.
         const int TIMEOUT_IN_MILLISECONDS = 5000;  // Timeout in case of failed asynchronous call.
         const int MAX_BUFFER_SIZE = 2048;   // As of now, we won't send image. Let us experiment first.
@@ -100,7 +102,7 @@ namespace PhoneApp1.modules
                     }
                     else
                     {
-                        response = e.SocketError;
+                        response = e.SocketError.ToString();
                     }
                     _clientDone.Set(); // Done. Set UI thread free.
                 });
