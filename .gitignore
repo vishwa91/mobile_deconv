@@ -2,8 +2,13 @@
 # Visual Studio 2012 temporary files
 *.v11.suo
 *.csproj.user
+*.sdf
+*.cache
 wp8_app/camera_example/C#/sdkBasicCameraCS/Bin/
 wp8_app/camera_example/C#/sdkBasicCameraCS/obj/
 wp8_app/sensors_example/C#/sdkRawSensorDataCS/Bin/
 wp8_app/sensors_example/C#/sdkRawSensorDataCS/obj/
 wp8_app/PhoneApp1/obj/
+wp8_app/PhoneApp1/Bin/
+wp8_app/bluetooth_example/C#/SimplePhoneSocketClient/WinsockClient/ARM/Debug
+wp8_app/bluetooth_example/C#/SimplePhoneSocketListener/WinsockListener/Debug
