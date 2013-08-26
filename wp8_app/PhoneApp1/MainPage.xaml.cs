@@ -37,22 +37,16 @@ namespace PhoneApp1
         /* For this application, we will need a total of 3 broad components:
          * 1. Camera: For taking the pictures
          * 2. Sensors: For recording the motion of the camera during shutter open
-         * 3. Bluetooth: For sending data to the computer.
+         * 3. TCP: For sending data to the computer.
          */
         // Create a camera instance
         PhotoCamera app_camera;
         // Create a media library. Will remove this once we can write directly to bluetooth stream
         MediaLibrary photo_library = new MediaLibrary();
 
-        // Create an instance of gyroscope and accelerometer. Once we are comfortable with accelerometer alone, we can 
-        // make gyroscope optional.
-        Accelerometer app_accelerometer;
-        Gyroscope app_gyroscope;
-        // Create timers for sampling
-        DispatcherTimer accel_timer, gyro_timer;
-        // A bool variable to check if data is valid
-        bool isDataValid;
-
+        // Create sensors instances
+        AppAccelerometer accelerometer;
+        AppGyroscope gyroscope;
         // Constants
         const int port = 23; // Port number is not our wish. 7 is an echo server
         const string hostname = "10.21.2.208";
@@ -93,6 +87,26 @@ namespace PhoneApp1
                     txtDebug.Text = "Camera not available.";
                 });
                 ShutterButton.IsEnabled = false;
+            }
+            // Start the accelerometer and gyroscope service.
+            accelerometer = new AppAccelerometer();
+            gyroscope = new AppGyroscope();
+            DeviceStatus deviceStatus;
+            deviceStatus = accelerometer.start();
+            if (deviceStatus == DeviceStatus.DEVICE_ERROR)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtDebug.Text = "Error in accelerometer device";
+                });
+            }
+            deviceStatus = gyroscope.start();
+            if (deviceStatus == DeviceStatus.DEVICE_ERROR)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate()
+                {
+                    txtDebug.Text = "Error in gyroscope device";
+                });
             }
             
         }
@@ -247,11 +261,6 @@ namespace PhoneApp1
             // Send a test message.
             result = client.Send("Testing socket connection.");
             Log("Test: "+result, UpdateType.Information);
-        }
-
-        private void RemoteTest_Click(object sender, RoutedEventArgs e)
-        {
-
         }
 
     }
