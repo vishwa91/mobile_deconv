@@ -1,5 +1,18 @@
-﻿Build started 11/16/2012 12:27:26 PM.
+﻿Build started 8/30/2013 2:38:05 PM.
+     1>Project "C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\WinsockClient\WinsockClient.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\WPSDK\WP80\bin\x86_arm\CL.exe /c /I"C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\WinsockClient\\" /I"Generated Files\\" /IARM\Debug\ /AI"C:\Program Files (x86)\Windows Phone Kits\8.0\Windows Metadata" /Zi /ZW /ZW:nostdlib /nologo /W3 /WX- /sdl /MP /Od /Oy- /D _WINRT_DLL /D _WINDLL /D _UNICODE /D UNICODE /D _DEBUG /D WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"pch.h" /Fp"ARM\Debug\WinsockClient.pch" /Fo"ARM\Debug\\" /Fd"ARM\Debug\vc110.pdb" /Gd /TP /FU"C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\WPSDK\WP80\lib\arm\platform.winmd" /FU"C:\Program Files (x86)\Windows Phone Kits\8.0\Windows Metadata\Windows.winmd" /analyze- /errorReport:prompt pch.cpp
+         pch.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\WPSDK\WP80\bin\x86_arm\CL.exe /c /I"C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\WinsockClient\\" /I"Generated Files\\" /IARM\Debug\ /AI"C:\Program Files (x86)\Windows Phone Kits\8.0\Windows Metadata" /Zi /ZW /ZW:nostdlib /nologo /W3 /WX- /sdl /MP /Od /Oy- /D _WINRT_DLL /D _WINDLL /D _UNICODE /D UNICODE /D _DEBUG /D WINAPI_FAMILY=WINAPI_FAMILY_PHONE_APP /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"pch.h" /Fp"ARM\Debug\WinsockClient.pch" /Fo"ARM\Debug\\" /Fd"ARM\Debug\vc110.pdb" /Gd /TP /FU"C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\WPSDK\WP80\lib\arm\platform.winmd" /FU"C:\Program Files (x86)\Windows Phone Kits\8.0\Windows Metadata\Windows.winmd" /analyze- /errorReport:prompt WinsockClient.cpp
+         WinsockClient.cpp
+     1>WinsockClient.cpp(16): warning C4101: 'buf' : unreferenced local variable
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\WPSDK\WP80\bin\x86_arm\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\ARM\Debug\WinsockClient\WinsockClient.dll" /INCREMENTAL /NOLOGO Ws2_32.lib WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib /NODEFAULTLIB:ole32.lib /MANIFEST:NO /DEBUG /PDB:"C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\ARM\Debug\WinsockClient\WinsockClient.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /WINMD /WINMDFILE:"C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\ARM\Debug\WinsockClient\WinsockClient.winmd" /DYNAMICBASE /NXCOMPAT /MACHINE:ARM /DLL ARM\Debug\WinsockClient.obj
+         ARM\Debug\pch.obj
+            Creating library C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\ARM\Debug\WinsockClient\WinsockClient.lib and object C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\ARM\Debug\WinsockClient\WinsockClient.exp
+         WinsockClient.vcxproj -> C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\ARM\Debug\WinsockClient\WinsockClient.dll
+     1>Done Building Project "C:\Users\ipcv8-win8\Documents\vishwa_btp\wp8_app\bluetooth_example\C#\SimplePhoneSocketClient\WinsockClient\WinsockClient.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.01
+Time Elapsed 00:00:02.69

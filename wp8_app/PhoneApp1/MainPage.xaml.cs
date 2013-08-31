@@ -21,10 +21,10 @@ using Microsoft.Devices;        // From camera app
 using System.IO;                // From camera app
 using System.IO.IsolatedStorage;// From camera app
 using Microsoft.Xna.Framework.Media; // From camera app
+using Microsoft.Xna.Framework;
 
 // Communication module
 using PhoneApp1.modules;
-
 enum UpdateType
 {
     Information,
@@ -47,6 +47,7 @@ namespace PhoneApp1
         // Create sensors instances
         AppAccelerometer accelerometer;
         AppGyroscope gyroscope;
+        DispatcherTimer accel_timer;
         // Constants
         const int port = 23; // Port number is not our wish. 7 is an echo server
         const string hostname = "10.21.2.208";
@@ -99,6 +100,13 @@ namespace PhoneApp1
                 {
                     txtDebug.Text = "Error in accelerometer device";
                 });
+            }
+            else
+            {
+                accel_timer = new DispatcherTimer();
+                accel_timer.Interval = TimeSpan.FromMilliseconds(20);
+                accel_timer.Tick += new EventHandler(accelerometer_timer);
+                accel_timer.Start();
             }
             deviceStatus = gyroscope.start();
             if (deviceStatus == DeviceStatus.DEVICE_ERROR)
@@ -261,6 +269,13 @@ namespace PhoneApp1
             // Send a test message.
             result = client.Send("Testing socket connection.");
             Log("Test: "+result, UpdateType.Information);
+        }
+
+        void accelerometer_timer(object sender, EventArgs e)
+        {
+            clrLog(UpdateType.Information);
+            Vector3 accel = accelerometer.getvalue();
+            Log(string.Format("x:{0}\n,y:{1}\n,z:{2}", accel.X.ToString("0.00"), accel.Y.ToString("0.00"), accel.Z.ToString("0.00")), UpdateType.Information);
         }
 
     }

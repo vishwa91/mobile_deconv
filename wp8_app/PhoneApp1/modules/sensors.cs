@@ -1,5 +1,6 @@
 ﻿// Source file for sensors data.
 using System;
+using System.Windows;
 using Microsoft.Phone.Controls;
 
 using Microsoft.Devices.Sensors;
@@ -26,7 +27,7 @@ namespace PhoneApp1.modules
         public AppAccelerometer()
         {
             // Check if we have accelerometer support
-            if (!Accelerometer.IsSupported)
+            if (Accelerometer.IsSupported)
             {
                 // Create a dispatch timer to regularly poll the data.
                 _timer = new DispatcherTimer();
@@ -39,10 +40,11 @@ namespace PhoneApp1.modules
                 _accelerometer.TimeBetweenUpdates = TimeSpan.FromMilliseconds(20);
                 // Attach an event handler
                 _accelerometer.CurrentValueChanged += new EventHandler<SensorReadingEventArgs<AccelerometerReading>>(accel_curval_changed);
-
+                MessageBox.Show("Found accelerometer.");
             }
             else
             {
+                MessageBox.Show("Accelerometer not found");
                 _accelerometer = null;
             }
         }
@@ -68,6 +70,10 @@ namespace PhoneApp1.modules
             }
             else
                 return DeviceStatus.DEVICE_ERROR;
+        }
+        public Vector3 getvalue()
+        {
+            return acceleration;
         }
 
         void accel_curval_changed(object sender, SensorReadingEventArgs<AccelerometerReading> e)
@@ -105,6 +111,11 @@ namespace PhoneApp1.modules
                 _timer.Interval = TimeSpan.FromMilliseconds(20);
                 _timer.Tick += new EventHandler(timer_tick);
             }
+            else
+            {
+                _gyroscope = null;
+                MessageBox.Show("Gyroscope not supported.");
+            }
         }
         public DeviceStatus start()
         {
@@ -128,7 +139,10 @@ namespace PhoneApp1.modules
             else
                 return DeviceStatus.DEVICE_ERROR;
         }
-
+        public Vector3 getvalue()
+        {
+            return rotation_rate;
+        }
         void gyro_curval_changed(object sender, SensorReadingEventArgs<GyroscopeReading> e)
         {
             isDataValid = _gyroscope.IsDataValid;
