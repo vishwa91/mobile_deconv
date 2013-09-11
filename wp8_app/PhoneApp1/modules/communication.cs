@@ -23,6 +23,7 @@ namespace PhoneApp1.modules
         public string Connect(string hostname, int port)
         {
             // Debug data
+            /*
             var host_name = Windows.Networking.Connectivity.NetworkInformation.GetHostNames();
             foreach (var hn in host_name)
             {
@@ -40,7 +41,7 @@ namespace PhoneApp1.modules
                         MessageBox.Show("Host not configured.");
                     });
                 }
-            }
+            }*/
             string result = string.Empty; // Hold result of connection attempt.
             DnsEndPoint hostentry = new DnsEndPoint(hostname, port);
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -50,10 +51,6 @@ namespace PhoneApp1.modules
             {
                 // Retrieve the result of this request
                 result = e.SocketError.ToString();
-                Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                {
-                    MessageBox.Show(string.Format("Response: {0}", result.ToString()));
-                });
                 // Signal that the request is complete, unblocking the UI thread
                 _clientDone.Set();
             });
@@ -98,10 +95,6 @@ namespace PhoneApp1.modules
             {
                 // Socket not created.
                 response = "Socket not initialized.";
-                Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                {
-                    MessageBox.Show(string.Format("Response: {0}", response.ToString()));
-                });
             }
             return response;
         }

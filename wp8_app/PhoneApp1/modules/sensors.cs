@@ -40,7 +40,6 @@ namespace PhoneApp1.modules
                 _accelerometer.TimeBetweenUpdates = TimeSpan.FromMilliseconds(20);
                 // Attach an event handler
                 _accelerometer.CurrentValueChanged += new EventHandler<SensorReadingEventArgs<AccelerometerReading>>(accel_curval_changed);
-                MessageBox.Show("Found accelerometer.");
             }
             else
             {
