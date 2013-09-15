@@ -22,26 +22,6 @@ namespace PhoneApp1.modules
         // Method to connect to the remote server.
         public string Connect(string hostname, int port)
         {
-            // Debug data
-            /*
-            var host_name = Windows.Networking.Connectivity.NetworkInformation.GetHostNames();
-            foreach (var hn in host_name)
-            {
-                if (hn.IPInformation != null)
-                {
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                    {
-                        MessageBox.Show(string.Format("Host address: {0}", hn.DisplayName.ToString()));
-                    });
-                }
-                else
-                {
-                    Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                    {
-                        MessageBox.Show("Host not configured.");
-                    });
-                }
-            }*/
             string result = string.Empty; // Hold result of connection attempt.
             DnsEndPoint hostentry = new DnsEndPoint(hostname, port);
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);

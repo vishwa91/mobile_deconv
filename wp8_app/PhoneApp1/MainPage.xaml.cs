@@ -5,11 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents; // From camera app
-using System.Windows.Input;     // From camera app
-using System.Windows.Media;     // From camera app
-using System.Windows.Media.Animation; // From camera app
-using System.Windows.Shapes;    // From camera app
 using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
@@ -18,19 +13,19 @@ using Microsoft.Devices.Sensors; // From sensors app
 using System.Windows.Threading;  // From sensors app
 // Directives. From camera app
 using Microsoft.Devices;        // From camera app
-using System.IO;                // From camera app
-using System.IO.IsolatedStorage;// From camera app
-using Microsoft.Xna.Framework.Media; // From camera app
+
 using Microsoft.Xna.Framework;
 using System.Windows.Media.Imaging;
 using Windows.Storage.Streams;
+using System.Text;
 
 // Communication module
 using PhoneApp1.modules;
 enum UpdateType
 {
     Information,
-    DebugSection
+    DebugSection,
+    MessageBox
 }
 namespace PhoneApp1
 {
@@ -42,13 +37,8 @@ namespace PhoneApp1
          * 3. TCP: For sending data to the computer.
          */
         // Create a camera instance
-        PhotoCamera app_camera;
-        // Resolution object.
-        Size resolution = new Size();
-
-        // Create a media library. Will remove this once we can write directly to bluetooth stream
-        MediaLibrary photo_library = new MediaLibrary();
-
+        AppCamera app_camera;
+        bool transmit = false;
         // Create sensors instances
         AppAccelerometer accelerometer;
         AppGyroscope gyroscope;
@@ -57,7 +47,6 @@ namespace PhoneApp1
         List<float> accelX = new List<float>();
         List<float> accelY = new List<float>();
         List<float> accelZ = new List<float>();
-        bool shutter_open = true;
         // Constants
         const int port = 1991; // Port number is not our wish. 7 is an echo server
         const string hostname = "10.21.2.208";
@@ -72,36 +61,10 @@ namespace PhoneApp1
         // I think OnNavigateTo is the function that is executed once the app is opened
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
         {
-            // Check if we have a camera at the back. Ignore any front cameras.
-           
-            if (PhotoCamera.IsCameraTypeSupported(CameraType.Primary) == true)
-            {
-                Log("Got a working camera. Initializing.", UpdateType.DebugSection);
-                app_camera = new Microsoft.Devices.PhotoCamera(CameraType.Primary);
-                // Attach event handlers.
-                Log("Attaching event handlers.", UpdateType.DebugSection);
-                app_camera.Initialized += new EventHandler<CameraOperationCompletedEventArgs>(cam_initialized); // Initialized.
-                app_camera.CaptureCompleted += new EventHandler<CameraOperationCompletedEventArgs>(cam_captured); // Captured.
-                app_camera.CaptureImageAvailable += new EventHandler<ContentReadyEventArgs>(cam_available);   // Picture available.
-                app_camera.CaptureThumbnailAvailable += new EventHandler<ContentReadyEventArgs>(cam_thumbnail); // Thumbnail available.
-                app_camera.AutoFocusCompleted += new EventHandler<CameraOperationCompletedEventArgs>(cam_autofocus); // Autofocus.
-                resolution = app_camera.Resolution;
-                
-                // Instead of using a button, we need to figure out a way to send a remote request from the PC
-                // But currently, just use a button
-                CameraButtons.ShutterKeyPressed += OnButtonPress;
-                CameraButtons.ShutterKeyReleased += OnButtonRelease;
-                // Set the source for the view finder canvas
-                viewfinderBrush.SetSource(app_camera);
-            }
-            else
-            {
-                this.Dispatcher.BeginInvoke(delegate()
-                {
-                    txtDebug.Text = "Camera not available.";
-                });
-                ShutterButton.IsEnabled = false;
-            }
+            // Create a new camera instance.
+            app_camera = new AppCamera();
+            app_camera.initialise();
+     
             // Start the accelerometer and gyroscope service.
             accelerometer = new AppAccelerometer();
             gyroscope = new AppGyroscope();
@@ -109,10 +72,7 @@ namespace PhoneApp1
             deviceStatus = accelerometer.start();
             if (deviceStatus == DeviceStatus.DEVICE_ERROR)
             {
-                Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                {
-                    txtDebug.Text = "Error in accelerometer device";
-                });
+                Log("Error in accelerometer device", UpdateType.DebugSection);
             }
             else
             {
@@ -122,15 +82,7 @@ namespace PhoneApp1
                 accel_timer.Start();
             }
             deviceStatus = gyroscope.start();
-            /*
-            if (deviceStatus == DeviceStatus.DEVICE_ERROR)
-            {
-                Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                {
-                    txtDebug.Text = "Error in gyroscope device"+;
-                });
-            }*/
-            
+                      
         }
 
         protected override void OnNavigatingFrom(System.Windows.Navigation.NavigatingCancelEventArgs e)
@@ -177,153 +129,23 @@ namespace PhoneApp1
                 });
             }
         }       
-        // Define the camera event handlers
-        void cam_initialized(object sender, Microsoft.Devices.CameraOperationCompletedEventArgs e)
-        {
-            // Check if the initialization has succeeded.
-            if (e.Succeeded)
-            {
-               Log("Camera initialized.", UpdateType.DebugSection);
-            }
-        }
-        void cam_captured(object sender, CameraOperationCompletedEventArgs e)
-        {
-            // Nothing to do here. Sending data over bluetooth will be later taken 
-            // care in the CaptureImage Available function.
-        }
-        void cam_available(object sender, Microsoft.Devices.ContentReadyEventArgs e)
-        {
-            // We will need to send the image over bluetooth later. As of now, just save.
-            try
-            {
-                Log("Saving image.", UpdateType.DebugSection);
-                long imsize = e.ImageStream.Length;
-                byte[] imbuffer = new byte[imsize];
-                e.ImageStream.Read(imbuffer, 0, imbuffer.Length);
-                if (app_comsocket != null)
-                {
-                    app_comsocket.Send("AVLC:" + accelX.Count + "\n");
-                    app_comsocket.Send("SIZE:" + imsize + "\n");
-                    app_comsocket.Send("HGHT:" + resolution.Height + "\n");
-                    app_comsocket.Send("WDTH:" + resolution.Width + "\n");
-                    app_comsocket.Send("STIM" + "\n");
-                    string imstring = null;
-                    Log("Expecting " + ((imsize / 1024)).ToString() + "Packets", UpdateType.DebugSection);
-                    imstring = System.Text.Encoding.Unicode.GetString(imbuffer, 0, (int)imsize);
-                    app_comsocket.Send(imstring + "\n");
-                    app_comsocket.Send("ENDT\n");
-                }
-
-                // Done saving.
-                Log("Image saved.", UpdateType.DebugSection);
-                e.ImageStream.Seek(0, SeekOrigin.Begin);
-                // No saving to isolated store right now.
-            }
-            finally
-            {
-                // Close the image stream.
-                e.ImageStream.Close();
-            }
-        }
-        public void cam_thumbnail(object sender, ContentReadyEventArgs e)
-        {
-            /*
-            //Log("Ignoring thumbnail.", UpdateType.DebugSection);
-            Log("Sending thumbnail", UpdateType.DebugSection);
-            long imsize = e.ImageStream.Length;
-            byte[] imbuffer = new byte[imsize];
-            e.ImageStream.Read(imbuffer, 0, imbuffer.Length);
-            if (app_comsocket != null)
-            {
-                app_comsocket.Send("SIZE:" + imsize + "\n");
-                app_comsocket.Send("HGHT:" + resolution.Height + "\n");
-                app_comsocket.Send("WDTH:" + resolution.Width + "\n");
-                app_comsocket.Send("STIM" + "\n");
-                string imstring = null;
-                Log("Expecting " + ((imsize / 1024)).ToString() + "Packets", UpdateType.DebugSection);
-                imstring = System.Text.Encoding.Unicode.GetString(imbuffer, 0, (int)imsize);
-                app_comsocket.Send(imstring + "\n");
-               
-                string substring = null;
-                for (int i = 0; i < (int)(imsize / 1024); i++)
-                {
-                    Log("Sending packet " + i.ToString(), UpdateType.Information);
-                    try
-                    {
-                        //imstring = System.Text.Encoding.Unicode.GetString(imbuffer, i * 1024, (i + 1) * 1024);
-                        substring = imstring.Substring(i*1024, 1024);
-                    }
-                    catch (Exception overflow)
-                    {
-                        Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                        {
-                            MessageBox.Show(string.Format("{0}, {1}", imsize, i * 1024));
-                        });
-                    }
-                    app_comsocket.Send(substring);
-                }
-                app_comsocket.Send("ENDT\n");
-            }
-
-            // Done saving.
-            Log("Image saved.", UpdateType.DebugSection);
-            e.ImageStream.Seek(0, SeekOrigin.Begin);
-            e.ImageStream.Close();*/
-        }
-        void cam_autofocus(object sender, CameraOperationCompletedEventArgs e)
-        {
-           Log("Autofocus complete.", UpdateType.DebugSection);
-            // This is where we start our data aquisition from the accelerometer.
-            // Every, say 20ms, we need to poll the sensor, save the data in an
-            // array and send the data along with the image.
-        }
-        // Button gestures
         // Function from XAML script. Not sure of it's functionality
         private void ShutterButtonClick(object sender, RoutedEventArgs e)
         {
-            if (app_camera != null)
+           // Capture a picture. This will happen asynchronously. 
+            if (app_camera.cam_busy == true)
             {
-                // Try an image capture
-                try
-                {
-                    txtDebug.Text = "Trying to get an image.";
-                    app_camera.CaptureImage();
-                    txtDebug.Text = "Got an image.";
-                }
-                catch (Exception ex)
-                {
-                    Log(ex.ToString(), UpdateType.DebugSection);
-                }
+                Log("Camera resource busy.", UpdateType.DebugSection);
+            }
+            else
+            {
+                Log("Starting camera capture", UpdateType.DebugSection);
+                accelX.Clear();
+                accelY.Clear();
+                accelZ.Clear();
+                app_camera.capture();
             }
         }
-        private void OnButtonPress(object sender, EventArgs e)
-        {
-            // When button is pressed, focus first and then take a snap.
-            if (app_camera != null)
-            {
-                // Try to focus first
-                shutter_open = true;
-                try
-                {
-                    app_camera.Focus();
-                }
-                catch (Exception focusError)
-                {
-                    Log(focusError.ToString(), UpdateType.DebugSection);
-                }
-                // (Hopefull) done with focussing. Take an image now.                
-                app_camera.CaptureImage();
-                shutter_open = false;
-            }
-        }
-        private void OnButtonRelease(object sender, EventArgs e)
-        {
-            // Done capturing, release focus.
-            if (app_camera != null)
-            {
-                app_camera.CancelFocus();
-            }
-        }       
         private void SocketConn_Click(object sender, RoutedEventArgs e)
         {
             clrLog(UpdateType.Information);
@@ -331,10 +153,7 @@ namespace PhoneApp1
             if (txtHostName.Equals("Host") || txtHostName.Equals("") || txtPort.Equals("Port") || txtPort.Equals(""))
             {
                 // Release message and return.
-                Deployment.Current.Dispatcher.BeginInvoke(delegate()
-                {
-                    MessageBox.Show("Invalid hostname or port.");
-                });
+                Log("Invalid hostname or port", UpdateType.MessageBox);
             }
             else
             {
@@ -365,14 +184,59 @@ namespace PhoneApp1
                 
             }
         }
+        // The accelerometer timer not only displays the acceleration data periodically, but also 
+        // logs the acceleration values when the shutter is open.
         void accelerometer_timer(object sender, EventArgs e)
         {
             Vector3 accel = accelerometer.getvalue();
-            if (shutter_open == true)
+            if (app_camera.cam_busy == true)
             {
                 accelX.Add(accel.X);
                 accelY.Add(accel.Y);
                 accelZ.Add(accel.Z);
+            }
+            if ((app_camera.cam_busy == false) && (app_camera.transmit == true))
+            {
+                Log("Camera capture complete", UpdateType.DebugSection);
+                if (app_comsocket != null)
+                {
+                    // Send acceleration data
+                    app_comsocket.Send("STAC\n");
+                    string accel_string = "";
+                    for (int i = 0; i < accelX.Count; i++)
+                        accel_string += accelX[i].ToString() + ";" + accelY[i].ToString() + ";" + accelZ[i].ToString() + ";;";
+                    accel_string += "\n";
+                    app_comsocket.Send(accel_string);
+                    app_comsocket.Send("EDAC\n");
+                    // Send resolution data
+                    app_comsocket.Send("STRS\n");
+                    app_comsocket.Send(app_camera.imheight.ToString() + ";" + app_camera.imwidth.ToString() + "\n");
+                    app_comsocket.Send("EDRS\n");
+                    // Send image data size
+                    app_comsocket.Send("STSZ\n");
+                    int imlength = (int)app_camera.imstream.Length;
+                    app_comsocket.Send(imlength.ToString()+"\n");
+                    app_comsocket.Send("EDSZ\n"); 
+                    // Send image data
+                    app_comsocket.Send("STIM\n");                    
+                    string imstring = Encoding.Unicode.GetString(app_camera.imstream.GetBuffer(), 0, (int)app_camera.imstream.Length);
+                    imstring = imstring.Replace("\x00", "null");
+                    imstring = imstring.Replace("\n", "nline");
+
+                    byte[] imarray = app_camera.imstream.ToArray();
+                    Log("Image length is " + imstring.Length.ToString(), UpdateType.DebugSection);
+                   
+                    for (int i = 0; i < imarray.Length; i++)
+                    {
+                        app_comsocket.Send(imarray[i].ToString()+";");
+                    }
+                    //app_comsocket.Send(imstring + "\n");
+                    app_comsocket.Send("EDIM\n");
+                    // Done.
+                    app_comsocket.Send("ENDT\n");
+                }
+                Log("Total readings: " + accelX.Count.ToString(), UpdateType.Information);
+                app_camera.transmit = false;
             }
             Deployment.Current.Dispatcher.BeginInvoke(delegate()
             {

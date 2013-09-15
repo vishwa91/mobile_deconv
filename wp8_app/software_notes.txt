@@ -16,3 +16,4 @@ All the necessary code examples are easily available in the following links.
 4. http://code.msdn.microsoft.com/wpapps/Basic-Camera-Sample-52dae359
 5. http://code.msdn.microsoft.com/wpapps/Raw-Sensor-Data-Sample-d84e124d
 6. http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202858(v=vs.105).aspx
+7. http://stackoverflow.com/questions/17537477/windows-phone-8-camera-speed-of-image-capture
