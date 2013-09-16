@@ -4,11 +4,9 @@
 
 import SocketServer
 import Image
-global_data = []
-imsize = 0
+from StringIO import StringIO
 imdat = ''
 tokenfile = open('tokens.dat', 'w')
-imh, imw = (0,0)
 class MyTCPHandler(SocketServer.BaseRequestHandler):
     """
         TCP service handler.
@@ -23,14 +21,38 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
         nchunks = 0
         while 1:
             self.data = self.request.recv(bufsize)
-            tokenstring = self.data.replace('\x00','').replace('null', chr(0))
+            tokenstring = self.data.replace('\x00','')
+            print tokenstring
             tokenfile.write(tokenstring)
-            tokens = tokenstring.split('\n')
             imdat += tokenstring
-            if 'ENDT' in tokens:
+            if 'STRT' in tokenstring:
+                print 'Started transmission.'
+            if 'ENDT' in tokenstring:
                 print 'Transmission complete'
-                return 0            
-
+                print 'Will start image processing now.'
+                process()
+                return 0
+            
+def process():
+    """ Routine to process the incoming data."""
+    global imdat
+    tokens = imdat.split('\n')
+    imstart = tokens.index('STIM')
+    imtoken = tokens[imstart+1]
+    imtokens = imtoken.split(';')
+    imtokens = [chr(int(i)) for i in imtokens[:-1]]
+    imstring = ''
+    for i in imtokens:
+        imstring += i
+    im = Image.open(StringIO(imstring))
+    im.save('test_im.bmp')
+    acstart = tokens.index('STAC')
+    actoken = tokens[acstart+1]
+    actokens = actoken[:-1].replace(';;', '\n').replace(';', ',')
+    acfile = open('test_ac.dat', 'w')
+    acfile.write(actokens)
+    acfile.close()
+    print 'Competed processing'
 if __name__ == '__main__':
     HOST = '10.22.43.192'
     PORT = 1991

@@ -9,6 +9,8 @@ using System.Windows.Media;
 using Windows.Phone.Media.Capture;
 using Microsoft.Xna.Framework.Media;
 
+using PhoneApp1.Resources;
+
 namespace PhoneApp1.modules
 {
     class AppCamera
@@ -24,11 +26,12 @@ namespace PhoneApp1.modules
             transmit = false;
             // Get available resolutions.
             IReadOnlyList<Windows.Foundation.Size> available_res = PhotoCaptureDevice.GetAvailableCaptureResolutions(CameraSensorLocation.Back);
+            int count = available_res.Count;
             // Make the resolution details public
-            imheight = (int)available_res[0].Height;
-            imwidth = (int)available_res[0].Width;
+            imheight = (int)available_res[count-1].Height;
+            imwidth = (int)available_res[count-1].Width;
             // Open a new capture device asynchronously.            
-            _camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, available_res[0]);
+            _camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, available_res[count-1]);
             // Create a new sequence
             _camsequence = _camera.CreateCaptureSequence(1);
             // Create a new memory stream.

@@ -64,7 +64,6 @@ namespace PhoneApp1
             // Create a new camera instance.
             app_camera = new AppCamera();
             app_camera.initialise();
-     
             // Start the accelerometer and gyroscope service.
             accelerometer = new AppAccelerometer();
             gyroscope = new AppGyroscope();
@@ -208,15 +207,6 @@ namespace PhoneApp1
                     accel_string += "\n";
                     app_comsocket.Send(accel_string);
                     app_comsocket.Send("EDAC\n");
-                    // Send resolution data
-                    app_comsocket.Send("STRS\n");
-                    app_comsocket.Send(app_camera.imheight.ToString() + ";" + app_camera.imwidth.ToString() + "\n");
-                    app_comsocket.Send("EDRS\n");
-                    // Send image data size
-                    app_comsocket.Send("STSZ\n");
-                    int imlength = (int)app_camera.imstream.Length;
-                    app_comsocket.Send(imlength.ToString()+"\n");
-                    app_comsocket.Send("EDSZ\n"); 
                     // Send image data
                     app_comsocket.Send("STIM\n");                    
                     string imstring = Encoding.Unicode.GetString(app_camera.imstream.GetBuffer(), 0, (int)app_camera.imstream.Length);
@@ -224,13 +214,13 @@ namespace PhoneApp1
                     imstring = imstring.Replace("\n", "nline");
 
                     byte[] imarray = app_camera.imstream.ToArray();
-                    Log("Image length is " + imstring.Length.ToString(), UpdateType.DebugSection);
-                   
+                    Log("Image size is " + app_camera.imheight.ToString()+";"+app_camera.imwidth.ToString(), UpdateType.DebugSection);
+                    imstring ="";
                     for (int i = 0; i < imarray.Length; i++)
                     {
-                        app_comsocket.Send(imarray[i].ToString()+";");
+                        imstring += imarray[i].ToString() + ';';
                     }
-                    //app_comsocket.Send(imstring + "\n");
+                    app_comsocket.Send(imstring + "\n");
                     app_comsocket.Send("EDIM\n");
                     // Done.
                     app_comsocket.Send("ENDT\n");
