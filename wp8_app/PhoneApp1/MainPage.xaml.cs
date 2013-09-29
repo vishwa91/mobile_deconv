@@ -47,8 +47,11 @@ namespace PhoneApp1
         List<float> accelX = new List<float>();
         List<float> accelY = new List<float>();
         List<float> accelZ = new List<float>();
+        byte[] imarray;
+        bool yet_to_transmit = false;
+        int imarray_count = 0;
         // Constants
-        const int port = 1991; // Port number is not our wish. 7 is an echo server
+        const int port = 1991; 
         const string hostname = "10.21.2.208";
         // Create a com socket object
         ComSocket app_comsocket = null;
@@ -76,7 +79,7 @@ namespace PhoneApp1
             else
             {
                 accel_timer = new DispatcherTimer();
-                accel_timer.Interval = TimeSpan.FromMilliseconds(20);
+                accel_timer.Interval = TimeSpan.FromMilliseconds(10);
                 accel_timer.Tick += new EventHandler(accelerometer_timer);
                 accel_timer.Start();
             }
@@ -194,6 +197,49 @@ namespace PhoneApp1
                 accelY.Add(accel.Y);
                 accelZ.Add(accel.Z);
             }
+            /*
+            if (yet_to_transmit)
+            {
+                Log("Transmission in progress", UpdateType.DebugSection);
+                
+                if (app_comsocket != null)
+                {
+                    if (imarray_count == imarray.Length)
+                    {
+                        yet_to_transmit = false;
+                        app_comsocket.Send("EDIM\n");
+                        app_comsocket.Send("ENDT\n");
+                        Log("Transmission complete", UpdateType.DebugSection);
+                        ShutterButton.IsEnabled = true;
+                        SocketConn.IsEnabled = true;
+                        txtHostName.IsEnabled = true;
+                        txtPort.IsEnabled = true;
+                    }
+                    else
+                    {
+                        ShutterButton.IsEnabled = false;
+                        SocketConn.IsEnabled = false;
+                        txtHostName.IsEnabled = false;
+                        txtPort.IsEnabled = false;
+                        // Send data in chunks of 128
+                        //if (imarray.Length - imarray_count > 128)
+                        if(false)
+                        {
+                            for (int i=0; i < 128; i++)
+                            {
+                                app_comsocket.Send(imarray[imarray_count].ToString() + ";");
+                                imarray_count += 1;
+                            }
+                        }
+                        else
+                        {
+                            app_comsocket.Send(imarray[imarray_count].ToString() + ';');
+                            imarray_count += 1;
+                        }
+                    }
+
+                }
+            }*/
             if ((app_camera.cam_busy == false) && (app_camera.transmit == true))
             {
                 Log("Camera capture complete", UpdateType.DebugSection);
@@ -205,28 +251,41 @@ namespace PhoneApp1
                     for (int i = 0; i < accelX.Count; i++)
                         accel_string += accelX[i].ToString() + ";" + accelY[i].ToString() + ";" + accelZ[i].ToString() + ";;";
                     accel_string += "\n";
-                    app_comsocket.Send(accel_string);
+                    app_comsocket.Send(accel_string);                   
+                    //string imstring = Encoding.Unicode.GetString(app_camera.imstream.GetBuffer(), 0, (int)app_camera.imstream.Length);
+                    //imstring = imstring.Replace("\x00", "null");
+                    //imstring = imstring.Replace("\n", "nline");
+
+                    imarray = app_camera.imstream.ToArray();
+                    app_comsocket.Send("STIL\n");
+                    app_comsocket.Send(imarray.Length.ToString() + '\n');
+                    app_comsocket.Send("EDIL\n");
                     app_comsocket.Send("EDAC\n");
                     // Send image data
-                    app_comsocket.Send("STIM\n");                    
-                    string imstring = Encoding.Unicode.GetString(app_camera.imstream.GetBuffer(), 0, (int)app_camera.imstream.Length);
-                    imstring = imstring.Replace("\x00", "null");
-                    imstring = imstring.Replace("\n", "nline");
-
-                    byte[] imarray = app_camera.imstream.ToArray();
+                    app_comsocket.Send("STIM\n"); 
+                    string imstring = Encoding.Unicode.GetString(imarray, 0, imarray.Length);
+                    app_comsocket.Send(imarray);
+                    app_comsocket.Send("\n");
                     Log("Image size is " + app_camera.imheight.ToString()+";"+app_camera.imwidth.ToString(), UpdateType.DebugSection);
-                    imstring ="";
+                    
+                    //string imstring ="";
+                    /*
                     for (int i = 0; i < imarray.Length; i++)
                     {
-                        imstring += imarray[i].ToString() + ';';
-                    }
-                    app_comsocket.Send(imstring + "\n");
+                        app_comsocket.Send(imarray[i].ToString() + ';');
+                    }*/
+                    app_comsocket.Send("\n");
+                     
                     app_comsocket.Send("EDIM\n");
+                    
                     // Done.
                     app_comsocket.Send("ENDT\n");
+                     
                 }
                 Log("Total readings: " + accelX.Count.ToString(), UpdateType.Information);
                 app_camera.transmit = false;
+                yet_to_transmit = true;
+                imarray_count = 0;
             }
             Deployment.Current.Dispatcher.BeginInvoke(delegate()
             {
@@ -234,6 +293,11 @@ namespace PhoneApp1
             });
         }
 
+        string to_unicode(string str)
+        {
+            byte[] imbyte = Encoding.Unicode.GetBytes(str);
+            return Encoding.Unicode.GetString(imbyte, 0, imbyte.Length);
+        }
     }
     
 }

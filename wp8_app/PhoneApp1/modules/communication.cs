@@ -41,6 +41,41 @@ namespace PhoneApp1.modules
             // Return the result.
             return result;
         }
+        public string Send(byte[] data)
+        {
+            string response = "Operation timeout.";
+            // Hopefully, _socket is not null;
+            if (_socket != null)
+            {
+                // SocketAsyncEventArgs is used for sending the event arguments while communicating.
+                SocketAsyncEventArgs socketEventArg = new SocketAsyncEventArgs();
+
+                // Set the remote server
+                socketEventArg.RemoteEndPoint = _socket.RemoteEndPoint;
+                socketEventArg.UserToken = null; // What is this?
+                // Handler for completed transaction
+                socketEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(delegate(object s, SocketAsyncEventArgs e)
+                {
+                    response = e.SocketError.ToString();
+                    _clientDone.Set(); // Done. Set UI thread free.
+                });
+                // Create encoded data to send to the remote server.
+                socketEventArg.SetBuffer(data, 0, data.Length);
+
+                // Done sending data.
+                _clientDone.Reset();
+                // Now send the data.
+                _socket.SendAsync(socketEventArg);
+                // Wait for some time to see if there is a timeout.
+                _clientDone.WaitOne(TIMEOUT_IN_MILLISECONDS);
+            }
+            else
+            {
+                // Socket not created.
+                response = "Socket not initialized.";
+            }
+            return response;
+        }
         // Method to send data to the remote server.
         public string Send(string data)
         {

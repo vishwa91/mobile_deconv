@@ -40,11 +40,11 @@
         <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" HorizontalAlignment="Left" Height="58" Margin="9,147,0,0" VerticalAlignment="Top" Width="145">
             
         </Border>
-        <Button Content="Socketconn" HorizontalAlignment="Left" Margin="638,347,-5,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="SocketConn_Click"/>
+        <Button Name="SocketConn" Content="Socketconn" HorizontalAlignment="Left" Margin="638,347,-5,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="SocketConn_Click"/>
         <TextBlock Grid.Column="1" HorizontalAlignment="Left" Margin="14,212,0,0" TextWrapping="Wrap" Text="Accelerometer" Name="txtAccel" VerticalAlignment="Top" Height="76" Width="136"/>
         <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" Height="77" Margin="10,212,6,0" VerticalAlignment="Top"/>
         <TextBox Name="txtPort" HorizontalAlignment="Left" Height="72" Margin="39,408,0,0" TextWrapping="Wrap" Text="1991" VerticalAlignment="Top" Width="121" Grid.Column="1"/>
-        <TextBox Name="txtHostName" TextWrapping="Wrap" Text="10.22.43.192" Margin="448,408,105,0" Grid.ColumnSpan="2"/>
+        <TextBox Name="txtHostName" TextWrapping="Wrap" Text="192.168.151.1" Margin="448,408,105,0" Grid.ColumnSpan="2"/>
         <!--Uncomment to see an alignment grid to help ensure your controls are
             aligned on common boundaries.  The image has a top margin of -32px to
             account for the System Tray. Set this to 0 (or remove the margin altogether)

@@ -14,7 +14,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         global imsize, imdat, tokenfile, imh, imw
         nextimage = False
-        bufsize = 1024
+        bufsize = 64
         imdat = ''
         receive_size = 0
         chunk_number = 0
@@ -54,8 +54,9 @@ def process():
     acfile.close()
     print 'Competed processing'
 if __name__ == '__main__':
-    HOST = '10.22.43.192'
-    PORT = 1991
+    #HOST = '10.22.43.192'
+    HOST = '192.168.151.1'
+    PORT = 1992
     server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
     print 'TCP socket listening at host %s and port %d'%(HOST, PORT)
     server.serve_forever()

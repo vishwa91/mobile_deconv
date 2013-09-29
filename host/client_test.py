@@ -5,7 +5,7 @@
 import socket
 import sys
 
-HOST, PORT = '10.22.43.192', 1991
+HOST, PORT = '10.21.3.191', 1991
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
