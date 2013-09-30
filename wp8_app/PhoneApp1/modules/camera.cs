@@ -32,6 +32,8 @@ namespace PhoneApp1.modules
             imwidth = (int)available_res[count-1].Width;
             // Open a new capture device asynchronously.            
             _camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, available_res[count-1]);
+            // Set the exposure time to 1s
+            _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 1000000);
             // Create a new sequence
             _camsequence = _camera.CreateCaptureSequence(1);
             // Create a new memory stream.
