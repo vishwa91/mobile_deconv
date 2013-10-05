@@ -47,9 +47,9 @@ namespace PhoneApp1
         List<float> accelX = new List<float>();
         List<float> accelY = new List<float>();
         List<float> accelZ = new List<float>();
-        byte[] imarray;
-        bool yet_to_transmit = false;
-        int imarray_count = 0;
+
+        // Bool variable to enable logging.
+        bool accel_log = false;
         // Constants
         const int port = 1991; 
         const string hostname = "10.21.2.208";
@@ -79,7 +79,7 @@ namespace PhoneApp1
             else
             {
                 accel_timer = new DispatcherTimer();
-                accel_timer.Interval = TimeSpan.FromMilliseconds(10);
+                accel_timer.Interval = TimeSpan.FromMilliseconds(40);
                 accel_timer.Tick += new EventHandler(accelerometer_timer);
                 accel_timer.Start();
             }
@@ -122,7 +122,7 @@ namespace PhoneApp1
                     txtDebug.Text = str;
                 });
             }
-            else
+            else if (update_type == UpdateType.Information)
             {
                 Deployment.Current.Dispatcher.BeginInvoke(delegate()
                 {
@@ -130,8 +130,15 @@ namespace PhoneApp1
                     txtInfo.Text = str;
                 });
             }
+            else if (update_type == UpdateType.MessageBox)
+            {
+                Deployment.Current.Dispatcher.BeginInvoke(delegate()
+                {
+                    MessageBox.Show(str);
+                });
+            }
         }       
-        // Function from XAML script. Not sure of it's functionality
+
         private void ShutterButtonClick(object sender, RoutedEventArgs e)
         {
            // Capture a picture. This will happen asynchronously. 
@@ -190,56 +197,34 @@ namespace PhoneApp1
         // logs the acceleration values when the shutter is open.
         void accelerometer_timer(object sender, EventArgs e)
         {
+            // Set the viewfinderBrush source
+            if (app_camera.cam_open_busy == false && app_camera.source_set == false)
+            {
+                viewfinderBrush.SetSource(app_camera._camera);
+                app_camera.source_set = true;
+            }
+            // Focus the camera
+            if (app_camera.focus_busy == false && app_camera.cam_busy == false)
+            {
+                app_camera.set_focus(focus_slider.Value);
+                Log(focus_slider.Value.ToString(), UpdateType.DebugSection);
+            }
             Vector3 accel = accelerometer.getvalue();
+            // If logging is enabled, send the data to the com socket
+            if (accel_log == true)
+            {
+                if (app_comsocket != null)
+                {
+                    app_comsocket.Send(accel.X.ToString() + ";" + accel.Y.ToString() + ";" + accel.Z.ToString() + ";;");
+                }
+            }
             if (app_camera.cam_busy == true)
             {
+                focus_slider.IsEnabled = false;
                 accelX.Add(accel.X);
                 accelY.Add(accel.Y);
                 accelZ.Add(accel.Z);
             }
-            /*
-            if (yet_to_transmit)
-            {
-                Log("Transmission in progress", UpdateType.DebugSection);
-                
-                if (app_comsocket != null)
-                {
-                    if (imarray_count == imarray.Length)
-                    {
-                        yet_to_transmit = false;
-                        app_comsocket.Send("EDIM\n");
-                        app_comsocket.Send("ENDT\n");
-                        Log("Transmission complete", UpdateType.DebugSection);
-                        ShutterButton.IsEnabled = true;
-                        SocketConn.IsEnabled = true;
-                        txtHostName.IsEnabled = true;
-                        txtPort.IsEnabled = true;
-                    }
-                    else
-                    {
-                        ShutterButton.IsEnabled = false;
-                        SocketConn.IsEnabled = false;
-                        txtHostName.IsEnabled = false;
-                        txtPort.IsEnabled = false;
-                        // Send data in chunks of 128
-                        //if (imarray.Length - imarray_count > 128)
-                        if(false)
-                        {
-                            for (int i=0; i < 128; i++)
-                            {
-                                app_comsocket.Send(imarray[imarray_count].ToString() + ";");
-                                imarray_count += 1;
-                            }
-                        }
-                        else
-                        {
-                            app_comsocket.Send(imarray[imarray_count].ToString() + ';');
-                            imarray_count += 1;
-                        }
-                    }
-
-                }
-            }*/
             if ((app_camera.cam_busy == false) && (app_camera.transmit == true))
             {
                 Log("Camera capture complete", UpdateType.DebugSection);
@@ -251,41 +236,35 @@ namespace PhoneApp1
                     for (int i = 0; i < accelX.Count; i++)
                         accel_string += accelX[i].ToString() + ";" + accelY[i].ToString() + ";" + accelZ[i].ToString() + ";;";
                     accel_string += "\n";
-                    app_comsocket.Send(accel_string);                   
-                    //string imstring = Encoding.Unicode.GetString(app_camera.imstream.GetBuffer(), 0, (int)app_camera.imstream.Length);
-                    //imstring = imstring.Replace("\x00", "null");
-                    //imstring = imstring.Replace("\n", "nline");
-
-                    imarray = app_camera.imstream.ToArray();
+                    app_comsocket.Send(accel_string);
+                    app_comsocket.Send("EDAC\n");
+                    
+                    // Send image data length
+                    byte[] imarray = app_camera.imstream.ToArray();
                     app_comsocket.Send("STIL\n");
                     app_comsocket.Send(imarray.Length.ToString() + '\n');
                     app_comsocket.Send("EDIL\n");
-                    app_comsocket.Send("EDAC\n");
+                    // Send focus details
+                    app_comsocket.Send("STFC\n");
+                    app_comsocket.Send(focus_slider.Value.ToString()+"\n");
+                    app_comsocket.Send("EDFC\n");
                     // Send image data
                     app_comsocket.Send("STIM\n"); 
                     string imstring = Encoding.Unicode.GetString(imarray, 0, imarray.Length);
                     app_comsocket.Send(imarray);
                     app_comsocket.Send("\n");
                     Log("Image size is " + app_camera.imheight.ToString()+";"+app_camera.imwidth.ToString(), UpdateType.DebugSection);
-                    
-                    //string imstring ="";
-                    /*
-                    for (int i = 0; i < imarray.Length; i++)
-                    {
-                        app_comsocket.Send(imarray[i].ToString() + ';');
-                    }*/
+
                     app_comsocket.Send("\n");
                      
-                    app_comsocket.Send("EDIM\n");
-                    
+                    app_comsocket.Send("EDIM\n");                    
                     // Done.
                     app_comsocket.Send("ENDT\n");
-                     
+                    app_comsocket.Close(); 
                 }
                 Log("Total readings: " + accelX.Count.ToString(), UpdateType.Information);
                 app_camera.transmit = false;
-                yet_to_transmit = true;
-                imarray_count = 0;
+                focus_slider.IsEnabled = true;
             }
             Deployment.Current.Dispatcher.BeginInvoke(delegate()
             {
@@ -293,10 +272,23 @@ namespace PhoneApp1
             });
         }
 
-        string to_unicode(string str)
+        private void start_log(object sender, RoutedEventArgs e)
         {
-            byte[] imbyte = Encoding.Unicode.GetBytes(str);
-            return Encoding.Unicode.GetString(imbyte, 0, imbyte.Length);
+            if (accel_log == false)
+            {
+                Log("Starting accelerometer logging. Please keep the phone in static state.", UpdateType.MessageBox);
+                accel_log = true;
+                sensor_button.Content = "Stop sensor log";
+                if (app_comsocket != null)
+                    app_comsocket.Send("STLG\n");
+            }
+            else
+            {
+                if (app_comsocket != null)
+                    app_comsocket.Send("\nEDLG\n");
+                accel_log = false;
+                sensor_button.Content = "Start sensor log";
+            }
         }
     }
     

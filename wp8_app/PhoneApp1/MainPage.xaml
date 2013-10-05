@@ -31,20 +31,28 @@
         <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
             <TextBlock Text="IIT MADRAS IPCV" Style="{StaticResource PhoneTextNormalStyle}" Margin="12,0"/>
             <TextBlock Text="Camera App" Margin="9,-7,0,0" Style="{StaticResource PhoneTextTitle1Style}"/>
+
         </StackPanel>
+        <Button Content="Start sensor log" Name="sensor_button" Margin="414,287,10,121" Click="start_log"/>
+        <Slider Name="focus_slider" Margin="140,373,182,-45" Minimum="0" Maximum="100" SmallChange="1" Value="50"/>
 
         <TextBlock Canvas.Left="10" TextWrapping="Wrap" Text="Debug Section" Name="txtDebug" RenderTransformOrigin="0.463,0.481" Margin="12,147,8,275" Grid.Column="1"/>
         <TextBlock Canvas.Left ="10" Grid.Column="1" HorizontalAlignment="Left" Margin="14,10,0,0" TextWrapping="Wrap" Name="txtInfo" Text="Information block" VerticalAlignment="Top" Height="123" Width="136"/>
         <Button x:Name="ShutterButton" Content="Click" Margin="639,287,-6,121" Click="ShutterButtonClick" Grid.ColumnSpan="2"/>
         <Border BorderBrush="White" BorderThickness="1" HorizontalAlignment="Left" Height="137" VerticalAlignment="Top" Width="145" Grid.Column="1" Margin="9,5,0,0"/>
         <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" HorizontalAlignment="Left" Height="58" Margin="9,147,0,0" VerticalAlignment="Top" Width="145">
-            
+
         </Border>
         <Button Name="SocketConn" Content="Socketconn" HorizontalAlignment="Left" Margin="638,347,-5,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="SocketConn_Click"/>
         <TextBlock Grid.Column="1" HorizontalAlignment="Left" Margin="14,212,0,0" TextWrapping="Wrap" Text="Accelerometer" Name="txtAccel" VerticalAlignment="Top" Height="76" Width="136"/>
         <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" Height="77" Margin="10,212,6,0" VerticalAlignment="Top"/>
         <TextBox Name="txtPort" HorizontalAlignment="Left" Height="72" Margin="39,408,0,0" TextWrapping="Wrap" Text="1991" VerticalAlignment="Top" Width="121" Grid.Column="1"/>
         <TextBox Name="txtHostName" TextWrapping="Wrap" Text="192.168.151.1" Margin="448,408,105,0" Grid.ColumnSpan="2"/>
+        <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Margin="16,418,0,0">
+        	<Run Text="Focus Distance"/>
+        	<LineBreak/>
+        	<Run/>
+        </TextBlock>
         <!--Uncomment to see an alignment grid to help ensure your controls are
             aligned on common boundaries.  The image has a top margin of -32px to
             account for the System Tray. Set this to 0 (or remove the margin altogether)

@@ -101,7 +101,7 @@ namespace PhoneApp1
                 // An unhandled exception has occurred; break into the debugger
                 Debugger.Break();
             }
-            MessageBox.Show(string.Format("failed to load with error: {1}", e.ToString()));
+            MessageBox.Show(e.ToString());
             e.Handled = true;
           
         }

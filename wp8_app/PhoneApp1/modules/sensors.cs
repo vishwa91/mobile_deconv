@@ -79,7 +79,8 @@ namespace PhoneApp1.modules
         {
             // Update member values
             isDataValid = _accelerometer.IsDataValid;
-            acceleration = e.SensorReading.Acceleration;
+            if (isDataValid)
+                acceleration = e.SensorReading.Acceleration;
         }
         void _timer_tick(object sender, EventArgs e)
         {
@@ -145,7 +146,8 @@ namespace PhoneApp1.modules
         void gyro_curval_changed(object sender, SensorReadingEventArgs<GyroscopeReading> e)
         {
             isDataValid = _gyroscope.IsDataValid;
-            rotation_rate = e.SensorReading.RotationRate;
+            if (isDataValid)
+                rotation_rate = e.SensorReading.RotationRate;
         }
         void timer_tick(object sender, EventArgs e)
         {
