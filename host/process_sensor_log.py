@@ -17,9 +17,9 @@ sensor_tokens = sensor_string.split(';;')
 for token in sensor_tokens[:-1]:
     fields = token.split(';')
     if fields != '':
-        xaccel.append(float(fields[0]))
-        yaccel.append(float(fields[1]))
-        zaccel.append(float(fields[2]))
+        xaccel.append(round(float(fields[0]), 2))
+        yaccel.append(round(float(fields[1]), 2))
+        zaccel.append(round(float(fields[2]), 2))
 
 # Subtract the average.
 mx, my, mz = mean(xaccel), mean(yaccel), mean(zaccel)

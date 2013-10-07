@@ -234,7 +234,7 @@ namespace PhoneApp1
                     app_comsocket.Send("STAC\n");
                     string accel_string = "";
                     for (int i = 0; i < accelX.Count; i++)
-                        accel_string += accelX[i].ToString() + ";" + accelY[i].ToString() + ";" + accelZ[i].ToString() + ";;";
+                        accel_string += accelX[i].ToString("0.00") + ";" + accelY[i].ToString("0.00") + ";" + accelZ[i].ToString("0.00") + ";;";
                     accel_string += "\n";
                     app_comsocket.Send(accel_string);
                     app_comsocket.Send("EDAC\n");
