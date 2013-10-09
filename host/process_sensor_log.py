@@ -20,6 +20,8 @@ for token in sensor_tokens[:-1]:
         xaccel.append(round(float(fields[0]), 2))
         yaccel.append(round(float(fields[1]), 2))
         zaccel.append(round(float(fields[2]), 2))
+figure(-1)
+plot(xaccel-mean(xaccel))
 
 # Subtract the average.
 mx, my, mz = mean(xaccel), mean(yaccel), mean(zaccel)
