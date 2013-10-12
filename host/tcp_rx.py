@@ -7,6 +7,7 @@ from StringIO import StringIO
 from scipy import *
 from scipy.ndimage import *
 from scipy.linalg import *
+from numpy.fft import *
 
 from matplotlib.pyplot import *
 from mpl_toolkits.mplot3d import Axes3D
@@ -26,6 +27,12 @@ G = 9.8
 # Sharp image dimensions for focus=50
 # Width = 7cm
 # Height = 5.5cm
+
+WORLD_WIDTH = 7e-2
+WORLD_HEIGHT = 5.5e-2
+
+IM_WIDTH = 640
+IM_HEIGHT = 480
 
 # Output files and directory
 OUTPUT_DIR = 'output'
@@ -159,22 +166,26 @@ class DataHandle(object):
 		method calculate_position has to be called first"""
 
 		global TSTEP
-
+		global IM_HEIGHT, IM_WIDTH
+		global WORLD_HEIGHT, WORLD_WIDTH
 		fig = figure()
 		time = arange(0, TSTEP*self.ndata, TSTEP)[:self.ndata]
 
 		print self.xpos.shape, time.shape
 
+		scale_x = IM_HEIGHT/WORLD_HEIGHT
+		scale_y = IM_WIDTH/WORLD_WIDTH
+
 		subplot(3,1,1)
-		plot(time, self.xpos)
-		plot(time, time*self.mx, 'r')
-		plot(time, self.xpos+time*self.mx, 'y.')
+		plot(time, self.xpos*scale_x)
+		plot(time, time*self.mx*scale_x, 'r')
+		plot(time, (self.xpos+time*self.mx)*scale_x, 'y.')
 		title('X position')
 
 		subplot(3,1,2)
-		plot(time, self.ypos)
-		plot(time, time*self.my, 'r')
-		plot(time, self.ypos+time*self.my, 'y.')
+		plot(time, self.ypos*scale_y)
+		plot(time, time*self.my*scale_y, 'r')
+		plot(time, (self.ypos+time*self.my)*scale_y, 'y.')
 		title('Y position')
 
 		subplot(3,1,3)
@@ -184,6 +195,30 @@ class DataHandle(object):
 		title('Z position')
 
 		show()
+
+	def deblurr_kernel(self):
+		""" Construct the deblurr kernel from the position information
+		"""
+
+		global IM_HEIGHT, IM_WIDTH
+		global WORLD_HEIGHT, WORLD_WIDTH
+
+		scale_x = IM_HEIGHT/WORLD_HEIGHT
+		scale_y = IM_WIDTH/WORLD_WIDTH
+
+		# Find the shift in terms of pixels.
+		xpos_pixel = (self.xpos*scale_x).astype(int)
+		ypos_pixel = (self.ypos*scale_y).astype(int)
+
+		xdim, ydim = xpos_pixel.max(), ypos_pixel.max()
+		blurr_kernel = zeros(((xdim+1)*2, (ydim+1)*2))
+
+		for i in range(len(xpos_pixel)):
+			blurr_kernel[xdim+xpos_pixel[i], ydim+ypos_pixel[i]]+=1
+
+		return blurr_kernel
+
+
 
 def tcp_listen():
 	""" Listen to the TCP socket and get data"""
@@ -232,5 +267,40 @@ if __name__  == '__main__':
 	dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),
 		os.path.join(OUTPUT_DIR, IMAGE_NAME))
 	dhandle.calculate_position()
-	dhandle.plot_position()
-	dhandle.im.show()
+	#dhandle.plot_position()
+	#dhandle.im.show()
+	blurr_kernel = dhandle.deblurr_kernel()
+	Image.fromarray(blurr_kernel*255/blurr_kernel.max()
+		).convert('L').save(
+		os.path.join(OUTPUT_DIR, 'blurr_kernel.bmp'))
+
+	# Attempt a dumb deconvolution
+	im = asarray(dhandle.im)
+	imr = im[:,:,0]
+	img = im[:,:,1]
+	imb = im[:,:,2]
+
+	imdim = imr.shape
+	IMR = fft2(imr, s=imdim)
+	IMG = fft2(img, s=imdim)
+	IMB = fft2(imb, s=imdim)
+
+	H = fft2(blurr_kernel/sum(blurr_kernel), s=imdim)
+	phi = 0.03
+	IMOUTR = IMR*H/(H*conj(H) + phi)
+	IMOUTG = IMG*H/(H*conj(H) + phi)
+	IMOUTB = IMB*H/(H*conj(H) + phi)
+
+	imoutr = ifft2(IMOUTR)
+	imoutg = ifft2(IMOUTG)
+	imoutb = ifft2(IMOUTB)
+
+	imout = zeros_like(im)
+	imout[:,:,0] = imoutr
+	imout[:,:,1] = imoutg
+	imout[:,:,2] = imoutb
+
+	imout *= 255/imout.max()
+
+	Image.fromarray(imout.astype(uint8)).convert('RGB').save(
+		os.path.join(OUTPUT_DIR, 'deblurred_image.bmp'))
