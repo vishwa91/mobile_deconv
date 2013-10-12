@@ -7,7 +7,7 @@ data = open('sensor_log.dat').read()
 
 timestep = 20e-3
 g = 9.8
-windowsize = 65
+windowsize = 30
 
 tokens = data.split('\n')
 sensor_string = tokens[tokens.index('STLG')+1]
