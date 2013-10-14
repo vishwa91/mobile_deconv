@@ -4,13 +4,13 @@ import os, sys
 import socket
 from StringIO import StringIO
 
+from matplotlib.pyplot import *
+from mpl_toolkits.mplot3d import Axes3D
+
 from scipy import *
 from scipy.ndimage import *
 from scipy.linalg import *
 from numpy.fft import *
-
-from matplotlib.pyplot import *
-from mpl_toolkits.mplot3d import Axes3D
 
 import Image
 
@@ -29,7 +29,7 @@ G = 9.8
 # Height = 5.5cm
 
 WORLD_WIDTH = 7e-2
-WORLD_HEIGHT = 5.5e-2
+WORLD_HEIGHT = 5.25e-2
 
 IM_WIDTH = 640
 IM_HEIGHT = 480
@@ -130,7 +130,7 @@ class DataHandle(object):
 			self.im = Image.open(imname)
 
 
-	def calculate_position(self):
+	def calculate_position(self, linear_drift = True):
 		""" Calculate the position from the given acceleration data.
 		Note the following assumptions:
 		1. The average acceleration has to be zero.
@@ -156,10 +156,15 @@ class DataHandle(object):
 		self.my, res, rank, sing = lstsq(norm_time, ypos.T)
 		self.mz, res, rank, sing = lstsq(norm_time, zpos.T)
 
-		# Subtract the drift
-		self.xpos = xpos - self.mx*norm_time.reshape((self.ndata))
-		self.ypos = ypos - self.my*norm_time.reshape((self.ndata))
-		self.zpos = zpos - self.mz*norm_time.reshape((self.ndata))
+		if linear_drift:
+			# Subtract the drift
+			self.ypos = ypos - self.my*norm_time.reshape((self.ndata))
+			self.xpos = xpos - self.mx*norm_time.reshape((self.ndata))
+			self.zpos = zpos - self.mz*norm_time.reshape((self.ndata))
+		else:
+			self.ypos = ypos
+			self.xpos = xpos
+			self.zpos = zpos
 
 	def plot_position(self):
 		""" Plot the positions in X, Y, Z direction. Note that the
@@ -210,7 +215,7 @@ class DataHandle(object):
 		xpos_pixel = (self.xpos*scale_x).astype(int)
 		ypos_pixel = (self.ypos*scale_y).astype(int)
 
-		xdim, ydim = xpos_pixel.max(), ypos_pixel.max()
+		xdim, ydim = abs(xpos_pixel).max(), abs(ypos_pixel).max()
 		blurr_kernel = zeros(((xdim+1)*2, (ydim+1)*2))
 
 		for i in range(len(xpos_pixel)):
@@ -218,6 +223,43 @@ class DataHandle(object):
 
 		return blurr_kernel
 
+def deblur(im, kernel, nsr=0.01):
+	""" Weiner deconvolution for deblurring"""
+	# Attempt a dumb deconvolution
+	
+	xdim, ydim, nchan = im.shape
+	if nchan == 3:	
+		imr = im[:,:,0]
+		img = im[:,:,1]
+		imb = im[:,:,2]
+
+		imdim = imr.shape
+		IMR = fft2(imr, s=imdim)
+		IMG = fft2(img, s=imdim)
+		IMB = fft2(imb, s=imdim)
+
+		H = fft2(kernel/sum(kernel), s=imdim)
+
+		IMOUTR = IMR*H/(H*conj(H) + nsr)
+		IMOUTG = IMG*H/(H*conj(H) + nsr)
+		IMOUTB = IMB*H/(H*conj(H) + nsr)
+
+		imoutr = ifft2(IMOUTR)
+		imoutg = ifft2(IMOUTG)
+		imoutb = ifft2(IMOUTB)
+
+		imout = zeros_like(im)
+		imout[:,:,0] = imoutr
+		imout[:,:,1] = imoutg
+		imout[:,:,2] = imoutb
+
+	elif nchan == 1:
+		IM = fft2(im, s=(xdim, ydim))
+		H = fft2(kernle/sum(kernel), s=(xdim, ydim))
+		IMOUT = IM*H(H*conj(H) + nsr)
+		imout = ifft2(IMOUT)
+
+	return imout
 
 
 def tcp_listen():
@@ -266,41 +308,19 @@ if __name__  == '__main__':
 	#dhandle = DataHandle(dstring)
 	dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),
 		os.path.join(OUTPUT_DIR, IMAGE_NAME))
-	dhandle.calculate_position()
+	dhandle.calculate_position(linear_drift = True)
 	#dhandle.plot_position()
 	#dhandle.im.show()
-	blurr_kernel = dhandle.deblurr_kernel()
-	Image.fromarray(blurr_kernel*255/blurr_kernel.max()
+	blur_kernel = dhandle.deblurr_kernel()
+	Image.fromarray(blur_kernel*255/blur_kernel.max()
 		).convert('L').save(
-		os.path.join(OUTPUT_DIR, 'blurr_kernel.bmp'))
-
-	# Attempt a dumb deconvolution
-	im = asarray(dhandle.im)
-	imr = im[:,:,0]
-	img = im[:,:,1]
-	imb = im[:,:,2]
-
-	imdim = imr.shape
-	IMR = fft2(imr, s=imdim)
-	IMG = fft2(img, s=imdim)
-	IMB = fft2(imb, s=imdim)
-
-	H = fft2(blurr_kernel/sum(blurr_kernel), s=imdim)
-	phi = 0.03
-	IMOUTR = IMR*H/(H*conj(H) + phi)
-	IMOUTG = IMG*H/(H*conj(H) + phi)
-	IMOUTB = IMB*H/(H*conj(H) + phi)
-
-	imoutr = ifft2(IMOUTR)
-	imoutg = ifft2(IMOUTG)
-	imoutb = ifft2(IMOUTB)
-
-	imout = zeros_like(im)
-	imout[:,:,0] = imoutr
-	imout[:,:,1] = imoutg
-	imout[:,:,2] = imoutb
-
-	imout *= 255/imout.max()
-
-	Image.fromarray(imout.astype(uint8)).convert('RGB').save(
+		os.path.join(OUTPUT_DIR, 'blur_kernel.bmp'))
+	robust_kernel = imread('output/robust_blur_kernel.bmp',
+	 flatten=True)
+	im = array(dhandle.im)
+	robust_out = deblur(im, robust_kernel, nsr=0.1)
+	out = deblur(im, blur_kernel, nsr=0.1)
+	Image.fromarray(robust_out).show()
+	Image.fromarray(out).show()
+	Image.fromarray(out.astype(uint8)).convert('RGB').save(
 		os.path.join(OUTPUT_DIR, 'deblurred_image.bmp'))
