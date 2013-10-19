@@ -1,0 +1,511 @@
+Iteration 1 
+
+Max_Err =
+
+    1.4252
+
+
+Norm_Err =
+
+    0.9629
+
+
+RMSE =
+
+    8.0215
+
+Elapsed time is 194.454321 seconds.
+Iteration 2 
+
+Max_Err =
+
+    1.3593
+
+
+Norm_Err =
+
+    0.9662
+
+
+RMSE =
+
+    6.0152
+
+Elapsed time is 196.265489 seconds.
+Iteration 3 
+
+Max_Err =
+
+    1.4412
+
+
+Norm_Err =
+
+    0.9672
+
+
+RMSE =
+
+    5.2109
+
+Elapsed time is 196.024528 seconds.
+Iteration 4 
+
+Max_Err =
+
+    1.3700
+
+
+Norm_Err =
+
+    0.9677
+
+
+RMSE =
+
+    4.7428
+
+Elapsed time is 196.560118 seconds.
+Iteration 5 
+
+Max_Err =
+
+    1.3266
+
+
+Norm_Err =
+
+    0.9681
+
+
+RMSE =
+
+    4.4296
+
+Elapsed time is 193.742465 seconds.
+Iteration 6 
+
+Max_Err =
+
+    1.3245
+
+
+Norm_Err =
+
+    0.9683
+
+
+RMSE =
+
+    4.2027
+
+Elapsed time is 196.541449 seconds.
+Iteration 7 
+
+Max_Err =
+
+    1.3083
+
+
+Norm_Err =
+
+    0.9684
+
+
+RMSE =
+
+    4.0293
+
+Elapsed time is 196.058889 seconds.
+Iteration 8 
+
+Max_Err =
+
+    1.3077
+
+
+Norm_Err =
+
+    0.9686
+
+
+RMSE =
+
+    3.8917
+
+Elapsed time is 196.116197 seconds.
+Iteration 9 
+
+Max_Err =
+
+    1.3118
+
+
+Norm_Err =
+
+    0.9686
+
+
+RMSE =
+
+    3.7792
+
+Elapsed time is 196.360843 seconds.
+Iteration 10 
+
+Max_Err =
+
+    1.3090
+
+
+Norm_Err =
+
+    0.9687
+
+
+RMSE =
+
+    3.6853
+
+Elapsed time is 196.335213 seconds.
+Iteration 11 
+
+Max_Err =
+
+    1.3018
+
+
+Norm_Err =
+
+    0.9688
+
+
+RMSE =
+
+    3.6054
+
+Elapsed time is 196.086840 seconds.
+Iteration 12 
+
+Max_Err =
+
+    1.2916
+
+
+Norm_Err =
+
+    0.9688
+
+
+RMSE =
+
+    3.5364
+
+Elapsed time is 196.512821 seconds.
+Iteration 13 
+
+Max_Err =
+
+    1.2796
+
+
+Norm_Err =
+
+    0.9689
+
+
+RMSE =
+
+    3.4761
+
+Elapsed time is 196.581935 seconds.
+Iteration 14 
+
+Max_Err =
+
+    1.2667
+
+
+Norm_Err =
+
+    0.9689
+
+
+RMSE =
+
+    3.4229
+
+Elapsed time is 196.560662 seconds.
+Iteration 15 
+
+Max_Err =
+
+    1.2585
+
+
+Norm_Err =
+
+    0.9689
+
+
+RMSE =
+
+    3.3756
+
+Elapsed time is 196.803579 seconds.
+Iteration 16 
+
+Max_Err =
+
+    1.2596
+
+
+Norm_Err =
+
+    0.9690
+
+
+RMSE =
+
+    3.3332
+
+Elapsed time is 196.598104 seconds.
+Iteration 17 
+
+Max_Err =
+
+    1.2592
+
+
+Norm_Err =
+
+    0.9690
+
+
+RMSE =
+
+    3.2949
+
+Elapsed time is 196.549871 seconds.
+Iteration 18 
+
+Max_Err =
+
+    1.2574
+
+
+Norm_Err =
+
+    0.9690
+
+
+RMSE =
+
+    3.2602
+
+Elapsed time is 196.893073 seconds.
+Iteration 19 
+
+Max_Err =
+
+    1.2546
+
+
+Norm_Err =
+
+    0.9690
+
+
+RMSE =
+
+    3.2287
+
+Elapsed time is 196.454857 seconds.
+Iteration 20 
+
+Max_Err =
+
+    1.2511
+
+
+Norm_Err =
+
+    0.9690
+
+
+RMSE =
+
+    3.1998
+
+Elapsed time is 196.630717 seconds.
+Iteration 21 
+
+Max_Err =
+
+    1.2469
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.1733
+
+Elapsed time is 197.014701 seconds.
+Iteration 22 
+
+Max_Err =
+
+    1.2423
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.1490
+
+Elapsed time is 196.611342 seconds.
+Iteration 23 
+
+Max_Err =
+
+    1.2374
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.1265
+
+Elapsed time is 196.687571 seconds.
+Iteration 24 
+
+Max_Err =
+
+    1.2322
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.1057
+
+Elapsed time is 197.048718 seconds.
+Iteration 25 
+
+Max_Err =
+
+    1.2314
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.0864
+
+Elapsed time is 196.894964 seconds.
+Iteration 26 
+
+Max_Err =
+
+    1.2343
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.0685
+
+Elapsed time is 196.727633 seconds.
+Iteration 27 
+
+Max_Err =
+
+    1.2365
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.0518
+
+Elapsed time is 197.013328 seconds.
+Iteration 28 
+
+Max_Err =
+
+    1.2382
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.0363
+
+Elapsed time is 196.744339 seconds.
+Iteration 29 
+
+Max_Err =
+
+    1.2393
+
+
+Norm_Err =
+
+    0.9691
+
+
+RMSE =
+
+    3.0218
+
+Elapsed time is 196.600685 seconds.
+Iteration 30 
+
+Max_Err =
+
+    1.2400
+
+
+Norm_Err =
+
+    0.9692
+
+
+RMSE =
+
+    3.0083
+
+Elapsed time is 197.014010 seconds.
+>> 
