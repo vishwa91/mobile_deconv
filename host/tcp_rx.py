@@ -11,6 +11,7 @@ from scipy import *
 from scipy.ndimage import *
 from scipy.linalg import *
 from numpy.fft import *
+from scipy.interpolate import spline
 
 import Image
 
@@ -28,11 +29,13 @@ G = 9.8
 # Width = 7cm
 # Height = 5.5cm
 
-WORLD_WIDTH = 7e-2
-WORLD_HEIGHT = 5.25e-2
+WORLD_WIDTH = 3.2e-2
+WORLD_HEIGHT = 2.4e-2
 
 IM_WIDTH = 640
 IM_HEIGHT = 480
+
+INTERPOLATE_SCALE = 10
 
 # Output files and directory
 OUTPUT_DIR = 'output'
@@ -215,6 +218,15 @@ class DataHandle(object):
         xpos_pixel = (self.xpos*scale_x).astype(int)
         ypos_pixel = (self.ypos*scale_y).astype(int)
 
+        # Smoothen the position to 10 times the points.
+        xlen = len(xpos_pixel)
+        ylen = len(ypos_pixel)
+
+        xpos_pixel = spline(range(xlen), xpos_pixel,
+                            linspace(0, xlen, xlen*INTERPOLATE_SCALE))
+        ypos_pixel = spline(range(ylen), ypos_pixel,
+                            linspace(0, ylen, ylen*INTERPOLATE_SCALE))
+
         xdim, ydim = abs(xpos_pixel).max(), abs(ypos_pixel).max()
         blurr_kernel = zeros(((xdim+1)*2, (ydim+1)*2))
 
@@ -303,24 +315,21 @@ def tcp_listen():
 
 if __name__  == '__main__':
     # Start listening to TCP socket
-    dstring = tcp_listen()
-    save_data(dstring)
-    dhandle = DataHandle(dstring)
-    #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),
-    #   os.path.join(OUTPUT_DIR, IMAGE_NAME))
+    dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
+    #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = True)
     #dhandle.plot_position()
     #dhandle.im.show()
     blur_kernel = dhandle.deblurr_kernel()
-    Image.fromarray(blur_kernel).convert('L').save(
+    Image.fromarray(blur_kernel*255.0/blur_kernel.max()).convert('L').save(
         os.path.join(OUTPUT_DIR, 'blur_kernel.bmp'))
     
-    robust_kernel = imread('output/robust_kernel.bmp',
-     flatten=True)
+    #robust_kernel = imread('output/robust_kernel.bmp',
+    # flatten=True)
     im = array(dhandle.im)
-    robust_out = deblur(im, robust_kernel, nsr=0.1)
+    #robust_out = deblur(im, robust_kernel, nsr=0.1)
     out = deblur(im, blur_kernel, nsr=0.1)
-    Image.fromarray(robust_out).show()
+    #Image.fromarray(robust_out).show()
     Image.fromarray(out).show()
     Image.fromarray(out.astype(uint8)).convert('RGB').save(
         os.path.join(OUTPUT_DIR, 'deblurred_image.bmp'))
