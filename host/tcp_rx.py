@@ -31,8 +31,8 @@ G = 9.8
 # Width = 7cm
 # Height = 5.5cm
 
-WORLD_WIDTH = 3.2e-2
-WORLD_HEIGHT = 2.4e-2
+WORLD_WIDTH = 1.6e-2
+WORLD_HEIGHT = 1.2e-2
 
 IM_WIDTH = 640
 IM_HEIGHT = 480
@@ -154,7 +154,7 @@ class DataHandle(object):
         ypos = cumsum(cumsum(yaccel))*G*TSTEP*TSTEP
         zpos = cumsum(cumsum(zaccel))*G*TSTEP*TSTEP
 
-        # Find the slope of the line drift = m*time
+        # Find the slope of the line 'drift = m*time'
         norm_time = arange(0, TSTEP*self.ndata,
          TSTEP)[:self.ndata].reshape((self.ndata,1))
         self.mx, res, rank, sing = lstsq(norm_time, xpos.T)
@@ -223,17 +223,17 @@ class DataHandle(object):
         # Smoothen the position to 10 times the points.
         xlen = len(xpos_pixel)
         ylen = len(ypos_pixel)
-
+        
         xpos_pixel = spline(range(xlen), xpos_pixel,
                             linspace(0, xlen, xlen*INTERPOLATE_SCALE))
         ypos_pixel = spline(range(ylen), ypos_pixel,
                             linspace(0, ylen, ylen*INTERPOLATE_SCALE))
-
+        
         xdim, ydim = abs(xpos_pixel).max(), abs(ypos_pixel).max()
         blurr_kernel = zeros(((xdim+1)*2, (ydim+1)*2))
 
         for i in range(len(xpos_pixel)):
-            blurr_kernel[xdim+xpos_pixel[i], ydim+ypos_pixel[i]]+=1
+            blurr_kernel[xdim-xpos_pixel[i], ydim-ypos_pixel[i]]+=1
 
         return blurr_kernel
 
@@ -329,8 +329,8 @@ if __name__  == '__main__':
     Image.fromarray(blur_kernel*255.0/blur_kernel.max()).convert('L').save(
         os.path.join(OUTPUT_DIR, 'blur_kernel.bmp'))
     
-    #robust_kernel = imread('output/robust_kernel.bmp',
-    # flatten=True)
+    robust_kernel = imread('output/robust_kernel.bmp',
+     flatten=True)
     im = array(dhandle.im)
     #robust_out = deblur(im, robust_kernel, nsr=0.1)
     out = deblur(im[:,:,0], blur_kernel, nsr=0.1)
