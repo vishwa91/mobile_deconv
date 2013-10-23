@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os, sys
+import commands
 import socket
 from StringIO import StringIO
 
@@ -11,6 +12,7 @@ from scipy import *
 from scipy.ndimage import *
 from scipy.linalg import *
 from numpy.fft import *
+from scipy.signal import convolve2d
 from scipy.interpolate import spline
 
 import Image
@@ -186,20 +188,20 @@ class DataHandle(object):
 
         subplot(3,1,1)
         plot(time, self.xpos*scale_x)
-        plot(time, time*self.mx*scale_x, 'r')
-        plot(time, (self.xpos+time*self.mx)*scale_x, 'y.')
+        #plot(time, time*self.mx*scale_x, 'r')
+        #plot(time, (self.xpos+time*self.mx)*scale_x, 'y.')
         title('X position')
 
         subplot(3,1,2)
         plot(time, self.ypos*scale_y)
-        plot(time, time*self.my*scale_y, 'r')
-        plot(time, (self.ypos+time*self.my)*scale_y, 'y.')
+        #plot(time, time*self.my*scale_y, 'r')
+        #plot(time, (self.ypos+time*self.my)*scale_y, 'y.')
         title('Y position')
 
         subplot(3,1,3)
         plot(time, self.zpos)
-        plot(time, time*self.mz, 'r')
-        plot(time, self.zpos+time*self.mz, 'y.')
+        #plot(time, time*self.mz, 'r')
+        #plot(time, self.zpos+time*self.mz, 'y.')
         title('Z position')
 
         show()
@@ -238,8 +240,11 @@ class DataHandle(object):
 def deblur(im, kernel, nsr=0.01):
     """ Weiner deconvolution for deblurring"""
     # Attempt a dumb deconvolution
-    
-    xdim, ydim, nchan = im.shape
+    if len(im.shape) == 2:
+        xdim, ydim = im.shape
+        nchan = 1
+    else:
+        xdim, ydim, nchan = im.shape
     if nchan == 3:  
         imr = im[:,:,0]
         img = im[:,:,1]
@@ -267,11 +272,11 @@ def deblur(im, kernel, nsr=0.01):
 
     elif nchan == 1:
         IM = fft2(im, s=(xdim, ydim))
-        H = fft2(kernle/sum(kernel), s=(xdim, ydim))
+        H = fft2(kernel/sum(kernel), s=(xdim, ydim))
         IMOUT = IM*H/(H*conj(H) + nsr)
         imout = ifft2(IMOUT)
 
-    return imout
+    return (imout*255/imout.max()).astype(uint8)
 
 
 def tcp_listen():
@@ -315,10 +320,10 @@ def tcp_listen():
 
 if __name__  == '__main__':
     # Start listening to TCP socket
-    dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
-    #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
+    #dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
+    dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = True)
-    #dhandle.plot_position()
+    dhandle.plot_position()
     #dhandle.im.show()
     blur_kernel = dhandle.deblurr_kernel()
     Image.fromarray(blur_kernel*255.0/blur_kernel.max()).convert('L').save(
@@ -328,9 +333,12 @@ if __name__  == '__main__':
     # flatten=True)
     im = array(dhandle.im)
     #robust_out = deblur(im, robust_kernel, nsr=0.1)
-    out = deblur(im, blur_kernel, nsr=0.1)
+    out = deblur(im[:,:,0], blur_kernel, nsr=0.1)
     #Image.fromarray(robust_out).show()
-    Image.fromarray(out).show()
+    #Image.fromarray(out).show()
     Image.fromarray(out.astype(uint8)).convert('RGB').save(
         os.path.join(OUTPUT_DIR, 'deblurred_image.bmp'))
+    imblurred = convolve2d(imread('output/saved_im_noshake.bmp', flatten=True),
+     blur_kernel/sum(blur_kernel))
+    Image.fromarray(imblurred).convert('L').save('output/synthetic.bmp')
     

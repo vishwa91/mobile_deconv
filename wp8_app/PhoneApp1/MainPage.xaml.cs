@@ -260,7 +260,8 @@ namespace PhoneApp1
                     app_comsocket.Send("EDIM\n");                    
                     // Done.
                     app_comsocket.Send("ENDT\n");
-                    app_comsocket.Close(); 
+                    app_comsocket.Close();
+                    app_comsocket = null;
                 }
                 Log("Total readings: " + accelX.Count.ToString(), UpdateType.Information);
                 app_camera.transmit = false;
