@@ -31,8 +31,8 @@ G = 9.8
 # Width = 7cm
 # Height = 5.5cm
 
-WORLD_WIDTH = 1.6e-2
-WORLD_HEIGHT = 1.2e-2
+WORLD_WIDTH = 5.4e-2
+WORLD_HEIGHT = 3.0*WORLD_WIDTH/4.0
 
 IM_WIDTH = 640
 IM_HEIGHT = 480
@@ -233,7 +233,7 @@ class DataHandle(object):
         blurr_kernel = zeros(((xdim+1)*2, (ydim+1)*2))
 
         for i in range(len(xpos_pixel)):
-            blurr_kernel[xdim-xpos_pixel[i], ydim-ypos_pixel[i]]+=1
+            blurr_kernel[xdim+xpos_pixel[i], ydim+ypos_pixel[i]]+=1
 
         return blurr_kernel
 
@@ -323,7 +323,7 @@ if __name__  == '__main__':
     #dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
     dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = True)
-    dhandle.plot_position()
+    #dhandle.plot_position()
     #dhandle.im.show()
     blur_kernel = dhandle.deblurr_kernel()
     Image.fromarray(blur_kernel*255.0/blur_kernel.max()).convert('L').save(
@@ -341,4 +341,4 @@ if __name__  == '__main__':
     imblurred = convolve2d(imread('output/saved_im_noshake.bmp', flatten=True),
      blur_kernel/sum(blur_kernel))
     Image.fromarray(imblurred).convert('L').save('output/synthetic.bmp')
-    
+    print commands.getoutput('cd output && ./run_deblur.sh')
