@@ -241,31 +241,33 @@ def deblur(im, kernel, nsr=0.01):
     """ Weiner deconvolution for deblurring"""
     # Attempt a dumb deconvolution
     if len(im.shape) == 2:
+        kx, ky = kernel.shape
         xdim, ydim = im.shape
         nchan = 1
     else:
+        kx, ky = kernel.shape
         xdim, ydim, nchan = im.shape
     if nchan == 3:  
         imr = im[:,:,0]
         img = im[:,:,1]
         imb = im[:,:,2]
 
-        imdim = imr.shape
+        imdim = (xdim, ydim)
         IMR = fft2(imr, s=imdim)
         IMG = fft2(img, s=imdim)
         IMB = fft2(imb, s=imdim)
 
         H = fft2(kernel/sum(kernel), s=imdim)
 
-        IMOUTR = IMR*H/(H*conj(H) + nsr)
-        IMOUTG = IMG*H/(H*conj(H) + nsr)
-        IMOUTB = IMB*H/(H*conj(H) + nsr)
+        IMOUTR = IMR*conj(H)/(H*conj(H) + nsr)
+        IMOUTG = IMG*conj(H)/(H*conj(H) + nsr)
+        IMOUTB = IMB*conj(H)/(H*conj(H) + nsr)
 
         imoutr = ifft2(IMOUTR)
         imoutg = ifft2(IMOUTG)
         imoutb = ifft2(IMOUTB)
 
-        imout = zeros_like(im)
+        imout = zeros((xdim, ydim, 3))
         imout[:,:,0] = imoutr
         imout[:,:,1] = imoutg
         imout[:,:,2] = imoutb
@@ -273,10 +275,10 @@ def deblur(im, kernel, nsr=0.01):
     elif nchan == 1:
         IM = fft2(im, s=(xdim, ydim))
         H = fft2(kernel/sum(kernel), s=(xdim, ydim))
-        IMOUT = IM*H/(H*conj(H) + nsr)
+        IMOUT = IM*conj(H)/(H*conj(H) + nsr)
         imout = ifft2(IMOUT)
 
-    return (imout*255/imout.max()).astype(uint8)
+    return (imout*255.0/imout.max()).astype(uint8)
 
 
 def tcp_listen():
@@ -320,8 +322,8 @@ def tcp_listen():
 
 if __name__  == '__main__':
     # Start listening to TCP socket
-    #dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
-    dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
+    dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
+    #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = True)
     #dhandle.plot_position()
     #dhandle.im.show()
@@ -332,13 +334,33 @@ if __name__  == '__main__':
     robust_kernel = imread('output/robust_kernel.bmp',
      flatten=True)
     im = array(dhandle.im)
-    #robust_out = deblur(im, robust_kernel, nsr=0.1)
-    out = deblur(im[:,:,0], blur_kernel, nsr=0.1)
-    #Image.fromarray(robust_out).show()
+
+    out = deblur(im, blur_kernel)
     #Image.fromarray(out).show()
     Image.fromarray(out.astype(uint8)).convert('RGB').save(
         os.path.join(OUTPUT_DIR, 'deblurred_image.bmp'))
+
     imblurred = convolve2d(imread('output/saved_im_noshake.bmp', flatten=True),
      blur_kernel/sum(blur_kernel))
     Image.fromarray(imblurred).convert('L').save('output/synthetic.bmp')
-    print commands.getoutput('cd output && ./run_deblur.sh')
+
+    cnt = 0
+    try:
+        #os.mkdir('output/tmp')
+        os.mkdir('tmp')
+    except OSError:
+        pass
+    for scale in linspace(7e-2, 12e-2, 50):
+        WORLD_WIDTH = scale
+        WORLD_HEIGHT = scale*0.75
+        blur_kernel = dhandle.deblurr_kernel()
+        '''
+        Image.fromarray(blur_kernel*255.0/blur_kernel.max()).convert('L').save(
+            os.path.join(OUTPUT_DIR, 'blur_kernel.bmp'))    
+        print commands.getoutput('cd output && wine robust_deconv.exe '
+                                 'saved_im.bmp blur_kernel.bmp tmp/im_%d.bmp'
+                                 ' 0 0.05 1'%cnt)
+        '''
+        imout = deblur(im[:,:,0], blur_kernel, nsr=0.01)
+        Image.fromarray(imout).save('tmp/im_%d.bmp'%cnt)
+        cnt += 1
