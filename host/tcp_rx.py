@@ -322,9 +322,9 @@ def tcp_listen():
 
 if __name__  == '__main__':
     # Start listening to TCP socket
-    dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
-    #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
-    dhandle.calculate_position(linear_drift = True)
+    #dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
+    dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
+    dhandle.calculate_position(linear_drift = False)
     #dhandle.plot_position()
     #dhandle.im.show()
     blur_kernel = dhandle.deblurr_kernel()
@@ -350,7 +350,7 @@ if __name__  == '__main__':
         os.mkdir('tmp')
     except OSError:
         pass
-    for scale in linspace(7e-2, 12e-2, 50):
+    for scale in linspace(7e-2, 20e-2, 50):
         WORLD_WIDTH = scale
         WORLD_HEIGHT = scale*0.75
         blur_kernel = dhandle.deblurr_kernel()

@@ -10,7 +10,7 @@ def _blur_im(im, blur_kernel):
 	''' Blur a grayscale image'''
 	bx, by = blur_kernel.shape
 	imx, imy = im.shape
-	return convolve2d(im, blur_kernel)
+	return convolve2d(im, blur_kernel)/sum(blur_kernel)
 
 def blur_im(im, blur_kernel):
 	'''
@@ -28,7 +28,7 @@ def blur_im(im, blur_kernel):
 		imbblur = _blur_im(imb, blur_kernel)
 		x, y = imrblur.shape
 		imnew = zeros((x, y, 3))
-		imnew[:,:,0]=imrblur; imnew[:,:,0]=imgblur; imnew[:,:,0]=imbblur; 
+		imnew[:,:,0]=imrblur; imnew[:,:,1]=imgblur; imnew[:,:,2]=imbblur; 
 		return imnew
 
 if __name__ == '__main__':
@@ -45,10 +45,5 @@ if __name__ == '__main__':
 	imfront_blur = blur_im(imfront, blur_kernel)
 	imback_blur = blur_im(imback, blur_back)
 	imblur = imfront_blur+imback_blur
-	pmax = imblur.max()
-	imblur *= 255.0/pmax
-	Image.fromarray((imfront_blur*255.0/imfront_blur.max()).astype(uint8)).convert('RGB'
-		).save('imbfront_blur.bmp')
-	Image.fromarray((imback_blur*255.0/imback_blur.max()).astype(uint8)).convert('RGB'
-		).save('imbback_blur.bmp')
 	Image.fromarray(imblur.astype(uint8)).convert('RGB').save('imblur.bmp')
+	Image.fromarray(imfront+imback).save('imnoblur.bmp')
