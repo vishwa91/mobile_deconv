@@ -24,8 +24,8 @@ G = 9.8
 # Height = 5.5cm
 
 # Output files and directory
-OUTPUT_DIR = 'output'
-SENSOR_FILE = 'sensor_log.dat'
+OUTPUT_DIR = '../output/sensor'
+SENSOR_FILE = '%s/sensor_log.dat'%OUTPUT_DIR
 
 def gauss_pdf(x, mean, var):
     ''' Return the Gaussian PDF for mean and var over x'''
