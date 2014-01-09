@@ -79,7 +79,7 @@ namespace PhoneApp1
             else
             {
                 accel_timer = new DispatcherTimer();
-                accel_timer.Interval = TimeSpan.FromMilliseconds(40);
+                accel_timer.Interval = TimeSpan.FromMilliseconds(10);
                 accel_timer.Tick += new EventHandler(accelerometer_timer);
                 accel_timer.Start();
             }
