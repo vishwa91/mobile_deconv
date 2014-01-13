@@ -172,25 +172,30 @@ class DataHandle(object):
         else:
             self.im = Image.open(imname)
 
-    def compute_kernel(self, fpos=None, depth=1.0, shift_type='linear'):
+    def compute_kernel(self, fpos=None, depth=1.0, shift_type='linear', 
+                        start=0, end=-1):
         '''
             Compute the blur kernel given the final position and depth.
             Note that the running average of the acceleration data will
             be taken as the effect of gravity.
         '''
         global G, TSTEP, INTERPOLATE_SCALE
-        ntime = len(self.xaccel)
         
+        if end == -1:
+            end = len(self.xaccel)
         #remove the average gravity effect.
-        avgx = sum(array(self.xaccel))/(ntime*1.0)
-        avgy = sum(array(self.yaccel))/(ntime*1.0)
-        avgz = sum(array(self.zaccel))/(ntime*1.0)
-        xaccel = array(self.xaccel) - avgx
-        yaccel = array(self.yaccel) - avgy
-        zaccel = array(self.zaccel) - avgz
+        avgx = mean(array(self.xaccel[start:end]))
+        avgy = mean(array(self.yaccel[start:end]))
+        xaccel = array(self.xaccel[start:end]) - avgx
+        yaccel = array(self.yaccel[start:end]) - avgy
+        
+        ntime = len(xaccel)
         
         xpos_temp = cumsum(cumsum(xaccel))*G*TSTEP*TSTEP
         ypos_temp = cumsum(cumsum(yaccel))*G*TSTEP*TSTEP
+        
+        xpos_temp -= mean(xpos_temp)
+        ypos_temp -= mean(ypos_temp)
         
         xpos_temp = spline(range(ntime), xpos_temp,
                         linspace(0, ntime, ntime*INTERPOLATE_SCALE))
@@ -219,14 +224,13 @@ class DataHandle(object):
         
         xpos = depth*(xpos_temp - driftx)
         ypos = depth*(ypos_temp - drifty)
-        #plot(xpos)
-        #plot(ypos)
-        #show()
+        
         xdim = max(abs(xpos))
         ydim = max(abs(ypos))
         
         kernel = zeros((2*xdim+1, 2*ydim+1), dtype=uint8)
-        for i in range(ntime*1/5, ntime*4/6, 1):
+        
+        for i in range(len(xpos)):
             kernel[xdim+xpos[i], ydim-ypos[i]] += 1
             
         return kernel
@@ -434,11 +438,14 @@ if __name__  == '__main__':
     #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = False)
     #dhandle.plot_position()
+    print len(dhandle.xaccel)
     
     count = 0
     dhandle.im.save(os.path.join(TMP_DIR, 'imtest.bmp'))
+    # The right position values start from t=43 to t=43+20
     maxshift = 1e-2
     shiftstep = 1e-3
+    tstart = 41
     for xfinal in arange(-maxshift, maxshift, shiftstep):
         for yfinal in arange(-maxshift, maxshift, shiftstep):
             for depth in [5000]:
@@ -447,20 +454,21 @@ if __name__  == '__main__':
                 xfinal,yfinal, depth),
                 print '\r'
                 kernel = dhandle.compute_kernel((xfinal, yfinal),
-                                    depth, shift_type='linear')
+                            depth, 'linear', tstart, tstart+20)
                 #imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.01)
                 #Image.fromarray(imout).convert('RGB').save(
                 #os.path.join(TMP_DIR, 'im/im%d.bmp'%count))
-                kernel *= 255.0/kernel.max()
-                Image.fromarray(kernel*10).convert('RGB').save(
+                kernel *= 200.0/kernel.max()
+                Image.fromarray(kernel).convert('RGB').save(
                 os.path.join(TMP_DIR, 'kernel/kernel_%f_%f.bmp'%(
                                     xfinal, yfinal)))
-                '''
-                out = commands.getoutput('../output/cam/robust_deconv.'
-                                         'exe ../tmp/cam/imtest.bmp'
-                                         ' ../tmp/cam/kernel/kernel%d'
-                                         '.bmp ../tmp/cam/im/im%d.bmp'
-                                         '0 0.1 1'%(count,count))
-                print out
-                '''
+                
+                #out = commands.getoutput('../output/cam/robust_deconv.'
+                #                         'exe ../tmp/cam/imtest.bmp'
+                #                         ' ../tmp/cam/kernel/kernel%d'
+                #                         '.bmp ../tmp/cam/im/im%d.bmp'
+                #                         '0 0.1 1'%(count,count))
+                #print out
+                
                 count += 1
+    
