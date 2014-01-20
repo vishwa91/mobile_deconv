@@ -72,7 +72,7 @@ def _deblur(kernel, im, nsr):
     #x = x1+x2; y = y1+y2
     F = fft.fft2(kernel, s=(x,y))
     IM = fft.fft2(im, s=(x,y))
-    IMOUT = conj(F)*IM/(abs(F)**2 + nsr*REG)
+    IMOUT = conj(F)*IM/(abs(F)**2 + nsr)
     imout = real(fft.ifft2(IMOUT))
     
     return (imout*255.0/imout.max()).astype(float)
@@ -199,10 +199,11 @@ class DataHandle(object):
         if end == -1:
             end = len(self.xaccel)
         #remove the average gravity effect.
+        mean_vector = sqrt(self.xaccel**2 + self.yaccel**2 + self.zaccel**2)
         avgx = mean(array(self.xaccel[start:end]))
         avgy = mean(array(self.yaccel[start:end]))
-        #avgx = estimate_g(self.xaccel[start:end])
-        #avgy = estimate_g(self.xaccel[start:end])
+        #avgx = mean(array(self.xaccel[start:end]))
+        #avgy = mean(array(self.yaccel[start:end]))
         xaccel = array(self.xaccel[start:end]) - avgx
         yaccel = array(self.yaccel[start:end]) - avgy
         
@@ -263,8 +264,11 @@ class DataHandle(object):
         if end == -1:
             end = len(self.xaccel)
         #remove the average gravity effect.
+        mean_vector = sqrt(self.xaccel**2 + self.yaccel**2 + self.zaccel**2)
         avgx = mean(array(self.xaccel[start:end]))
         avgy = mean(array(self.yaccel[start:end]))
+        #avgx = self.xaccel[start:end]/mean_vector[start:end]
+        #avgy = self.yaccel[start:end]/mean_vector[start:end]
         xaccel = array(self.xaccel[start:end]) - avgx
         yaccel = array(self.yaccel[start:end]) - avgy
         
@@ -518,23 +522,23 @@ def my_main():
         os.path.join(TMP_DIR, 'accel_kernel.bmp'))
     for xfinal in arange(-maxshift, maxshift, shiftstep):
         for yfinal in arange(-maxshift, maxshift, shiftstep):
-            for depth in range(100, 700, 20):
+            for depth in range(900, 1500, 20):
                 # Compute the kernel
                 print 'Computing new latent image with x=%f,y=%f,d=%f'%(
                 xfinal,yfinal, depth)
                 kernel = dhandle.compute_kernel((xfinal, yfinal),
-                            depth, 'quad', tstart, tstart+20)
-                imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.01)
-                Image.fromarray(imout).convert('RGB').save(
-                os.path.join(TMP_DIR, 'im/im%d.jpg'%count))
+                            depth, 'quad', tstart, tstart+21)
+                #imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.001)
+                #Image.fromarray(imout).convert('RGB').save(
+                #os.path.join(TMP_DIR, 'im/im%d.jpg'%count))
                 kernel *= 255.0/kernel.max()
                 Image.fromarray(kernel).convert('RGB').save(
                 os.path.join(TMP_DIR, 'kernel/kernel%d.bmp'%count))
                 #os.path.join(TMP_DIR, 'kernel/kernel_%f_%f_%d.bmp'%(
                 #                    xfinal, yfinal, depth)))
                 
-                #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/cam/kernel/kernel%d.bmp ../tmp/cam/im/im%d.bmp 0 0.1 1'%(count,count))
-                #print out
+                out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/cam/kernel/kernel%d.bmp ../tmp/cam/im/im%d.bmp 0 0.1 1'%(count,count))
+                print out
                 
                 count += 1
 
