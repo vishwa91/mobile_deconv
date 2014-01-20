@@ -2,6 +2,7 @@
 
 #from __future__ import print_function
 import os, sys
+import shutil
 import commands
 import socket
 from StringIO import StringIO
@@ -74,7 +75,7 @@ def _deblur(kernel, im, nsr):
     IMOUT = conj(F)*IM/(abs(F)**2 + nsr*REG)
     imout = real(fft.ifft2(IMOUT))
     
-    return imout.astype(float)
+    return (imout*255.0/imout.max()).astype(float)
 
 def deblur(kernel, im, nsr):
     ''' Deblur image using Wiener filter method'''
@@ -90,6 +91,20 @@ def deblur(kernel, im, nsr):
         imout[:,:,2] = _deblur(kernel, im[:,:,2], nsr)
         
         return imout.astype(uint8)
+
+def pgauss(val, mean, mvar):
+    ''' Return the probability of val'''
+    den = sqrt(2*pi*mvar)
+    mexp = ((val-mean)**2)/(2.0*mvar)
+    return exp(-mexp)/den
+    
+def estimate_g(data, niters=10):
+    ''' We estimate graviational value using iterative method.'''
+    g = mean(data)
+    gvar = variance(data)
+    for i in range(niters):
+        g=sum(data*pgauss(data, g, gvar))/sum(pgauss(data, g, gvar))
+    return g
         
 def save_data(dstring):
     """ Function to extract and save the image and acceleration data
@@ -186,6 +201,8 @@ class DataHandle(object):
         #remove the average gravity effect.
         avgx = mean(array(self.xaccel[start:end]))
         avgy = mean(array(self.yaccel[start:end]))
+        #avgx = estimate_g(self.xaccel[start:end])
+        #avgy = estimate_g(self.xaccel[start:end])
         xaccel = array(self.xaccel[start:end]) - avgx
         yaccel = array(self.yaccel[start:end]) - avgy
         
@@ -225,13 +242,55 @@ class DataHandle(object):
         xpos = depth*(xpos_temp - driftx)
         ypos = depth*(ypos_temp - drifty)
         
-        xdim = max(abs(xpos))
+        xdim = max(abs(xpos))*4.0/3.0
         ydim = max(abs(ypos))
         
         kernel = zeros((2*xdim+1, 2*ydim+1), dtype=uint8)
         
         for i in range(len(xpos)):
-            kernel[xdim+xpos[i], ydim-ypos[i]] += 1
+            kernel[xdim+xpos[i]*4.0/3.0, ydim-ypos[i]] += 1
+            
+        return kernel
+
+    def compute_accel_kernel(self, start, end):
+        '''
+            Compute the blur kernel given the final position and depth.
+            Note that the running average of the acceleration data will
+            be taken as the effect of gravity.
+        '''
+        global G, TSTEP, INTERPOLATE_SCALE
+        
+        if end == -1:
+            end = len(self.xaccel)
+        #remove the average gravity effect.
+        avgx = mean(array(self.xaccel[start:end]))
+        avgy = mean(array(self.yaccel[start:end]))
+        xaccel = array(self.xaccel[start:end]) - avgx
+        yaccel = array(self.yaccel[start:end]) - avgy
+        
+        ntime = len(xaccel)
+        
+        xpos_temp = xaccel * G
+        ypos_temp = yaccel * G
+        
+        xpos = spline(range(ntime), xpos_temp,
+                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
+        ypos = spline(range(ntime), ypos_temp,
+                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
+        ntime *= INTERPOLATE_SCALE
+        # arange: (start, end, step)
+        time = arange(0, ntime*TSTEP, TSTEP)
+        endtime = time[-1]
+        
+        xpos *= 100
+        ypos *= 100
+        xdim = max(abs(xpos))*4.0/3.0
+        ydim = max(abs(ypos))
+        
+        kernel = zeros((2*xdim+1, 2*ydim+1), dtype=uint8)
+        
+        for i in range(len(xpos)):
+            kernel[xdim+xpos[i]*4.0/3.0, ydim-ypos[i]] += 1
             
         return kernel
         
@@ -432,43 +491,52 @@ def tcp_listen():
             conn.close()
             return dstring
 
-if __name__  == '__main__':
+def my_main():
     # Start listening to TCP socket
-    dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
-    #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
+    #dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
+    dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = False)
     #dhandle.plot_position()
     print len(dhandle.xaccel)
     
+    # Clear up the im and the kernel directory
+    shutil.rmtree(os.path.join(TMP_DIR, 'kernel'))
+    shutil.rmtree(os.path.join(TMP_DIR, 'im'))
+    os.mkdir(os.path.join(TMP_DIR, 'kernel'))
+    os.mkdir(os.path.join(TMP_DIR, 'im'))
+    
     count = 0
     dhandle.im.save(os.path.join(TMP_DIR, 'imtest.bmp'))
     # The right position values start from t=43 to t=43+20
-    maxshift = 1e-2
-    shiftstep = 1e-3
+    maxshift = 10e-3
+    shiftstep = 2e-3
     tstart = 41
+    # Want to see what is the acceleration kernel.
+    accel_kernel = dhandle.compute_accel_kernel(41, 41+21)
+    accel_kernel *= 255.0/accel_kernel.max()
+    Image.fromarray(accel_kernel*100).convert('RGB').save(
+        os.path.join(TMP_DIR, 'accel_kernel.bmp'))
     for xfinal in arange(-maxshift, maxshift, shiftstep):
         for yfinal in arange(-maxshift, maxshift, shiftstep):
-            for depth in [5000]:
+            for depth in range(100, 700, 20):
                 # Compute the kernel
                 print 'Computing new latent image with x=%f,y=%f,d=%f'%(
-                xfinal,yfinal, depth),
-                print '\r'
+                xfinal,yfinal, depth)
                 kernel = dhandle.compute_kernel((xfinal, yfinal),
-                            depth, 'linear', tstart, tstart+20)
-                #imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.01)
-                #Image.fromarray(imout).convert('RGB').save(
-                #os.path.join(TMP_DIR, 'im/im%d.bmp'%count))
-                kernel *= 200.0/kernel.max()
+                            depth, 'quad', tstart, tstart+20)
+                imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.01)
+                Image.fromarray(imout).convert('RGB').save(
+                os.path.join(TMP_DIR, 'im/im%d.jpg'%count))
+                kernel *= 255.0/kernel.max()
                 Image.fromarray(kernel).convert('RGB').save(
-                os.path.join(TMP_DIR, 'kernel/kernel_%f_%f.bmp'%(
-                                    xfinal, yfinal)))
+                os.path.join(TMP_DIR, 'kernel/kernel%d.bmp'%count))
+                #os.path.join(TMP_DIR, 'kernel/kernel_%f_%f_%d.bmp'%(
+                #                    xfinal, yfinal, depth)))
                 
-                #out = commands.getoutput('../output/cam/robust_deconv.'
-                #                         'exe ../tmp/cam/imtest.bmp'
-                #                         ' ../tmp/cam/kernel/kernel%d'
-                #                         '.bmp ../tmp/cam/im/im%d.bmp'
-                #                         '0 0.1 1'%(count,count))
+                #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/cam/kernel/kernel%d.bmp ../tmp/cam/im/im%d.bmp 0 0.1 1'%(count,count))
                 #print out
                 
                 count += 1
-    
+
+if __name__ == '__main__':
+    my_main()
