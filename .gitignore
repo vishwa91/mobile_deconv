@@ -8,6 +8,7 @@
 *.dat
 *.bmp
 host/output
+host/tmp
 wp8_app/camera_example/C#/sdkBasicCameraCS/Bin/
 wp8_app/camera_example/C#/sdkBasicCameraCS/obj/
 wp8_app/sensors_example/C#/sdkRawSensorDataCS/Bin/

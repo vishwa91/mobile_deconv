@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
+#from __future__ import print_function
 import os, sys
+import shutil
 import commands
 import socket
 from StringIO import StringIO
@@ -11,7 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy import *
 from scipy.ndimage import *
 from scipy.linalg import *
-from numpy.fft import *
+from numpy import fft
 from scipy.signal import convolve2d
 from scipy.interpolate import spline
 
@@ -24,7 +26,7 @@ PORT = 1991
 BUFFER_SIZE = 1024
 
 # Time information
-TSTEP = 20e-3
+TSTEP = 10e-3
 G = 9.8
 
 # Sharp image dimensions for focus=50
@@ -54,6 +56,56 @@ STAC = '\x00S\x00T\x00A\x00C\x00\n'
 EDAC = '\x00E\x00D\x00A\x00C\x00\n'
 ENDT = '\x00E\x00N\x00D\x00T\x00\n'
 
+def _deblur(kernel, im, nsr):
+    ''' Deblur a single channel image'''
+    kernel = (1.0*kernel)/kernel.sum()
+    diffx = array([[1,  1],
+                   [-1,-1]])
+    diffy = array([[-1, 1],
+                   [-1, 1]])
+    x, y = im.shape
+    #x *= 2; y *= 2
+    DX = fft.fft2(diffx, s=(x,y))
+    DY = fft.fft2(diffy, s=(x,y))
+    REG = abs(DX)**2 + abs(DY)**2
+    #x2, y2 = kernel.shape
+    #x = x1+x2; y = y1+y2
+    F = fft.fft2(kernel, s=(x,y))
+    IM = fft.fft2(im, s=(x,y))
+    IMOUT = conj(F)*IM/(abs(F)**2 + nsr*REG)
+    imout = real(fft.ifft2(IMOUT))
+    
+    return (imout*255.0/imout.max()).astype(float)
+
+def deblur(kernel, im, nsr):
+    ''' Deblur image using Wiener filter method'''
+    s = im.shape
+    
+    if len(s) == 2:
+        return _deblur(kernel, im, nsr)
+    else:
+        x,y,_ = im.shape
+        imout = zeros((x, y, 3), dtype=float)
+        imout[:,:,0] = _deblur(kernel, im[:,:,0], nsr)
+        imout[:,:,1] = _deblur(kernel, im[:,:,1], nsr)
+        imout[:,:,2] = _deblur(kernel, im[:,:,2], nsr)
+        
+        return imout.astype(uint8)
+
+def pgauss(val, mean, mvar):
+    ''' Return the probability of val'''
+    den = sqrt(2*pi*mvar)
+    mexp = ((val-mean)**2)/(2.0*mvar)
+    return exp(-mexp)/den
+    
+def estimate_g(data, niters=10):
+    ''' We estimate graviational value using iterative method.'''
+    g = mean(data)
+    gvar = variance(data)
+    for i in range(niters):
+        g=sum(data*pgauss(data, g, gvar))/sum(pgauss(data, g, gvar))
+    return g
+        
 def save_data(dstring):
     """ Function to extract and save the image and acceleration data
     from the incoming tcp data"""
@@ -115,15 +167,15 @@ class DataHandle(object):
             for ac in acvals:
                 try:
                     ax, ay, az = [float(i) for i in ac.split(';')]
-                    self.xaccel.append(-ax)
-                    self.yaccel.append(-ay)
+                    self.xaccel.append(ax)
+                    self.yaccel.append(ay)
                     self.zaccel.append(az)
                 except ValueError:
                     print 'Invalid acceleration value. Skipping'
         else:
             acdat = loadtxt(acname)
-            self.xaccel, self.yaccel, self.zaccel = [-acdat[:, 0],
-                                                     -acdat[:, 1],
+            self.xaccel, self.yaccel, self.zaccel = [acdat[:, 0],
+                                                     acdat[:, 1],
                                                      acdat[:, 2]]
 
         self.ndata = len(self.xaccel)
@@ -135,8 +187,115 @@ class DataHandle(object):
         else:
             self.im = Image.open(imname)
 
+    def compute_kernel(self, fpos=None, depth=1.0, shift_type='linear', 
+                        start=0, end=-1):
+        '''
+            Compute the blur kernel given the final position and depth.
+            Note that the running average of the acceleration data will
+            be taken as the effect of gravity.
+        '''
+        global G, TSTEP, INTERPOLATE_SCALE
+        
+        if end == -1:
+            end = len(self.xaccel)
+        #remove the average gravity effect.
+        avgx = mean(array(self.xaccel[start:end]))
+        avgy = mean(array(self.yaccel[start:end]))
+        #avgx = estimate_g(self.xaccel[start:end])
+        #avgy = estimate_g(self.xaccel[start:end])
+        xaccel = array(self.xaccel[start:end]) - avgx
+        yaccel = array(self.yaccel[start:end]) - avgy
+        
+        ntime = len(xaccel)
+        
+        xpos_temp = cumsum(cumsum(xaccel))*G*TSTEP*TSTEP
+        ypos_temp = cumsum(cumsum(yaccel))*G*TSTEP*TSTEP
+        
+        xpos_temp -= mean(xpos_temp)
+        ypos_temp -= mean(ypos_temp)
+        
+        xpos_temp = spline(range(ntime), xpos_temp,
+                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
+        ypos_temp = spline(range(ntime), ypos_temp,
+                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
+        ntime *= INTERPOLATE_SCALE
+        # arange: (start, end, step)
+        time = arange(0, ntime*TSTEP, TSTEP)
+        endtime = time[-1]
+        # Subtract the linear drift and multiply with depth.
+        if shift_type == 'linear':
+            driftx = linspace(0, fpos[0], ntime)
+            drifty = linspace(0, fpos[1], ntime)
+        elif shift_type == 'quad':
+            # We assume shift is of the form y = a*x^2 + b*x
+            a = -fpos[0]/(endtime**2)
+            b = -2*a*endtime
+            driftx = a*time**2 + b*time
+            
+            a = -fpos[1]/(endtime**2)
+            b = -2*a*endtime
+            drifty = a*time**2 + b*time
+            
+        else:
+            raise ValueError("shift_type has to be linear or quad")
+        
+        xpos = depth*(xpos_temp - driftx)
+        ypos = depth*(ypos_temp - drifty)
+        
+        xdim = max(abs(xpos))*4.0/3.0
+        ydim = max(abs(ypos))
+        
+        kernel = zeros((2*xdim+1, 2*ydim+1), dtype=uint8)
+        
+        for i in range(len(xpos)):
+            kernel[xdim+xpos[i]*4.0/3.0, ydim-ypos[i]] += 1
+            
+        return kernel
 
-    def calculate_position(self, linear_drift = True, final_pos=None):
+    def compute_accel_kernel(self, start, end):
+        '''
+            Compute the blur kernel given the final position and depth.
+            Note that the running average of the acceleration data will
+            be taken as the effect of gravity.
+        '''
+        global G, TSTEP, INTERPOLATE_SCALE
+        
+        if end == -1:
+            end = len(self.xaccel)
+        #remove the average gravity effect.
+        avgx = mean(array(self.xaccel[start:end]))
+        avgy = mean(array(self.yaccel[start:end]))
+        xaccel = array(self.xaccel[start:end]) - avgx
+        yaccel = array(self.yaccel[start:end]) - avgy
+        
+        ntime = len(xaccel)
+        
+        xpos_temp = xaccel * G
+        ypos_temp = yaccel * G
+        
+        xpos = spline(range(ntime), xpos_temp,
+                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
+        ypos = spline(range(ntime), ypos_temp,
+                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
+        ntime *= INTERPOLATE_SCALE
+        # arange: (start, end, step)
+        time = arange(0, ntime*TSTEP, TSTEP)
+        endtime = time[-1]
+        
+        xpos *= 100
+        ypos *= 100
+        xdim = max(abs(xpos))*4.0/3.0
+        ydim = max(abs(ypos))
+        
+        kernel = zeros((2*xdim+1, 2*ydim+1), dtype=uint8)
+        
+        for i in range(len(xpos)):
+            kernel[xdim+xpos[i]*4.0/3.0, ydim-ypos[i]] += 1
+            
+        return kernel
+        
+    def calculate_position(self, linear_drift=True,
+                              final_pos=None, depth=1.0):
         """ Calculate the position from the given acceleration data.
         Note the following assumptions:
         1. The average acceleration has to be zero.
@@ -196,8 +355,8 @@ class DataHandle(object):
         time = arange(0, TSTEP*self.ndata, TSTEP)[:self.ndata]
 
         scale_x = IM_HEIGHT/WORLD_HEIGHT
-        scale_y = IM_WIDTH/WORLD_WIDTH
-        print scale_x, scale_y
+        scale_y = scale_x
+        
         subplot(3,1,1)
         plot(time, self.xpos*scale_x)
         #plot(time, time*self.mx*scale_x, 'r')
@@ -249,7 +408,7 @@ class DataHandle(object):
             #blurr_kernel[ydim+ypos_pixel[i], xdim+xpos_pixel[i]]+=1
         return blurr_kernel
 
-def deblur(im, kernel, nsr=0.01):
+def _junk_deblur(im, kernel, nsr=0.01):
     """ Weiner deconvolution for deblurring"""
     # Attempt a dumb deconvolution
     if len(im.shape) == 2:
@@ -332,53 +491,52 @@ def tcp_listen():
             conn.close()
             return dstring
 
-if __name__  == '__main__':
+def my_main():
     # Start listening to TCP socket
     #dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
     dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = False)
-    dhandle.plot_position()
-    plot(dhandle.xaccel)
-    plot(dhandle.yaccel)
-    show()
-    #dhandle.im.show()
-    blur_kernel = dhandle.deblurr_kernel()
+    #dhandle.plot_position()
+    print len(dhandle.xaccel)
     
-    Image.fromarray(blur_kernel*255.0/blur_kernel.max()).convert('L').save(
-        os.path.join(OUTPUT_DIR, 'blur_kernel.bmp'))
+    # Clear up the im and the kernel directory
+    shutil.rmtree(os.path.join(TMP_DIR, 'kernel'))
+    shutil.rmtree(os.path.join(TMP_DIR, 'im'))
+    os.mkdir(os.path.join(TMP_DIR, 'kernel'))
+    os.mkdir(os.path.join(TMP_DIR, 'im'))
     
-    robust_kernel = imread(os.path.join(OUTPUT_DIR, 'robust_kernel.bmp'),
-     flatten=True)
-    im = array(dhandle.im)
+    count = 0
+    dhandle.im.save(os.path.join(TMP_DIR, 'imtest.bmp'))
+    # The right position values start from t=43 to t=43+20
+    maxshift = 10e-3
+    shiftstep = 2e-3
+    tstart = 41
+    # Want to see what is the acceleration kernel.
+    accel_kernel = dhandle.compute_accel_kernel(41, 41+21)
+    accel_kernel *= 255.0/accel_kernel.max()
+    Image.fromarray(accel_kernel*100).convert('RGB').save(
+        os.path.join(TMP_DIR, 'accel_kernel.bmp'))
+    for xfinal in arange(-maxshift, maxshift, shiftstep):
+        for yfinal in arange(-maxshift, maxshift, shiftstep):
+            for depth in range(100, 700, 20):
+                # Compute the kernel
+                print 'Computing new latent image with x=%f,y=%f,d=%f'%(
+                xfinal,yfinal, depth)
+                kernel = dhandle.compute_kernel((xfinal, yfinal),
+                            depth, 'quad', tstart, tstart+20)
+                imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.01)
+                Image.fromarray(imout).convert('RGB').save(
+                os.path.join(TMP_DIR, 'im/im%d.jpg'%count))
+                kernel *= 255.0/kernel.max()
+                Image.fromarray(kernel).convert('RGB').save(
+                os.path.join(TMP_DIR, 'kernel/kernel%d.bmp'%count))
+                #os.path.join(TMP_DIR, 'kernel/kernel_%f_%f_%d.bmp'%(
+                #                    xfinal, yfinal, depth)))
+                
+                #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/cam/kernel/kernel%d.bmp ../tmp/cam/im/im%d.bmp 0 0.1 1'%(count,count))
+                #print out
+                
+                count += 1
 
-    out = deblur(im, blur_kernel)
-    #Image.fromarray(out).show()
-    Image.fromarray(out.astype(uint8)).convert('RGB').save(
-        os.path.join(OUTPUT_DIR, 'deblurred_image.bmp'))
-
-    imblurred = convolve2d(imread(os.path.join(OUTPUT_DIR,'dot.bmp')
-    , flatten=True),
-     blur_kernel/sum(blur_kernel))
-    Image.fromarray(imblurred).convert('L').save(os.path.join(OUTPUT_DIR,
-                                                'synthetic.bmp'))
-
-    cnt = 0
-    try:
-        os.mkdir(TMP_DIR)
-        #os.mkdir('tmp')
-    except OSError:
-        pass
-    for scale in linspace(3e-2, 12e-2, 10):
-        WORLD_WIDTH = scale
-        WORLD_HEIGHT = scale*0.75
-        blur_kernel = dhandle.deblurr_kernel()
-        '''
-        Image.fromarray(blur_kernel*255.0/blur_kernel.max()).convert('L').save(
-            os.path.join(OUTPUT_DIR, 'blur_kernel.bmp'))    
-        print commands.getoutput('cd output && wine robust_deconv.exe '
-                                 'saved_im.bmp blur_kernel.bmp tmp/im_%d.bmp'
-                                 ' 0 0.05 1'%cnt)
-        '''
-        imout = deblur(im[:,:,0], blur_kernel, nsr=0.07)
-        Image.fromarray(imout).save(os.path.join(TMP_DIR, 'im_%d.bmp'%cnt))
-        cnt += 1
+if __name__ == '__main__':
+    my_main()

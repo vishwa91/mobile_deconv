@@ -25,7 +25,7 @@ G = 9.8
 
 # Output files and directory
 OUTPUT_DIR = '../output/sensor'
-SENSOR_FILE = '%s/sensor_log.dat'%OUTPUT_DIR
+SENSOR_FILE = 'sensor_log.dat'
 
 def gauss_pdf(x, mean, var):
     ''' Return the Gaussian PDF for mean and var over x'''
@@ -172,8 +172,10 @@ class DataHandle(object):
 if __name__ == '__main__':
     #dstring = tcp_listen()
     #dhandle = DataHandle(dstring)
-    dhandle = DataHandle(dstring=None, fname='output/sensor_log.dat')
-    dhandle.calculate_position(subtract_drift=True)
+    dhandle = DataHandle(dstring=None, fname=os.path.join(
+        OUTPUT_DIR, SENSOR_FILE), window_size=75)
+    dhandle.calculate_position(subtract_drift=False)
+    dhandle.plot_position()
     clf()
     '''
     nbins = 40
