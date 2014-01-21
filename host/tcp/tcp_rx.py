@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-#from __future__ import print_function
 import os, sys
 import shutil
 import commands
@@ -14,7 +13,7 @@ from scipy import *
 from scipy.ndimage import *
 from scipy.linalg import *
 from numpy import fft
-from scipy.signal import convolve2d
+from scipy.signal import *
 from scipy.interpolate import spline
 
 import Image
@@ -56,39 +55,54 @@ STAC = '\x00S\x00T\x00A\x00C\x00\n'
 EDAC = '\x00E\x00D\x00A\x00C\x00\n'
 ENDT = '\x00E\x00N\x00D\x00T\x00\n'
 
-def _deblur(kernel, im, nsr):
+def _deblur(kernel, im, nsr, mode):
     ''' Deblur a single channel image'''
-    kernel = (1.0*kernel)/kernel.sum()
-    diffx = array([[1,  1],
-                   [-1,-1]])
-    diffy = array([[-1, 1],
-                   [-1, 1]])
-    x, y = im.shape
-    #x *= 2; y *= 2
-    DX = fft.fft2(diffx, s=(x,y))
-    DY = fft.fft2(diffy, s=(x,y))
-    REG = abs(DX)**2 + abs(DY)**2
-    #x2, y2 = kernel.shape
-    #x = x1+x2; y = y1+y2
-    F = fft.fft2(kernel, s=(x,y))
-    IM = fft.fft2(im, s=(x,y))
-    IMOUT = conj(F)*IM/(abs(F)**2 + nsr)
-    imout = real(fft.ifft2(IMOUT))
-    
-    return (imout*255.0/imout.max()).astype(float)
+    if mode in ['wien', 'reg']:
+        kernel = (1.0*kernel)/kernel.sum()
+        diffx = array([[1,  1],
+                       [-1,-1]])
+        diffy = array([[-1, 1],
+                       [-1, 1]])
+        x, y = im.shape
+        #x *= 2; y *= 2
+        DX = fft.fft2(diffx, s=(x,y))
+        DY = fft.fft2(diffy, s=(x,y))
+        REG = abs(DX)**2 + abs(DY)**2
+        #x2, y2 = kernel.shape
+        #x = x1+x2; y = y1+y2
+        F = fft.fft2(kernel, s=(x,y))
+        IM = fft.fft2(im, s=(x,y))
+        if mode == 'reg':
+            nsr *= REG
+        IMOUT = conj(F)*IM/(abs(F)**2 + nsr)
+        imout = real(fft.ifft2(IMOUT))
+    elif mode == 'rl':
+        flipped_kernel = flipud(fliplr(kernel))
+        imout = ones_like(im)
+        for i in range(20):
+            temp = im/(nsr+fftconvolve(imout, kernel, mode='same'))
+            imout = imout*fftconvolve(temp, flipped_kernel, mode='same')
+    else:
+        raise('mode needs to be wien, reg or rl. Type help(deblur) for help')
+    #return (imout*255.0/imout.max()).astype(float)
+    return imout.astype(float)
 
-def deblur(kernel, im, nsr):
-    ''' Deblur image using Wiener filter method'''
+def deblur(kernel, im, nsr, mode='rl'):
+    ''' Deblur an image. Currently, we have 3 options:
+        1. Wiener with mode = wien
+        2. Regularized with mode = reg
+        3. Richardson lucy, with mode = rl
+    '''
     s = im.shape
     
     if len(s) == 2:
-        return _deblur(kernel, im, nsr)
+        return _deblur(kernel, im, nsr, mode)
     else:
         x,y,_ = im.shape
         imout = zeros((x, y, 3), dtype=float)
-        imout[:,:,0] = _deblur(kernel, im[:,:,0], nsr)
-        imout[:,:,1] = _deblur(kernel, im[:,:,1], nsr)
-        imout[:,:,2] = _deblur(kernel, im[:,:,2], nsr)
+        imout[:,:,0] = _deblur(kernel, im[:,:,0], nsr, mode)
+        imout[:,:,1] = _deblur(kernel, im[:,:,1], nsr, mode)
+        imout[:,:,2] = _deblur(kernel, im[:,:,2], nsr, mode)
         
         return imout.astype(uint8)
 
@@ -252,51 +266,6 @@ class DataHandle(object):
             kernel[xdim+xpos[i]*4.0/3.0, ydim-ypos[i]] += 1
             
         return kernel
-
-    def compute_accel_kernel(self, start, end):
-        '''
-            Compute the blur kernel given the final position and depth.
-            Note that the running average of the acceleration data will
-            be taken as the effect of gravity.
-        '''
-        global G, TSTEP, INTERPOLATE_SCALE
-        
-        if end == -1:
-            end = len(self.xaccel)
-        #remove the average gravity effect.
-        mean_vector = sqrt(self.xaccel**2 + self.yaccel**2 + self.zaccel**2)
-        avgx = mean(array(self.xaccel[start:end]))
-        avgy = mean(array(self.yaccel[start:end]))
-        #avgx = self.xaccel[start:end]/mean_vector[start:end]
-        #avgy = self.yaccel[start:end]/mean_vector[start:end]
-        xaccel = array(self.xaccel[start:end]) - avgx
-        yaccel = array(self.yaccel[start:end]) - avgy
-        
-        ntime = len(xaccel)
-        
-        xpos_temp = xaccel * G
-        ypos_temp = yaccel * G
-        
-        xpos = spline(range(ntime), xpos_temp,
-                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
-        ypos = spline(range(ntime), ypos_temp,
-                        linspace(0, ntime, ntime*INTERPOLATE_SCALE))
-        ntime *= INTERPOLATE_SCALE
-        # arange: (start, end, step)
-        time = arange(0, ntime*TSTEP, TSTEP)
-        endtime = time[-1]
-        
-        xpos *= 100
-        ypos *= 100
-        xdim = max(abs(xpos))*4.0/3.0
-        ydim = max(abs(ypos))
-        
-        kernel = zeros((2*xdim+1, 2*ydim+1), dtype=uint8)
-        
-        for i in range(len(xpos)):
-            kernel[xdim+xpos[i]*4.0/3.0, ydim-ypos[i]] += 1
-            
-        return kernel
         
     def calculate_position(self, linear_drift=True,
                               final_pos=None, depth=1.0):
@@ -381,81 +350,6 @@ class DataHandle(object):
 
         show()
 
-    def deblurr_kernel(self):
-        """ Construct the deblurr kernel from the position information
-        """
-
-        global IM_HEIGHT, IM_WIDTH
-        global WORLD_HEIGHT, WORLD_WIDTH
-
-        scale_x = IM_HEIGHT/WORLD_HEIGHT
-        scale_y = IM_WIDTH/WORLD_WIDTH
-
-        # Find the shift in terms of pixels.
-        xpos_pixel = (self.xpos*scale_x).astype(int)
-        ypos_pixel = (self.ypos*scale_y).astype(int)
-
-        # Smoothen the position to 10 times the points.
-        xlen = len(xpos_pixel)
-        ylen = len(ypos_pixel)
-        
-        xpos_pixel = spline(range(xlen), xpos_pixel,
-                            linspace(0, xlen, xlen*INTERPOLATE_SCALE))
-        ypos_pixel = spline(range(ylen), ypos_pixel,
-                            linspace(0, ylen, ylen*INTERPOLATE_SCALE))
-        
-        xdim, ydim = abs(xpos_pixel).max(), abs(ypos_pixel).max()
-        blurr_kernel = zeros(((xdim+1)*2, (ydim+1)*2))
-
-        for i in range(len(xpos_pixel)):
-            blurr_kernel[xdim+xpos_pixel[i], ydim+ypos_pixel[i]]+=1
-            #blurr_kernel[ydim+ypos_pixel[i], xdim+xpos_pixel[i]]+=1
-        return blurr_kernel
-
-def _junk_deblur(im, kernel, nsr=0.01):
-    """ Weiner deconvolution for deblurring"""
-    # Attempt a dumb deconvolution
-    if len(im.shape) == 2:
-        kx, ky = kernel.shape
-        xdim, ydim = im.shape
-        nchan = 1
-    else:
-        kx, ky = kernel.shape
-        xdim, ydim, nchan = im.shape
-    if nchan == 3:  
-        imr = im[:,:,0]
-        img = im[:,:,1]
-        imb = im[:,:,2]
-
-        imdim = (xdim, ydim)
-        IMR = fft2(imr, s=imdim)
-        IMG = fft2(img, s=imdim)
-        IMB = fft2(imb, s=imdim)
-
-        H = fft2(kernel/sum(kernel), s=imdim)
-
-        IMOUTR = IMR*conj(H)/(H*conj(H) + nsr)
-        IMOUTG = IMG*conj(H)/(H*conj(H) + nsr)
-        IMOUTB = IMB*conj(H)/(H*conj(H) + nsr)
-
-        imoutr = ifft2(IMOUTR)
-        imoutg = ifft2(IMOUTG)
-        imoutb = ifft2(IMOUTB)
-
-        imout = zeros((xdim, ydim, 3))
-        imout[:,:,0] = imoutr
-        imout[:,:,1] = imoutg
-        imout[:,:,2] = imoutb
-
-    elif nchan == 1:
-        IM = fft2(im, s=(xdim, ydim))
-        H = fft2(kernel/sum(kernel), s=(xdim, ydim))
-        IMOUT = IM*conj(H)/(H*conj(H) + nsr)
-        imout = ifft2(IMOUT)
-
-    return (imout*255.0/imout.max()).astype(uint8)
-
-
 def tcp_listen():
     """ Listen to the TCP socket and get data"""
     # Wait till you get a socket client
@@ -511,15 +405,12 @@ def my_main():
     
     count = 0
     dhandle.im.save(os.path.join(TMP_DIR, 'imtest.bmp'))
+    
     # The right position values start from t=43 to t=43+20
     maxshift = 10e-3
     shiftstep = 2e-3
     tstart = 41
-    # Want to see what is the acceleration kernel.
-    accel_kernel = dhandle.compute_accel_kernel(41, 41+21)
-    accel_kernel *= 255.0/accel_kernel.max()
-    Image.fromarray(accel_kernel*100).convert('RGB').save(
-        os.path.join(TMP_DIR, 'accel_kernel.bmp'))
+    
     for xfinal in arange(-maxshift, maxshift, shiftstep):
         for yfinal in arange(-maxshift, maxshift, shiftstep):
             for depth in range(900, 1500, 20):
@@ -528,17 +419,17 @@ def my_main():
                 xfinal,yfinal, depth)
                 kernel = dhandle.compute_kernel((xfinal, yfinal),
                             depth, 'quad', tstart, tstart+21)
-                #imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.001)
-                #Image.fromarray(imout).convert('RGB').save(
-                #os.path.join(TMP_DIR, 'im/im%d.jpg'%count))
+                imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.001)
+                Image.fromarray(imout).convert('RGB').save(
+                os.path.join(TMP_DIR, 'im/im%d.jpg'%count))
                 kernel *= 255.0/kernel.max()
                 Image.fromarray(kernel).convert('RGB').save(
                 os.path.join(TMP_DIR, 'kernel/kernel%d.bmp'%count))
                 #os.path.join(TMP_DIR, 'kernel/kernel_%f_%f_%d.bmp'%(
                 #                    xfinal, yfinal, depth)))
                 
-                out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/cam/kernel/kernel%d.bmp ../tmp/cam/im/im%d.bmp 0 0.1 1'%(count,count))
-                print out
+                #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/cam/kernel/kernel%d.bmp ../tmp/cam/im/im%d.bmp 0 0.1 1'%(count,count))
+                #print out
                 
                 count += 1
 
