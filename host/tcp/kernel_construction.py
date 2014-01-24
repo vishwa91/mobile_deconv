@@ -60,16 +60,13 @@ def _estimate_coefficients(accel_vector, nestim=5):
         # ai - ai+1 + bi(ti-nestim*t*i) - bi+1(-nestim*t*i+1) +
         # ci(tj-nestim*t*j)^2 - ci+1(-nestim*t*i+1)^2 = 0
         Epos[i, i] += 1; Epos[i, i+1] += -1;
-        Epos[i, nvar+i] += T*i - nestim*T*i;
-        Epos[i, nvar+i+1] += nestim*T*(i+1);
-        Epos[i, 2*nvar+i] += (T*i - nestim*T*i)**2;
-        Epos[i, 2*nvar+i+1] -= (nestim*T*(i+1))**2
+        Epos[i, nvar+i] += (nestim - 1)*T
+        Epos[i, 2*nvar+i] += ((nestim-1)*T)**2
 
         # Velocity continuity equation:
         # bi - bi+1 + ci(ti-nestim*t*i) - ci+1(-nestim*t*i+1) = 0
         Evel[i, i+nvar] += 1; Evel[i, i+nvar+1] -= 1;
-        Evel[i, i+2*nvar] += T*i - nestim*T*i;
-        Evel[i, i+2*nvar+1] += nestim*T*(i+1);
+        Evel[i, i+2*nvar] += (nestim-1)*T
     # Initial position and velocity are zero.
     Epos[-1, 0] = 1
     Evel[-1, nvar] = 1
@@ -93,7 +90,7 @@ def _estimate_position(accel, nestim):
     a_coeffs = X[:nvars]
     b_coeffs = X[nvars:2*nvars]
     c_coeffs = X[2*nvars:3*nvars]
-    inter = 1
+    inter = 100
     t_vec = arange(0, nestim*T, T/inter)
     pos_vec = zeros(nvars*size(t_vec))
     for i in range(nvars):
@@ -124,9 +121,8 @@ def estimate_position(accel, nestim):
 if __name__ == '__main__':
     data = loadtxt(accel_data_file)
     temp = array([0.1, 0.4, -0.1, 0.5, 0.1])
-    #temp = array([0.1, 0.4, -0.1])
-    x, y, z, xr, yr, zr = estimate_position(data, 1)
-    subplot(3,1,1); plot(x); plot(500*xr)
-    subplot(3,1,2); plot(y); plot(500*yr)
-    subplot(3,1,3); plot(z); plot(500*zr)
+    x, y, z, xr, yr, zr = estimate_position(data.copy(), 2)
+    subplot(3,1,1); plot(x); plot(xr)
+    subplot(3,1,2); plot(y); plot(yr)
+    subplot(3,1,3); plot(z); plot(zr)
     show()
