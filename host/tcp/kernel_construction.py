@@ -27,10 +27,14 @@ def _deblur(kernel, im, nsr, mode):
                        [-1,-1]])
         diffy = array([[-1, 1],
                        [-1, 1]])
+        diffxy = array([[0,-1, 0],
+                       [-1,4,-1],
+                       [0,-1, 0]])
         #x *= 2; y *= 2
         DX = fft.fft2(diffx, s=(x,y))
         DY = fft.fft2(diffy, s=(x,y))
-        REG = abs(DX)**2 + abs(DY)**2
+        DXY = fft.fft2(diffxy, s=(x,y))
+        REG = abs(DX)**2 + abs(DY)**2 + abs(DXY)**2
         #x2, y2 = kernel.shape
         #x = x1+x2; y = y1+y2
         F = fft.fft2(kernel, s=(x,y))
@@ -201,7 +205,7 @@ if __name__ == '__main__':
         kernel = kernel.astype(float)/kernel.sum()
         #Image.fromarray(flipud(kernel)*255.0/kernel.sum()).convert('RGB').save(
         #    '../tmp/kernel/kernel_%d.bmp'%depth)
-        imout = _deblur(flipud(kernel), im, 0.001, mode='tik')
+        imout = _deblur(flipud(kernel), im, 0.001, mode='reg')
         #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/kernel/kernel_%d.bmp ../tmp/kernel/im_%d.bmp 0 0.1 1'%(depth, depth))
         #print out
         # (fftconvolve(imout, flipud(kernel), mode='same')-im
