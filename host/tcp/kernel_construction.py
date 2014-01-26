@@ -1,18 +1,64 @@
 #!/usr/bin/env python
 
 import os, sys
+import commands
 
+from matplotlib.pyplot import *
 from scipy import *
 from scipy.signal import *
 from scipy.linalg import *
+from scipy.interpolate import spline
+from scipy.ndimage import *
 from numpy import fft
-from matplotlib.pyplot import *
 
 import Image
+from canny import Canny
 
 accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
 G = 9.8
+
+def _deblur(kernel, im, nsr, mode):
+    ''' Deblur a single channel image'''
+    x, y= im.shape
+    if mode in ['wien', 'reg']:
+        kernel /= (1.0*kernel.sum())
+        diffx = array([[1,  1],
+                       [-1,-1]])
+        diffy = array([[-1, 1],
+                       [-1, 1]])
+        #x *= 2; y *= 2
+        DX = fft.fft2(diffx, s=(x,y))
+        DY = fft.fft2(diffy, s=(x,y))
+        REG = abs(DX)**2 + abs(DY)**2
+        #x2, y2 = kernel.shape
+        #x = x1+x2; y = y1+y2
+        F = fft.fft2(kernel, s=(x,y))
+        IM = fft.fft2(im, s=(x,y))
+        if mode == 'reg':
+            nsr *= REG
+        IMOUT = conj(F)*IM/(abs(F)**2 + nsr)
+        imout = real(fft.ifft2(IMOUT))
+    elif mode == 'rl':
+        flipped_kernel = flipud(fliplr(kernel))
+        imout = ones_like(im)
+        for i in range(50):
+            temp = im/(nsr+fftconvolve(imout, kernel, mode='same'))
+            imout = imout*fftconvolve(temp, flipped_kernel, mode='same')
+    elif mode =='tik':
+        im_nms = Canny(im, 0.2, 50, 20).nms_im[1:-1, 1:-1]
+        xt,yt = where(im_nms > 20)
+        im_nms[:,:] = 0
+        im_nms[xt,yt] = 20
+        IM = fft.fft2(im, s=(x,y))
+        REG = abs(fft.fft2(im_nms, s=(x,y))/IM)**2
+        F = fft.fft2(kernel, s=(x,y))
+        IMOUT = conj(F)*IM/(abs(F)**2 + nsr*REG)
+        imout = real(fft.ifft2(IMOUT))
+    else:
+        raise('mode needs to be wien, reg, tik or rl. Type help(deblur) for help')
+    #return (imout*255.0/imout.max()).astype(float)
+    return imout.astype(float)
 
 def estimate_g(data):
     '''Estimate gravity vector using projection onto unit sphere
@@ -90,8 +136,7 @@ def _estimate_position(accel, nestim):
     a_coeffs = X[:nvars]
     b_coeffs = X[nvars:2*nvars]
     c_coeffs = X[2*nvars:3*nvars]
-    inter = 100
-    t_vec = arange(0, nestim*T, T/inter)
+    t_vec = arange(0, nestim*T, T)
     pos_vec = zeros(nvars*size(t_vec))
     for i in range(nvars):
         temp_vec = a_coeffs[i] + b_coeffs[i]*t_vec + c_coeffs[i]*t_vec*t_vec
@@ -118,11 +163,47 @@ def estimate_position(accel, nestim):
     raw_zpos = cumsum(cumsum(zaccel))*T*T
     return xpos, ypos, zpos, raw_xpos, raw_ypos, raw_zpos
 
+def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 10):
+    '''Construct the kernel from the position data'''
+    ntime = len(xpos)
+    xpos = d*spline(range(ntime), xpos,
+        linspace(0, ntime, ntime*interpolate_scale))
+    ypos = d*spline(range(ntime), ypos,
+        linspace(0, ntime, ntime*interpolate_scale))
+    ntime *= interpolate_scale
+    xpos -= mean(xpos); ypos -= mean(ypos)
+    xmax = max(abs(xpos)); ymax = max(abs(ypos))
+    kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
+    for i in range(ntime):
+        kernel[int(xpos[i]), int(ypos[i])] += 1
+    return kernel
+
 if __name__ == '__main__':
+    try:
+        os.mkdir('../tmp/kernel')
+    except OSError:
+        pass
     data = loadtxt(accel_data_file)
     temp = array([0.1, 0.4, -0.1, 0.5, 0.1])
-    x, y, z, xr, yr, zr = estimate_position(data.copy(), 2)
-    subplot(3,1,1); plot(x); plot(xr)
-    subplot(3,1,2); plot(y); plot(yr)
-    subplot(3,1,3); plot(z); plot(zr)
-    show()
+    im = imread('../tmp/cam/imtest.bmp', flatten=True)
+    x, y, z, xr, yr, zr = estimate_position(data.copy(), 5)
+    subplot(3,1,1); plot(xr); plot(x)
+    subplot(3,1,2); plot(yr); plot(y)
+    subplot(3,1,3); plot(zr); plot(z)
+    start = 41
+    end = 63
+    x_imp = x[start:end]; y_imp = y[start:end]
+    #show()
+    drange = arange(100**2, 6000**2, 300**2)
+    for depth in sqrt(drange).astype(int):
+        print 'Deconvolving for %d depth'%depth
+        kernel = construct_kernel(x_imp, y_imp, depth, 10)
+        kernel = kernel.astype(float)/kernel.sum()
+        #Image.fromarray(flipud(kernel)*255.0/kernel.sum()).convert('RGB').save(
+        #    '../tmp/kernel/kernel_%d.bmp'%depth)
+        imout = _deblur(flipud(kernel), im, 0.001, mode='tik')
+        #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/kernel/kernel_%d.bmp ../tmp/kernel/im_%d.bmp 0 0.1 1'%(depth, depth))
+        #print out
+        # (fftconvolve(imout, flipud(kernel), mode='same')-im
+        Image.fromarray(imout).convert(
+            'RGB').save('../tmp/kernel/im_%d.bmp'%depth)

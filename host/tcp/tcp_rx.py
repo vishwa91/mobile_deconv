@@ -391,8 +391,8 @@ def tcp_listen():
 
 def my_main():
     # Start listening to TCP socket
-    #dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
-    dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
+    dstring = tcp_listen();save_data(dstring);dhandle = DataHandle(dstring)
+    #dhandle = DataHandle(None, os.path.join(OUTPUT_DIR, ACCEL_FILE),os.path.join(OUTPUT_DIR, IMAGE_NAME))
     dhandle.calculate_position(linear_drift = False)
     #dhandle.plot_position()
     print len(dhandle.xaccel)
