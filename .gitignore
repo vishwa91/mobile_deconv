@@ -4,11 +4,6 @@
 *.csproj.user
 *.sdf
 *.cache
-*.jpg
-*.dat
-*.bmp
-host/output
-host/tmp
 wp8_app/camera_example/C#/sdkBasicCameraCS/Bin/
 wp8_app/camera_example/C#/sdkBasicCameraCS/obj/
 wp8_app/sensors_example/C#/sdkRawSensorDataCS/Bin/
@@ -20,3 +15,10 @@ wp8_app/bluetooth_example/C#/SimplePhoneSocketListener/WinsockListener/Debug/*
 wp8_app/bluetooth_example/c#/SimplePhoneSocketClient/ARM/*
 wp8_app/bluetooth_example/c#/SimplePhoneSocketClient/SimplePhoneSocketClient/Bin/ARM/Debug/*
 wp8_app/bluetooth_example/c#/SimplePhoneSocketClient/SimplePhoneSocketClient/obj/*
+# Temporary files
+*.pyc
+*.jpg
+*.dat
+*.bmp
+host/output
+host/tmp
