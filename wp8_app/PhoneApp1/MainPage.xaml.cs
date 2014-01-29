@@ -13,7 +13,7 @@ using Microsoft.Devices.Sensors; // From sensors app
 using System.Windows.Threading;  // From sensors app
 // Directives. From camera app
 using Microsoft.Devices;        // From camera app
-
+using Nokia.Graphics.Imaging;
 using Microsoft.Xna.Framework;
 using System.Windows.Media.Imaging;
 using Windows.Storage.Streams;

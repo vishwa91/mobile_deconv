@@ -12,8 +12,8 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy import *
 from scipy.ndimage import *
 from scipy.linalg import *
-from numpy import fft
 from scipy.signal import *
+from numpy import fft
 from scipy.interpolate import spline
 
 import Image
@@ -419,7 +419,7 @@ def my_main():
                 xfinal,yfinal, depth)
                 kernel = dhandle.compute_kernel((xfinal, yfinal),
                             depth, 'quad', tstart, tstart+21)
-                imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.001)
+                imout = deblur(kernel, array(dhandle.im)[:,:,0], 0.001, mode='reg')
                 Image.fromarray(imout).convert('RGB').save(
                 os.path.join(TMP_DIR, 'im/im%d.jpg'%count))
                 kernel *= 255.0/kernel.max()
