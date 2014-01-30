@@ -18,7 +18,7 @@ accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
 G = 9.8
 
-def _deblur(kernel, im, nsr, mode):
+def _deblur(kernel, im, nsr, niters=4):
     ''' Deblur a single channel image'''
     x1, y1= im.shape
     x2, y2 = kernel.shape
@@ -35,44 +35,18 @@ def _deblur(kernel, im, nsr, mode):
     imtemp[:x2, y2:-y2] = im[-x2:, :] # left
     imtemp[-x2:, y2:-y2] = im[:x2, :] # right
     im = imtemp
-    if mode in ['wien', 'reg']:
-        kernel /= (1.0*kernel.sum())
-        diffx = array([[1,  1],
-                       [-1,-1]])
-        diffy = array([[-1, 1],
-                       [-1, 1]])
-        diffxy = array([[0,-1, 0],
-                       [-1,4,-1],
-                       [0,-1, 0]])
-        #x *= 2; y *= 2
-        DX = fft.fft2(diffx, s=(x,y))
-        DY = fft.fft2(diffy, s=(x,y))
-        DXY = fft.fft2(diffxy, s=(x,y))
-        REG = abs(DX)**2 + abs(DY)**2 + abs(DXY)**2
-        #x2, y2 = kernel.shape
-        #x = x1+x2; y = y1+y2
-        F = fft.fft2(kernel, s=(x,y))
-        IM = fft.fft2(im, s=(x,y))
-        if mode == 'reg':
-            IMOUT = conj(F)*IM/(abs(F)**2 + nsr*REG)
-        else:
-            IMOUT = conj(F)*IM/(abs(F)**2 + nsr)
-        imout = real(fft.ifft2(IMOUT))
-        # Subtract the output convolved with kernel and observed image.
-        imdiff = im - fftconvolve(imout, kernel, mode='same')
-        IMDIFF = fft.fft2(imdiff, s=(x,y))
-        REG = abs(IMDIFF/IM)**2
-        IMOUT = conj(F)*IM/(abs(F)**2 + nsr*REG)
-        imout = real(fft.ifft2(IMOUT))
-    elif mode == 'rl':
-        flipped_kernel = flipud(fliplr(kernel))
-        imout = ones_like(im)
-        for i in range(50):
-            temp = im/(nsr+fftconvolve(imout, kernel, mode='same'))
-            imout = imout*fftconvolve(temp, flipped_kernel, mode='same')
-    else:
-        raise('mode needs to be wien, reg, or rl. Type help(deblur) for help')
-    #return (imout*255.0/imout.max()).astype(float)
+
+    # Create the ffts
+    IM = fft.fft2(im, s=(x,y))
+    H  = fft.fft2(kernel, s=(x,y))
+    # First time transformation is just wiener.
+    IMOUT = conj(H)*IM/(abs(H)**2+nsr)
+
+    # Now we do reguralization.
+    for i in range(niters):
+        IMDIFF = (IM - H*IMOUT)/IM
+        IMOUT = conj(H)*IM/(abs(H)**2+nsr*IMDIFF)
+    imout = fft.ifft2(IMOUT)
     return imout.astype(float)[:x1, :y1]
 
 def estimate_g(data, start=0, end=-1):
@@ -214,6 +188,18 @@ def estimate_simple_pos(accel, start, end):
 
     return raw_xpos, raw_ypos, raw_zpos, g_vector
 
+def compute_var(im, window=5):
+    ''' Compute the variance map of the image. window should be odd'''
+    if window%2 != 1:
+        raise("window value should be odd")
+    imvar = zeros_like(im)
+    xdim, ydim = imvar.shape
+    mshift = window//2
+    for x in range(mshift, xdim-mshift):
+        for y in range(mshift, ydim-mshift):
+            imvar[x,y] = var(im[x-mshift:x+mshift, y-mshift:y+mshift])
+    return imvar*255.0/imvar.max()
+
 if __name__ == '__main__':
     try:
         os.mkdir('../tmp/kernel')
@@ -232,15 +218,27 @@ if __name__ == '__main__':
     subplot(3,1,3); plot(z); plot(data[start:end,2]-g[start:end, 2])
     show()
     drange = arange(100**2, 1000**2, 200**2)
-    for depth in range(100, 7000, 100):
+    imdepth = ones_like(im)
+    imdepth[:,:] = float('inf')
+    var_old = zeros_like(im)
+    var_old[:,:] = float('inf')
+    for depth in range(100, 800, 10):
         print 'Deconvolving for %d depth'%depth
         kernel = construct_kernel(x, y, depth, 10)
         kernel = kernel.astype(float)/kernel.sum()
         Image.fromarray(kernel*255.0/kernel.max()).convert('RGB').save(
             '../tmp/kernel/kernel_%d.bmp'%depth)
-        imout = _deblur(kernel, im, 0.001, mode='reg')
+        imout = _deblur(kernel, im, 0.001, niters=3)
         #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/kernel/kernel_%d.bmp ../tmp/kernel/im_%d.bmp 0 0.1 1'%(depth, depth))
         #print out
         # fftconvolve(imout, kernel, mode='same')-im
-        Image.fromarray(imout).convert('RGB').save(
+        # Construct the variance map.
+        imdiff = im - fftconvolve(imout, kernel, mode='same')
+        var_image = compute_var(imdiff, 15)
+        xd, yd = where(var_image < var_old)
+        var_old[xd, yd] = var_image[xd, yd]
+        imdepth[xd, yd] = depth
+        Image.fromarray(var_image).convert('RGB').save(
             '../tmp/kernel/im_%d.bmp'%depth)
+    Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
+        'depth_map.bmp')
