@@ -221,24 +221,24 @@ if __name__ == '__main__':
     imdepth = ones_like(im)
     imdepth[:,:] = float('inf')
     var_old = zeros_like(im)
-    var_old[:,:] = float('inf')
-    for depth in range(100, 800, 10):
+    #var_old[:,:] = float('inf')
+    for depth in range(100, 2000, 10):
         print 'Deconvolving for %d depth'%depth
         kernel = construct_kernel(x, y, depth, 10)
         kernel = kernel.astype(float)/kernel.sum()
         Image.fromarray(kernel*255.0/kernel.max()).convert('RGB').save(
             '../tmp/kernel/kernel_%d.bmp'%depth)
-        imout = _deblur(kernel, im, 0.001, niters=3)
+        imout = _deblur(kernel, im, 0.001, niters=0)
         #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/kernel/kernel_%d.bmp ../tmp/kernel/im_%d.bmp 0 0.1 1'%(depth, depth))
         #print out
         # fftconvolve(imout, kernel, mode='same')-im
         # Construct the variance map.
         imdiff = im - fftconvolve(imout, kernel, mode='same')
-        var_image = compute_var(imdiff, 15)
-        xd, yd = where(var_image < var_old)
+        var_image = compute_var(imout, 15)
+        xd, yd = where(var_image >= var_old)
         var_old[xd, yd] = var_image[xd, yd]
         imdepth[xd, yd] = depth
-        Image.fromarray(var_image).convert('RGB').save(
+        Image.fromarray(imout).convert('RGB').save(
             '../tmp/kernel/im_%d.bmp'%depth)
     Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
-        'depth_map.bmp')
+        '../tmp/depth_map.bmp')
