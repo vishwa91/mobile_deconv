@@ -34,8 +34,8 @@ def _deblur(kernel, im, nsr, niters=4):
     imtemp[x2:-x2, -y2:] = im[:, :y2] # bottom
     imtemp[:x2, y2:-y2] = im[-x2:, :] # left
     imtemp[-x2:, y2:-y2] = im[:x2, :] # right
-    im = imtemp
-
+    #im = imtemp
+    x, y = im.shape
     # Create the ffts
     IM = fft.fft2(im, s=(x,y))
     H  = fft.fft2(kernel, s=(x,y))
@@ -195,10 +195,35 @@ def compute_var(im, window=5):
     imvar = zeros_like(im)
     xdim, ydim = imvar.shape
     mshift = window//2
-    for x in range(mshift, xdim-mshift):
-        for y in range(mshift, ydim-mshift):
-            imvar[x,y] = var(im[x-mshift:x+mshift, y-mshift:y+mshift])
-    return imvar*255.0/imvar.max()
+    vertical_indices = range(0, xdim, mshift)
+    horizontal_indices = range(0, ydim, mshift)
+    for x in vertical_indices:
+        for y in horizontal_indices:
+            kvar = var(im[x:x+window, y:y+window])
+            kmean = mean(im[x:x+window, y:y+window])
+            imvar[x:x+window,y:y+window]=(im[x:x+window, y:y+window]-kmean)/kvar
+    return imvar*255.0/abs(imvar).max()
+
+def compute_contrast(im, window=5):
+    '''
+        Compute the contrast of the given image. To do so, first we filter the 
+        image using a soble operator and then average over the image.
+    '''
+    kx = array([[ 1, 1, 1],
+                [ 0, 0, 0],
+                [-1,-1,-1]])
+    ky = array([[-1, 0, 1],
+                [-1, 0, 1],
+                [-1, 0, 1]])
+    klaplace = array([[ 0,-1, 0],
+                      [-1, 4,-1],
+                      [ 0,-1, 0]])
+    dx = fftconvolve(kx, im, mode='same')
+    dy = fftconvolve(ky, im, mode='same')
+    #imd = abs(dx) + abs(dy)
+    imd = abs(fftconvolve(im, klaplace, mode='same'))
+    average_kernel = ones((window, window), dtype=float)/float(window)
+    return fftconvolve(imd, average_kernel, mode='same')
 
 if __name__ == '__main__':
     try:
@@ -221,21 +246,21 @@ if __name__ == '__main__':
     imdepth = ones_like(im)
     imdepth[:,:] = float('inf')
     var_old = zeros_like(im)
-    #var_old[:,:] = float('inf')
+    var_old[:,:] = float('inf')
     for depth in range(100, 2000, 10):
         print 'Deconvolving for %d depth'%depth
         kernel = construct_kernel(x, y, depth, 10)
         kernel = kernel.astype(float)/kernel.sum()
         Image.fromarray(kernel*255.0/kernel.max()).convert('RGB').save(
             '../tmp/kernel/kernel_%d.bmp'%depth)
-        imout = _deblur(kernel, im, 0.001, niters=0)
+        imout = _deblur(kernel, im, 0.001, niters=1)
         #out = commands.getoutput('../output/cam/robust_deconv.exe ../tmp/cam/imtest.bmp ../tmp/kernel/kernel_%d.bmp ../tmp/kernel/im_%d.bmp 0 0.1 1'%(depth, depth))
         #print out
         # fftconvolve(imout, kernel, mode='same')-im
         # Construct the variance map.
         imdiff = im - fftconvolve(imout, kernel, mode='same')
-        var_image = compute_var(imout, 15)
-        xd, yd = where(var_image >= var_old)
+        var_image = compute_var(imdiff, 51)
+        xd, yd = where(var_image <= var_old)
         var_old[xd, yd] = var_image[xd, yd]
         imdepth[xd, yd] = depth
         Image.fromarray(imout).convert('RGB').save(
