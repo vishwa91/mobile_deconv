@@ -13,7 +13,7 @@ using Microsoft.Devices.Sensors; // From sensors app
 using System.Windows.Threading;  // From sensors app
 // Directives. From camera app
 using Microsoft.Devices;        // From camera app
-using Nokia.Graphics.Imaging;
+//using Nokia.Graphics.Imaging;
 using Microsoft.Xna.Framework;
 using System.Windows.Media.Imaging;
 using Windows.Storage.Streams;
@@ -50,6 +50,8 @@ namespace PhoneApp1
 
         // Bool variable to enable logging.
         bool accel_log = false;
+        // Bool variable to enable preview image capture;
+        bool get_preview_image = false;
         // Constants
         const int port = 1991; 
         const string hostname = "10.21.2.208";
@@ -152,7 +154,7 @@ namespace PhoneApp1
                 accelX.Clear();
                 accelY.Clear();
                 accelZ.Clear();
-                app_camera.capture();
+                app_camera.capture(get_preview_image);
             }
         }
         private void SocketConn_Click(object sender, RoutedEventArgs e)
@@ -248,9 +250,17 @@ namespace PhoneApp1
                     app_comsocket.Send("STFC\n");
                     app_comsocket.Send(focus_slider.Value.ToString()+"\n");
                     app_comsocket.Send("EDFC\n");
+                    // Send preview image data
+                    if (get_preview_image == true)
+                    {
+                        app_comsocket.Send("STIP\n");
+                        byte[] byte_preview = new byte[app_camera.preview_image.Length * sizeof(int)];
+                        System.Buffer.BlockCopy(app_camera.preview_image, 0, byte_preview, 0, byte_preview.Length);
+                        app_comsocket.Send(byte_preview);
+                        app_comsocket.Send("\nEDIP\n");
+                    }
                     // Send image data
                     app_comsocket.Send("STIM\n"); 
-                    string imstring = Encoding.Unicode.GetString(imarray, 0, imarray.Length);
                     app_comsocket.Send(imarray);
                     app_comsocket.Send("\n");
                     Log("Image size is " + app_camera.imheight.ToString()+";"+app_camera.imwidth.ToString(), UpdateType.DebugSection);
@@ -289,6 +299,19 @@ namespace PhoneApp1
                     app_comsocket.Send("\nEDLG\n");
                 accel_log = false;
                 sensor_button.Content = "Start sensor log";
+            }
+        }
+        private void get_preview(object sender, RoutedEventArgs e)
+        {
+            if (get_preview_image == false)
+            {
+                get_preview_image = true;
+                get_preview_button.Content = "Disable preview";
+            }
+            else
+            {
+                get_preview_image = false;
+                get_preview_button.Content = "Get preview";
             }
         }
     }

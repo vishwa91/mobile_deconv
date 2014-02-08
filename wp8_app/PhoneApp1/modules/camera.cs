@@ -21,6 +21,7 @@ namespace PhoneApp1.modules
         public bool cam_open_busy, cam_busy, transmit;
         public bool source_set = false, focus_busy=false;
         public int imheight, imwidth;
+        public int[] preview_image;
         public UInt32 focus_min, focus_max;
         public async void initialise()
         {
@@ -32,11 +33,13 @@ namespace PhoneApp1.modules
             // Make the resolution details public
             imheight = (int)available_res[count-1].Height;
             imwidth = (int)available_res[count-1].Width;
+            // Allocate memory for the preview image variable
+            preview_image = new int[imheight * imwidth];
             // Open a new capture device asynchronously.    
             cam_open_busy = true;
             _camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, available_res[count-1]);
             cam_open_busy = false;
-            // Set the exposure time to .2s
+            // Set the exposure time to 200ms
             _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 200000);
             // Create a new sequence
             _camsequence = _camera.CreateCaptureSequence(1);
@@ -46,8 +49,12 @@ namespace PhoneApp1.modules
             // Wait for the camera to initialize.
             await _camera.PrepareCaptureSequenceAsync(_camsequence);
         }
-        public async void capture()
+        public async void capture(bool get_preview)
         {
+            if (get_preview == true)
+            {
+                _camera.GetPreviewBufferArgb(preview_image);
+            }
             // Take a picture. Flag busy meanwhile.
             cam_busy = true;
             await _camsequence.StartCaptureAsync();

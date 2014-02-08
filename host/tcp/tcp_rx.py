@@ -43,12 +43,15 @@ INTERPOLATE_SCALE = 40
 # Output files and directory
 OUTPUT_DIR = '../output/cam'
 IMAGE_NAME = 'saved_im.bmp'
+PREVIEW_IMAGE_NAME = 'preview_im.bmp'
 ACCEL_FILE = 'saved_ac.dat'
 TOKEN_FILE = 'tokens.dat'
 TMP_DIR = '../tmp/cam'
 
 # Delimiting tokens
 STRT = '\x00S\x00T\x00R\x00T\x00\n'
+STIP = '\x00S\x00T\x00I\x00P\x00\n'
+EDIP = '\x00E\x00D\x00I\x00P\x00\n'
 STIM = '\x00S\x00T\x00I\x00M\x00\n'
 EDIM = '\x00E\x00D\x00I\x00M\x00\n'
 STAC = '\x00S\x00T\x00A\x00C\x00\n'
@@ -132,6 +135,10 @@ def save_data(dstring):
     except OSError:
         pass
 
+    # Get index of image preview delimiters
+    stip_index = dstring.index(STIP)
+    edip_index = dstring.index(EDIP)
+
     # Get the index of the image delimitors
     stim_index = dstring.index(STIM)
     edim_index = dstring.index(EDIM)
@@ -148,6 +155,12 @@ def save_data(dstring):
     for ac in acvals:
         afile.write(ac.replace(';', ' ')+'\n')
 
+    # Save preview image
+    preview_string = dstring[stip_index+len(STIP)+1:edip_index-1]
+    preview_im_flat = array([ord(i) for i in preview_string])
+    preview_im = preview_im_flat.reshape((480,640,4)).astype(uint8)
+    Image.fromarray(preview_im[:,:,:3]).convert('RGB').save(
+        os.path.join(OUTPUT_DIR, PREVIEW_IMAGE_NAME))
     # Save the image and the data
     imstring = dstring[stim_index+len(STIM)+1:edim_index-1]
     im = Image.open(StringIO(imstring[:-2]))
@@ -160,7 +173,7 @@ class DataHandle(object):
     the gyroscope will be incorporated, the handle will have rotation
     data also"""
 
-    def __init__(self, dstring, acname=None, imname=None):
+    def __init__(self, dstring, acname=None, imname=None, impreview=None):
         """ Extract the data and store the image and other values"""
         global STIM, EDIM, STAC, EDAC
 
@@ -168,6 +181,10 @@ class DataHandle(object):
             # Get the index of the image delimiters
             stim_index = dstring.index(STIM)
             edim_index = dstring.index(EDIM)
+
+            # Get index of image preview delimiters
+            stip_index = dstring.index(STIP)
+            edip_index = dstring.index(EDIP)
 
             # Get the index of the acceleration data delimiters
             stac_index = dstring.index(STAC)
@@ -193,7 +210,13 @@ class DataHandle(object):
                                                      acdat[:, 2]]
 
         self.ndata = len(self.xaccel)
-
+        if impreview == None:
+            # Get the preview image.
+            preview_string = dstring[stip_index+len(STIP)+1:edip_index-1]
+            preview_im_flat = array([ord(i) for i in preview_string])
+            self.preview_im = preview_im_flat.reshape((480,640,4)).astype(uint8)
+        else:
+            self.preview_im = Image.open(impreview)
         if imname == None:
             # Get the image.
             imstring = dstring[stim_index+len(STIM)+1:edim_index-1]
@@ -384,6 +407,10 @@ def tcp_listen():
             print 'Acceleration reception done'
         if EDIM in data:
             print 'Image reception done'
+        if STIP in data:
+            print 'Started receiving preview image'
+        if EDIP in data:
+            print 'Preview image reception complete'
         if ENDT in dstring:
             print 'Reception complete. Closing connection'
             conn.close()
