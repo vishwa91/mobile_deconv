@@ -18,17 +18,17 @@ T = 10e-3
 G = 9.8
 
 def _try_deblur(kernel, im, nsr, mfilter):
-	''' Another try at deblurring'''
-	kernel = kernel.astype(float)/kernel.sum()
-	x, y = im.shape
-	IM = fft.fft2(im, s=(x,y))
-	H  = fft.fft2(kernel, s=(x,y))
-	F  = fft.fft2(mfilter, s=(x,y))/IM
-	
-	IMOUT = conj(H)*IM/(abs(H)**2 + nsr*(abs(F)**2))
-	imout = real(fft.ifft2(IMOUT))
-	return imout.astype(float)
-	
+    ''' Another try at deblurring'''
+    kernel = kernel.astype(float)/kernel.sum()
+    x, y = im.shape
+    IM = fft.fft2(im, s=(x,y))
+    H  = fft.fft2(kernel, s=(x,y))
+    F  = fft.fft2(mfilter, s=(x,y))/IM
+    
+    IMOUT = conj(H)*IM/(abs(H)**2 + nsr*(abs(F)**2))
+    imout = real(fft.ifft2(IMOUT))
+    return imout.astype(float)
+    
 def _deblur(kernel, im, nsr, niters=4):
     ''' Deblur a single channel image'''
     x1, y1= im.shape
@@ -109,57 +109,72 @@ def estimate_simple_pos(accel, start, end):
     return raw_xpos, raw_ypos, raw_zpos, g_vector
 
 if __name__ == '__main__':
-	try:
-		os.mkdir('../tmp/steer')
-	except OSError:
-		pass
-	impure = imread('../output/cam/preview_im.bmp', flatten=True)
-	# Load the acceleration data.
-	data = loadtxt(accel_data_file)
-	start = 41
- 	end = 63
-	x, y, z, g = estimate_simple_pos(data, start, end)
-	kernel = construct_kernel(x, y, 4000, 10)
-	kernel = kernel.astype('float')/(1.0*kernel.sum())
-	# Blur the image
-	imblur = convolve2d(impure, kernel)
-	imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-	#Create the basis kernels for a steerable filter.
-	sobelx = array([[ 1, 2, 1],
-			     [ 0, 0, 0],
-			     [-1,-2,-1]])
-	sobely = array([[-1, 0, 1],
-			     [-2, 0, 2],
-			     [-1, 0, 1]])
-	filter_lap = array([[0.00, -0.25, 0.00],
-			            [-0.25, 1.0, -0.25],
+    try:
+        os.mkdir('../tmp/steer')
+    except OSError:
+        pass
+    impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    # Load the acceleration data.
+    data = loadtxt(accel_data_file)
+    start = 41
+    end = 63
+    x, y, z, g = estimate_simple_pos(data, start, end)
+    kernel = construct_kernel(x, y, 4000, 10)
+    kernel = kernel.astype('float')/(1.0*kernel.sum())
+    # Blur the image
+    imblur = convolve2d(impure, kernel)
+    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    #Create the basis kernels for a steerable filter.
+    sobelx = array([[ 1, 2, 1],
+                 [ 0, 0, 0],
+                 [-1,-2,-1]])
+    sobely = array([[-1, 0, 1],
+                 [-2, 0, 2],
+                 [-1, 0, 1]])
+    filter_lap = array([[0.00, -0.25, 0.00],
+                        [-0.25, 1.0, -0.25],
                         [0.00, -0.25, 0.00]])
-	count = 0
-	# Save the blur image also
-	Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
-	dx = x[1:] - x[:-1]
-	dy = y[1:] - y[:-1]
-	temp = convolve2d(imblur, sobelx)
-	imfinal = zeros_like(imblur)
-	imfinal[:,:] = float("inf")
-	for i in range(len(dx)):
-		cosx = dy[i]/hypot(dx[i],dy[i])
-		sinx = dx[i]/hypot(dx[i],dy[i])
-		diff_kernel = sobelx*cosx + sobely*sinx
-		imdiff = convolve2d(imblur, diff_kernel)[1:-1, 1:-1]
-		xmin, ymin = where(imdiff <= imfinal)
-		imfinal[xmin, ymin] = imdiff[xmin, ymin]
-		#Image.fromarray(imdiff).convert('RGB').save(
-		#	'../tmp/steer/im_%d.bmp'%count)
-		count += 1
-	#imfinal  = (imfinal - imfinal.min())*255.0/imfinal.max()
-	#imfinal *= 255.0/imfinal.max()
-	Image.fromarray(imfinal).convert('RGB').save('../tmp/steer/imfinal.bmp')
-	for depth in range(100, 7000, 100):
-		print 'Deconvolving for %d depth'%depth
-		kernel = construct_kernel(x, y, depth, 1)
-		imdeblur = _try_deblur(kernel, imblur, 0.001, imfinal)
-		imreblur = fftconvolve(impure, kernel, mode='same')
-		imlap = fftconvolve(filter_lap, imreblur)
-		Image.fromarray(imreblur-imblur).convert('RGB').save(
-			'../tmp/steer/im%d.bmp'%depth)
+    count = 0
+    # Save the blur image also
+    Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
+    dx = x[1:] - x[:-1]
+    dy = y[1:] - y[:-1]
+    temp = convolve2d(imblur, sobelx)
+    imfinal = zeros_like(imblur)
+    imfinal[:,:] = float("inf")
+    for i in range(len(dx)):
+        cosx = dx[i]/hypot(dx[i],dy[i])
+        sinx = dy[i]/hypot(dx[i],dy[i])
+        diff_kernel = sobelx*cosx + sobely*sinx
+        imdiff = convolve2d(imblur, diff_kernel)[1:-1, 1:-1]
+        xmin, ymin = where(imdiff <= imfinal)
+        imfinal[xmin, ymin] = imdiff[xmin, ymin]
+        #Image.fromarray(imdiff).convert('RGB').save(
+        #   '../tmp/steer/im_%d.bmp'%count)
+        count += 1
+    #imfinal  = (imfinal - imfinal.min())*255.0/imfinal.max()
+    #imfinal *= 255.0/imfinal.max()
+    Image.fromarray(imfinal).convert('RGB').save('../tmp/steer/imfinal.bmp')
+    imdepth = zeros_like(imblur)
+    imdepth[:,:] = float('inf')
+    old_diff = zeros_like(imblur)
+    old_diff[:,:] = float('inf')
+    x1, y1 = imblur.shape
+    for depth in range(100, 7000, 100):
+        print 'Deconvolving for %d depth'%depth
+        kernel = construct_kernel(x, y, depth, 1)
+        x2, y2 = kernel.shape
+        imdeblur = _try_deblur(kernel, imblur, 0.001, imfinal)
+        startx = max(0, x2//2-1); starty = max(0, y2//2-1)
+        endx = x1 + startx; endy = y1 + starty
+        imreblur = fftconvolve(impure, kernel)[startx:endx, starty:endy]
+
+        imlap = fftconvolve(filter_lap, imreblur)
+        imdiff = (imreblur - imblur)
+        xd, yd = where(imdiff < old_diff)
+        imdepth[xd,yd] = depth
+        old_diff[xd,yd] = imdiff[xd,yd]
+        Image.fromarray(imdiff).convert('RGB').save(
+            '../tmp/steer/im%d.bmp'%depth)
+    imdepth *= 255.0/imdepth.max()
+    Image.fromarray(imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
