@@ -17,6 +17,28 @@ accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
 G = 9.8
 
+def register(impure, imblur):
+    ''' Register and shift the pure image using fourier correlation method.'''
+    IMPURE = fft.fft2(impure)
+    IMBLUR = fft.fft2(imblur)
+
+    IMSHIFT = IMPURE*conj(IMBLUR)/(abs(IMPURE)*abs(IMBLUR))
+
+    imshift = real(fft.ifft2(IMSHIFT))
+    imshift *= 255.0/imshift.max()
+    x, y = where(imshift == imshift.max())
+    xdim, ydim = imshift.shape
+    if x >= xdim//2:
+        x = x- xdim
+    if y >= ydim//2:
+        y = y - ydim
+    
+    shift_kernel = zeros((2*abs(x)+1, 2*abs(y)+1))
+    shift_kernel[abs(x)-x,abs(y)-y] = 1
+    shifted_im = fftconvolve(shift_kernel, impure, mode='same')
+
+    return shifted_im
+
 def _try_deblur(kernel, im, nsr, mfilter):
     ''' Another try at deblurring'''
     kernel = kernel.astype(float)/kernel.sum()
@@ -108,6 +130,22 @@ def estimate_simple_pos(accel, start, end):
 
     return raw_xpos, raw_ypos, raw_zpos, g_vector
 
+def compute_var(im, window=5):
+    ''' Compute the variance map of the image. window should be odd'''
+    if window%2 != 1:
+        raise("window value should be odd")
+    imvar = zeros_like(im)
+    xdim, ydim = imvar.shape
+    mshift = window//2
+    vertical_indices = range(0, xdim, mshift)
+    horizontal_indices = range(0, ydim, mshift)
+    for x in vertical_indices:
+        for y in horizontal_indices:
+            kvar = var(im[x:x+window, y:y+window])
+            kmean = mean(im[x:x+window, y:y+window])
+            imvar[x:x+window,y:y+window]=(im[x:x+window, y:y+window]-kmean)/kvar
+    return imvar*255.0/abs(imvar).max()
+
 if __name__ == '__main__':
     try:
         os.mkdir('../tmp/steer')
@@ -124,6 +162,7 @@ if __name__ == '__main__':
     # Blur the image
     imblur = convolve2d(impure, kernel)
     imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    impure = register(impure, imblur)
     #Create the basis kernels for a steerable filter.
     sobelx = array([[ 1, 2, 1],
                  [ 0, 0, 0],
@@ -137,6 +176,7 @@ if __name__ == '__main__':
     count = 0
     # Save the blur image also
     Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
+    Image.fromarray(impure).convert('RGB').save('../tmp/steer/imbure.bmp')
     dx = x[1:] - x[:-1]
     dy = y[1:] - y[:-1]
     temp = convolve2d(imblur, sobelx)
@@ -146,14 +186,14 @@ if __name__ == '__main__':
         cosx = dx[i]/hypot(dx[i],dy[i])
         sinx = dy[i]/hypot(dx[i],dy[i])
         diff_kernel = sobelx*cosx + sobely*sinx
-        imdiff = convolve2d(imblur, diff_kernel)[1:-1, 1:-1]
+        imdiff = convolve2d(impure, diff_kernel)[1:-1, 1:-1]
         xmin, ymin = where(imdiff <= imfinal)
         imfinal[xmin, ymin] = imdiff[xmin, ymin]
         #Image.fromarray(imdiff).convert('RGB').save(
         #   '../tmp/steer/im_%d.bmp'%count)
         count += 1
     #imfinal  = (imfinal - imfinal.min())*255.0/imfinal.max()
-    #imfinal *= 255.0/imfinal.max()
+    imfinal *= 255.0/imfinal.max()
     Image.fromarray(imfinal).convert('RGB').save('../tmp/steer/imfinal.bmp')
     imdepth = zeros_like(imblur)
     imdepth[:,:] = float('inf')
@@ -167,14 +207,14 @@ if __name__ == '__main__':
         imdeblur = _try_deblur(kernel, imblur, 0.001, imfinal)
         startx = max(0, x2//2-1); starty = max(0, y2//2-1)
         endx = x1 + startx; endy = y1 + starty
-        imreblur = fftconvolve(impure, kernel)[startx:endx, starty:endy]
+        imreblur = fftconvolve(impure, kernel, mode='same')#[startx:endx, starty:endy]
 
         imlap = fftconvolve(filter_lap, imreblur)
-        imdiff = (imreblur - imblur)
+        imdiff = gaussian_filter(abs(imreblur - imblur), 0.0, order=1)
         xd, yd = where(imdiff < old_diff)
         imdepth[xd,yd] = depth
         old_diff[xd,yd] = imdiff[xd,yd]
-        Image.fromarray(imdiff).convert('RGB').save(
+        Image.fromarray(imdiff*255.0/imdiff.max()).convert('RGB').save(
             '../tmp/steer/im%d.bmp'%depth)
     imdepth *= 255.0/imdepth.max()
     Image.fromarray(imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
