@@ -130,39 +130,24 @@ def estimate_simple_pos(accel, start, end):
 
     return raw_xpos, raw_ypos, raw_zpos, g_vector
 
-def compute_var(im, window=5):
-    ''' Compute the variance map of the image. window should be odd'''
-    if window%2 != 1:
-        raise("window value should be odd")
-    imvar = zeros_like(im)
-    xdim, ydim = imvar.shape
-    mshift = window//2
-    vertical_indices = range(0, xdim, mshift)
-    horizontal_indices = range(0, ydim, mshift)
-    for x in vertical_indices:
-        for y in horizontal_indices:
-            kvar = var(im[x:x+window, y:y+window])
-            kmean = mean(im[x:x+window, y:y+window])
-            imvar[x:x+window,y:y+window]=(im[x:x+window, y:y+window]-kmean)/kvar
-    return imvar*255.0/abs(imvar).max()
+def compute_diff(impure, imblur, kernel, window=5, zero_thres=10):
+    ''' Compute the difference of the two images. The difference will also be
+        averaged to reduce the effect of noise.'''
+    imreblur = fftconvolve(impure, kernel, mode='same')
+    imdiff = abs(imblur - imreblur)
+    avg_kernel = ones((window, window), dtype=float)/float(window**2)
+    x, y = imdiff.shape
+    startx = max(0, window//2-1); starty = max(0, window//2-1)
+    endx = x + startx; endy = y + starty
+    imavg = fftconvolve(imdiff, avg_kernel, mode='same')#[startx:endx, starty:endy]
+    xz, yz = where(imavg <= zero_thres)
+    #imavg[xz, yz] = 0
 
-if __name__ == '__main__':
-    try:
-        os.mkdir('../tmp/steer')
-    except OSError:
-        pass
-    impure = imread('../output/cam/preview_im.bmp', flatten=True)
-    # Load the acceleration data.
-    data = loadtxt(accel_data_file)
-    start = 41
-    end = 63
-    x, y, z, g = estimate_simple_pos(data, start, end)
-    kernel = construct_kernel(x, y, 4000, 10)
-    kernel = kernel.astype('float')/(1.0*kernel.sum())
-    # Blur the image
-    imblur = convolve2d(impure, kernel)
-    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-    impure = register(impure, imblur)
+    return imavg, xz, yz
+
+def computer_path_diff(im, x, y):
+    ''' A very experimental function. We calcluate what we call the path 
+        differential of the image, given x vector and y vector.'''
     #Create the basis kernels for a steerable filter.
     sobelx = array([[ 1, 2, 1],
                  [ 0, 0, 0],
@@ -170,17 +155,9 @@ if __name__ == '__main__':
     sobely = array([[-1, 0, 1],
                  [-2, 0, 2],
                  [-1, 0, 1]])
-    filter_lap = array([[0.00, -0.25, 0.00],
-                        [-0.25, 1.0, -0.25],
-                        [0.00, -0.25, 0.00]])
-    count = 0
-    # Save the blur image also
-    Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
-    Image.fromarray(impure).convert('RGB').save('../tmp/steer/imbure.bmp')
     dx = x[1:] - x[:-1]
     dy = y[1:] - y[:-1]
-    temp = convolve2d(imblur, sobelx)
-    imfinal = zeros_like(imblur)
+    imfinal = zeros_like(im)
     imfinal[:,:] = float("inf")
     for i in range(len(dx)):
         cosx = dx[i]/hypot(dx[i],dy[i])
@@ -189,30 +166,37 @@ if __name__ == '__main__':
         imdiff = convolve2d(impure, diff_kernel)[1:-1, 1:-1]
         xmin, ymin = where(imdiff <= imfinal)
         imfinal[xmin, ymin] = imdiff[xmin, ymin]
-        #Image.fromarray(imdiff).convert('RGB').save(
-        #   '../tmp/steer/im_%d.bmp'%count)
-        count += 1
-    #imfinal  = (imfinal - imfinal.min())*255.0/imfinal.max()
     imfinal *= 255.0/imfinal.max()
-    Image.fromarray(imfinal).convert('RGB').save('../tmp/steer/imfinal.bmp')
+    return imfinal
+
+if __name__ == '__main__':
+    try:
+        os.mkdir('../tmp/steer')
+    except OSError:
+        pass
+    impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    # Load the acceleration data.
+    data = loadtxt(accel_data_file)
+    start = 41
+    end = 63
+    x, y, z, g = estimate_simple_pos(data, start, end)
+    impure = register(impure, imblur)
+    # Save the blur image also
+    Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
+    Image.fromarray(impure).convert('RGB').save('../tmp/steer/imbure.bmp')
     imdepth = zeros_like(imblur)
     imdepth[:,:] = float('inf')
     old_diff = zeros_like(imblur)
     old_diff[:,:] = float('inf')
     x1, y1 = imblur.shape
-    for depth in range(100, 7000, 100):
+    for depth in range(10, 7000, 10):
         print 'Deconvolving for %d depth'%depth
         kernel = construct_kernel(x, y, depth, 1)
-        x2, y2 = kernel.shape
-        imdeblur = _try_deblur(kernel, imblur, 0.001, imfinal)
-        startx = max(0, x2//2-1); starty = max(0, y2//2-1)
-        endx = x1 + startx; endy = y1 + starty
-        imreblur = fftconvolve(impure, kernel, mode='same')#[startx:endx, starty:endy]
-
-        imlap = fftconvolve(filter_lap, imreblur)
-        imdiff = gaussian_filter(abs(imreblur - imblur), 0.0, order=1)
+        imdiff, xz, yz = compute_diff(impure, imblur, kernel, 15, 20)
         xd, yd = where(imdiff < old_diff)
         imdepth[xd,yd] = depth
+        #imdepth[xz, yz] = 0
         old_diff[xd,yd] = imdiff[xd,yd]
         Image.fromarray(imdiff*255.0/imdiff.max()).convert('RGB').save(
             '../tmp/steer/im%d.bmp'%depth)
