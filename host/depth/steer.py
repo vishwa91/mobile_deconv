@@ -134,16 +134,17 @@ def compute_diff(impure, imblur, kernel, window=5, zero_thres=10):
     ''' Compute the difference of the two images. The difference will also be
         averaged to reduce the effect of noise.'''
     imreblur = fftconvolve(impure, kernel, mode='same')
-    imdiff = abs(imblur - imreblur)
+    imdiff = abs(imblur - imreblur)**2
     avg_kernel = ones((window, window), dtype=float)/float(window**2)
     x, y = imdiff.shape
     startx = max(0, window//2-1); starty = max(0, window//2-1)
     endx = x + startx; endy = y + starty
-    imavg = fftconvolve(imdiff, avg_kernel, mode='same')#[startx:endx, starty:endy]
+    #imavg = fftconvolve(imdiff, avg_kernel, mode='full')[startx:endx, starty:endy]
+    imavg = gaussian_filter(imdiff, 4.0, order=0)
     xz, yz = where(imavg <= zero_thres)
     #imavg[xz, yz] = 0
 
-    return imavg, xz, yz
+    return imavg, imreblur, xz, yz
 
 def computer_path_diff(im, x, y):
     ''' A very experimental function. We calcluate what we call the path 
@@ -169,6 +170,18 @@ def computer_path_diff(im, x, y):
     imfinal *= 255.0/imfinal.max()
     return imfinal
 
+def compute_var(im, window=5):
+    ''' Compute the variance map of the image'''
+    var_map = zeros_like(im)
+    xdim, ydim = im.shape
+
+    for x in range(0, xdim, window):
+        for y in range(0, ydim, window):
+            mvar = variance(im[x:x+window, y:y+window])
+            var_map[x:x+window, y:y+window] = mvar
+
+    return var_map
+
 if __name__ == '__main__':
     try:
         os.mkdir('../tmp/steer')
@@ -189,16 +202,31 @@ if __name__ == '__main__':
     imdepth[:,:] = float('inf')
     old_diff = zeros_like(imblur)
     old_diff[:,:] = float('inf')
-    x1, y1 = imblur.shape
-    for depth in range(10, 7000, 10):
-        print 'Deconvolving for %d depth'%depth
-        kernel = construct_kernel(x, y, depth, 1)
-        imdiff, xz, yz = compute_diff(impure, imblur, kernel, 15, 20)
+    # We try a two pass method. In the first path, we find the kernel size 
+    # that would best describe the complete scenario. Then, we search in a 
+    # small space around that size.
+    best_depth = 0
+    previous_diff = float('inf')
+    for coarse_depth in range(5, 40000, 1000):
+        print 'Trying coarse depth of %d'%coarse_depth
+        kernel = construct_kernel(x, y, coarse_depth, 10)
+        imdiff, _, xz, yz = compute_diff(impure, imblur, kernel, 32, 20)
+        net_diff = imdiff.sum()
+        if net_diff < previous_diff:
+            best_depth = coarse_depth
+            previous_diff = net_diff
+    print 'Best coarse depth is %d'%best_depth
+    print 'Now trying finer depth'
+    for depth in range(best_depth/2, int(best_depth*3), best_depth/50):
+        print 'Processing for %d depth'%depth
+        kernel = construct_kernel(x, y, depth, 20)
+        imdiff, imreblur, xz, yz = compute_diff(impure, imblur, kernel, 64, 25)
+        #imdiff = compute_var(imdiff, 15)
         xd, yd = where(imdiff < old_diff)
         imdepth[xd,yd] = depth
-        #imdepth[xz, yz] = 0
+        imdepth[xz, yz] = 0
         old_diff[xd,yd] = imdiff[xd,yd]
         Image.fromarray(imdiff*255.0/imdiff.max()).convert('RGB').save(
             '../tmp/steer/im%d.bmp'%depth)
-    imdepth *= 255.0/imdepth.max()
+    imdepth *= 200.0/imdepth.max()
     Image.fromarray(imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
