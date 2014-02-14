@@ -226,7 +226,7 @@ if __name__ == '__main__':
         imdepth[xd,yd] = depth
         imdepth[xz, yz] = 0
         old_diff[xd,yd] = imdiff[xd,yd]
-        Image.fromarray(imdiff*255.0/imdiff.max()).convert('RGB').save(
+        Image.fromarray(imreblur*255.0/imreblur.max()).convert('RGB').save(
             '../tmp/steer/im%d.bmp'%depth)
     imdepth *= 200.0/imdepth.max()
     Image.fromarray(imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
