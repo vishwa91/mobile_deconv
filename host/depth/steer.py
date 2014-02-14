@@ -139,8 +139,8 @@ def compute_diff(impure, imblur, kernel, window=5, zero_thres=10):
     x, y = imdiff.shape
     startx = max(0, window//2-1); starty = max(0, window//2-1)
     endx = x + startx; endy = y + starty
-    #imavg = fftconvolve(imdiff, avg_kernel, mode='full')[startx:endx, starty:endy]
-    imavg = gaussian_filter(imdiff, 4.0, order=0)
+    imavg = fftconvolve(imdiff, avg_kernel, mode='full')[startx:endx, starty:endy]
+    #imavg = gaussian_filter(imdiff, 4.0, order=0)
     xz, yz = where(imavg <= zero_thres)
     #imavg[xz, yz] = 0
 
@@ -220,7 +220,7 @@ if __name__ == '__main__':
     for depth in range(best_depth/2, int(best_depth*3), best_depth/50):
         print 'Processing for %d depth'%depth
         kernel = construct_kernel(x, y, depth, 20)
-        imdiff, imreblur, xz, yz = compute_diff(impure, imblur, kernel, 64, 25)
+        imdiff, imreblur, xz, yz = compute_diff(impure, imblur, kernel, 32, 75)
         #imdiff = compute_var(imdiff, 15)
         xd, yd = where(imdiff < old_diff)
         imdepth[xd,yd] = depth
