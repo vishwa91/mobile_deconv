@@ -9,11 +9,11 @@ from numpy import fft
 
 import Image
 from numba import jit
+
 accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
 G = 9.8
 
-#@jit
 def sconv(im, xcoords, ycoords, dmap):
 	'''
 		Convolve the image using space variant convolution. The xcoords and the 
@@ -21,15 +21,20 @@ def sconv(im, xcoords, ycoords, dmap):
 	'''
 	xdim, ydim = im.shape
 	final_im = zeros_like(im)
+	avg_map = zeros_like(im)
 	w = float(len(xcoords))
 	for xidx in range(xdim):
 		for yidx in range(ydim):
 			# For each pixel, 'Spread' it and add it to the empty image.
 			xshifts = xidx + dmap[xidx, yidx]*xcoords
 			yshifts = yidx + dmap[xidx, yidx]*ycoords
+			illegalx = where((xshifts>=xdim))
+			illegaly = where((yshifts>=ydim))
+			xshifts[illegalx] = xdim-1; yshifts[illegaly] = ydim-1;
 			final_im[xshifts.astype(int), yshifts.astype(int)] += (
-				im[xidx, yidx]/w)
-	return final_im
+				im[xidx, yidx])
+			avg_map[xshifts.astype(int), yshifts.astype(int)] += 1
+	return final_im/avg_map
 
 def estimate_simple_pos(accel, start, end):
     ''' Simple calculation of position using just integration'''
