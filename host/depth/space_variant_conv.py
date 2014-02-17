@@ -8,7 +8,7 @@ from scipy.signal import *
 from numpy import fft
 
 import Image
-from numba import jit
+from numba import jit, double
 
 accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
@@ -69,6 +69,8 @@ def estimate_g(data, start=0, end=-1):
 
     return output
 
+numba_sconv = jit(double[:,:](double[:,:], double[:],
+				  double[:], double[:,:]))(sconv)
 if __name__ == '__main__':
  	impure = imread('../output/cam/preview_im.bmp', flatten=True)
  	data = loadtxt(accel_data_file)
@@ -82,5 +84,5 @@ if __name__ == '__main__':
 	for idx in range(ydim):
 		dmap[:,idx] = depth[idx]
 	Image.fromarray(dmap*255.0/dmap.max()).show()
-	imblur = sconv(impure, x, y, dmap)
+	imblur = numba_sconv(impure, x, y, dmap)
 	Image.fromarray(imblur).convert('RGB').save('../tmp/space_variant_blur.bmp')

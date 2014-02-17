@@ -182,6 +182,41 @@ def compute_var(im, window=5):
 
     return var_map
 
+def sconv(im, xcoords, ycoords, dmap):
+    '''
+        Convolve the image using space variant convolution. The xcoords and the 
+        ycoords will be scaled by the value of dmap 
+    '''
+    xdim, ydim = im.shape
+    final_im = zeros_like(im)
+    avg_map = zeros_like(im)
+    w = float(len(xcoords))
+    for xidx in range(xdim):
+        for yidx in range(ydim):
+            # For each pixel, 'Spread' it and add it to the empty image.
+            xshifts = xidx + dmap[xidx, yidx]*xcoords
+            yshifts = yidx + dmap[xidx, yidx]*ycoords
+            illegalx = where((xshifts>=xdim))
+            illegaly = where((yshifts>=ydim))
+            xshifts[illegalx] = xdim-1; yshifts[illegaly] = ydim-1;
+            final_im[xshifts.astype(int), yshifts.astype(int)] += (
+                im[xidx, yidx])
+            avg_map[xshifts.astype(int), yshifts.astype(int)] += 1
+    xz, yz = where(avg_map == 0)
+    avg_map[xz, yz] = 1
+    return final_im/avg_map
+
+def mquantize(im, nlevels=5):
+    ''' Quantize the image for the given number of levels'''
+    vmin = im.min(); vmax = im.max()
+    levels = linspace(vmin, vmax, nlevels)
+    curr_min = 0
+    for level in levels:
+        xd, yd = where((im>curr_min) * (im<level))
+        im[xd, yd] = curr_min
+        curr_min = level
+    return im, levels
+
 if __name__ == '__main__':
     try:
         os.mkdir('../tmp/steer')
@@ -198,35 +233,25 @@ if __name__ == '__main__':
     # Save the blur image also
     Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
     Image.fromarray(impure).convert('RGB').save('../tmp/steer/imbure.bmp')
-    imdepth = zeros_like(imblur)
-    imdepth[:,:] = float('inf')
+
+    imdepth = zeros_like(imblur); imdepth[:,:] = 1000
+    imdiff = zeros_like(imblur); imdiff[:,:] = float('inf')
     old_diff = zeros_like(imblur)
-    old_diff[:,:] = float('inf')
-    # We try a two pass method. In the first path, we find the kernel size 
-    # that would best describe the complete scenario. Then, we search in a 
-    # small space around that size.
-    best_depth = 0
-    previous_diff = float('inf')
-    for coarse_depth in range(5, 40000, 1000):
-        print 'Trying coarse depth of %d'%coarse_depth
-        kernel = construct_kernel(x, y, coarse_depth, 10)
-        imdiff, _, xz, yz = compute_diff(impure, imblur, kernel, 32, 20)
-        net_diff = imdiff.sum()
-        if net_diff < previous_diff:
-            best_depth = coarse_depth
-            previous_diff = net_diff
-    print 'Best coarse depth is %d'%best_depth
-    print 'Now trying finer depth'
-    for depth in range(best_depth/2, int(best_depth*3), best_depth/50):
-        print 'Processing for %d depth'%depth
-        kernel = construct_kernel(x, y, depth, 20)
-        imdiff, imreblur, xz, yz = compute_diff(impure, imblur, kernel, 32, 75)
-        #imdiff = compute_var(imdiff, 15)
-        xd, yd = where(imdiff < old_diff)
-        imdepth[xd,yd] = depth
-        imdepth[xz, yz] = 0
-        old_diff[xd,yd] = imdiff[xd,yd]
-        Image.fromarray(imreblur*255.0/imreblur.max()).convert('RGB').save(
-            '../tmp/steer/im%d.bmp'%depth)
-    imdepth *= 200.0/imdepth.max()
-    Image.fromarray(imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
+
+    niters = 20
+    window = 5
+    for i in range(niters):
+        print 'Iteration %d'%i
+        imreblur = sconv(impure, x, y, imdepth)
+        imdiff = abs(imreblur - imblur)
+        avg_kernel = ones((window, window))
+        imdiff = fftconvolve(avg_kernel, imdiff, mode='same')
+        dgrad = imdiff - old_diff
+        dgrad /= abs(dgrad).max()
+        Image.fromarray(dgrad*255.0/dgrad.max()
+            ).convert('RGB').save('../tmp/steer/im%d.bmp'%i)
+        old_diff = imdiff
+        imdepth = (1-dgrad)*imdepth
+    print imdepth.max(), imdepth.min()
+    imdepth *= 255/imdepth.max()
+    Image.fromarray(255-imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
