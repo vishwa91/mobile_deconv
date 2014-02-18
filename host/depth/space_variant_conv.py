@@ -33,7 +33,11 @@ def sconv(im, xcoords, ycoords, dmap):
 			xshifts[illegalx] = xdim-1; yshifts[illegaly] = ydim-1;
 			final_im[xshifts.astype(int), yshifts.astype(int)] += (
 				im[xidx, yidx])
+			#final_im[xidx, yidx] += (
+			#	im[xshifts.astype(int), yshifts.astype(int)]).sum()
 			avg_map[xshifts.astype(int), yshifts.astype(int)] += 1
+	x, y = where(avg_map == 0)
+	avg_map[x, y] = 1
 	return final_im/avg_map
 
 def estimate_simple_pos(accel, start, end):
@@ -72,17 +76,17 @@ def estimate_g(data, start=0, end=-1):
 numba_sconv = jit(double[:,:](double[:,:], double[:],
 				  double[:], double[:,:]))(sconv)
 if __name__ == '__main__':
- 	impure = imread('../output/cam/preview_im.bmp', flatten=True)
+ 	impure = imread('../synthetic/random_dot.jpg', flatten=True)
  	data = loadtxt(accel_data_file)
 	start = 41
 	end = 63
 	x, y, z, g = estimate_simple_pos(data, start, end)
 	xdim, ydim = impure.shape
 	# Create a dmap
-	dmap = zeros_like(impure)
-	depth = linspace(10, 10000, ydim)
-	for idx in range(ydim):
-		dmap[:,idx] = depth[idx]
+	dmap = imread('../synthetic/depth.gif', flatten=True)
+	#depth = linspace(10, 10000, ydim)
+	#for idx in range(ydim):
+	#	dmap[:,idx] = depth[idx]
 	Image.fromarray(dmap*255.0/dmap.max()).show()
-	imblur = numba_sconv(impure, x, y, dmap)
+	imblur = sconv(impure, x, y, dmap*100)
 	Image.fromarray(imblur).convert('RGB').save('../tmp/space_variant_blur.bmp')

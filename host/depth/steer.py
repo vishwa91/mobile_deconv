@@ -201,6 +201,8 @@ def sconv(im, xcoords, ycoords, dmap):
             xshifts[illegalx] = xdim-1; yshifts[illegaly] = ydim-1;
             final_im[xshifts.astype(int), yshifts.astype(int)] += (
                 im[xidx, yidx])
+            #final_im[xidx, yidx] += (
+            #   im[xshifts.astype(int), yshifts.astype(int)]).sum()
             avg_map[xshifts.astype(int), yshifts.astype(int)] += 1
     xz, yz = where(avg_map == 0)
     avg_map[xz, yz] = 1
@@ -222,14 +224,16 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    impure = imread('../output/cam/preview_im.bmp', flatten=True)
-    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    #impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    #imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    impure = imread('../synthetic/random_dot.jpg', flatten=True)
+    imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
     # Load the acceleration data.
     data = loadtxt(accel_data_file)
     start = 41
     end = 63
     x, y, z, g = estimate_simple_pos(data, start, end)
-    impure = register(impure, imblur)
+    #impure = register(impure, imblur)
     # Save the blur image also
     Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
     Image.fromarray(impure).convert('RGB').save('../tmp/steer/imbure.bmp')
@@ -238,20 +242,25 @@ if __name__ == '__main__':
     imdiff = zeros_like(imblur); imdiff[:,:] = float('inf')
     old_diff = zeros_like(imblur)
 
-    niters = 20
-    window = 5
+    niters = 8
+    window = 4
     for i in range(niters):
         print 'Iteration %d'%i
         imreblur = sconv(impure, x, y, imdepth)
         imdiff = abs(imreblur - imblur)
         avg_kernel = ones((window, window))
         imdiff = fftconvolve(avg_kernel, imdiff, mode='same')
-        dgrad = imdiff - old_diff
-        dgrad /= abs(dgrad).max()
+        dgrad = imdiff #- old_diff
+        dgrad_max = max(0.0001, abs(dgrad).max()) 
+        dgrad /= dgrad_max
         Image.fromarray(dgrad*255.0/dgrad.max()
             ).convert('RGB').save('../tmp/steer/im%d.bmp'%i)
         old_diff = imdiff
-        imdepth = (1-dgrad)*imdepth
+        #imdepth = (1-dgrad)*imdepth
+        xp, yp = where(dgrad > 0.5)
+        xn ,yn = where(dgrad < 0.5)
+        imdepth[xp, yp] *= 2
+        imdepth[xn, yn] *= 0.8
     print imdepth.max(), imdepth.min()
     imdepth *= 255/imdepth.max()
     Image.fromarray(255-imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
