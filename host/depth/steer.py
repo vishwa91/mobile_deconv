@@ -250,6 +250,47 @@ def spacial_corr(imblur, imreblur, xw=8, yw=8):
             imcorr[x:x+xw,y:y+yw] = imcorr[x,y]
     return imcorr
 
+def compute_gradient(im1, im2, method='corr', window=5, xw=8, yw=8):
+    '''Compute the gradient image for the given two images. As of now, we have
+        two modes, corr and diff
+    '''
+    if method == 'diff':
+        avg_kernel = ones((window, window), dtype=float)
+        avg_kernel /= avg_kernel.sum()
+        diff = fftconvolve(abs(im1 - im2), avg_kernel, mode='same')
+        return diff
+    elif method == 'corr':
+        xdim, ydim = im1.shape
+        imcorr = zeros_like(im1)
+        for x in range(0, xdim, xw):
+            for y in range(0, ydim, yw):
+                xcorr = correlate2d(im1[x:x+xw, y:y+yw], 
+                                    im2[x:x+xw, y:y+yw], 'valid')
+                imcorr[x:x+xw, y:y+yw] = xcorr
+        return imcorr
+
+def iterative_depth(impure, imblur, xpos, ypos):
+    ''' Estimate the depth using multiple iterations. Rudimentary, but expected
+        to work.
+    '''
+    imdepth = zeros_like(impure)
+    imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
+    imdiff_curr = zeros_like(impure)
+    xdim, ydim = impure.shape
+    xw = 32; yw = 32
+    for depth in range(10, 10000, 100):
+        print 'Iteration for %d depth'%depth
+        kernel = construct_kernel(xpos, ypos, depth)
+        imreblur = fftconvolve(impure, kernel, mode='same')
+        imsave = abs(imreblur - imblur)
+        Image.fromarray(imsave*10).convert('RGB').save(
+            '../tmp/depth/im%d.bmp'%depth)
+        imdiff_curr = gaussian_filter(abs(imreblur-imblur), 2.0, 1)
+        x, y = where(imdiff_curr < imdiff)
+        imdepth[x, y] = depth
+        imdiff[x, y] = imdiff_curr[x, y]
+    return imdepth
+
 if __name__ == '__main__':
     try:
         os.mkdir('../tmp/steer')
@@ -277,26 +318,24 @@ if __name__ == '__main__':
     imdiff = zeros_like(imblur); imdiff[:,:] = float('inf')
     old_diff = zeros_like(imblur)
 
-    niters = 8
+    niters = 20
     window = 4
 
+    imdepth = iterative_depth(impure, imblur, x, y)
+    Image.fromarray(imdepth*255.0/imdepth.max()).show()
+    '''
     for i in range(niters):
         print 'Iteration %d'%i
         imreblur = sconv(impure, x, y, imdepth)
-        imdiff = abs(imreblur - imblur)
-        avg_kernel = ones((window, window))
-        imdiff = fftconvolve(imdiff, avg_kernel, mode='same')
+        imdiff = compute_gradient(imreblur, imblur, method='lap', xw=32, yw=32)
         dgrad = imdiff - old_diff
-        dgrad_max = max(0.0001, abs(dgrad).max()) 
-        dgrad /= dgrad_max
-        Image.fromarray(imdepth
+        dgrad_max = max(0.0001, abs(dgrad).max())
+        dgrad /= dgrad.max()
+        Image.fromarray(imdiff*255.0/imdiff.max()
             ).convert('RGB').save('../tmp/steer/im%d.bmp'%i)
         old_diff = imdiff
-        #imdepth = (1-dgrad)*imdepth
-        xp, yp = where(dgrad > 0.5)
-        xn ,yn = where(dgrad < 0.5)
-        imdepth[xp, yp] *= 2
-        imdepth[xn, yn] *= 0.8
+        imdepth = (1+dgrad)*imdepth
     print imdepth.max(), imdepth.min()
     imdepth *= 255/imdepth.max()
     Image.fromarray(255-imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
+    '''
