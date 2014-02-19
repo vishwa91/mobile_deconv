@@ -35,7 +35,7 @@ def register(impure, imblur):
     
     shift_kernel = zeros((2*abs(x)+1, 2*abs(y)+1))
     shift_kernel[abs(x)-x,abs(y)-y] = 1
-    shifted_im = fftconvolve(shift_kernel, impure, mode='same')
+    shifted_im = fftconvolve(impure, shift_kernel, mode='same')
 
     return shifted_im
 
@@ -219,6 +219,37 @@ def mquantize(im, nlevels=5):
         curr_min = level
     return im, levels
 
+def spacial_fft(im, xw=8, yw=8):
+    ''' Compute the spacial fft of the image with given window size'''
+    imfft = zeros_like(im, dtype=complex)
+    xdim, ydim = im.shape
+    for x in range(0, xdim, xw):
+        for y in range(0, ydim, yw):
+            imfft[x:x+xw, y:y+yw] = fft.fft2(im[x:x+xw, y:y+yw])
+    return imfft
+
+def spacial_ifft(im, xw=8, yw=8):
+    ''' Compute the spacial ifft of the image with given window size'''
+    imifft = zeros_like(im, dtype=complex)
+    xdim, ydim = im.shape
+    for x in range(0, xdim, xw):
+        for y in range(0, ydim, yw):
+            imifft[x:x+xw, y:y+yw] = fft.ifft2(im[x:x+xw, y:y+yw])
+    return imifft
+
+def spacial_corr(imblur, imreblur, xw=8, yw=8):
+    '''Find the correlation map of the two images'''
+    IMBLUR = spacial_fft(imblur)
+    IMREBLUR = spacial_fft(imreblur)
+
+    IMCORR = IMBLUR*conj(IMREBLUR)/(abs(IMBLUR*IMREBLUR))
+    imcorr = spacial_ifft(IMCORR)
+    xdim, ydim = imcorr.shape
+    for x in range(0, xdim, xw):
+        for y in range(0, ydim, yw):
+            imcorr[x:x+xw,y:y+yw] = imcorr[x,y]
+    return imcorr
+
 if __name__ == '__main__':
     try:
         os.mkdir('../tmp/steer')
@@ -228,12 +259,16 @@ if __name__ == '__main__':
     #imblur = imread('../output/cam/saved_im.bmp', flatten=True)
     impure = imread('../synthetic/random_dot.jpg', flatten=True)
     imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
+    
+
     # Load the acceleration data.
     data = loadtxt(accel_data_file)
     start = 41
     end = 63
     x, y, z, g = estimate_simple_pos(data, start, end)
+
     #impure = register(impure, imblur)
+
     # Save the blur image also
     Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
     Image.fromarray(impure).convert('RGB').save('../tmp/steer/imbure.bmp')
@@ -244,16 +279,17 @@ if __name__ == '__main__':
 
     niters = 8
     window = 4
+
     for i in range(niters):
         print 'Iteration %d'%i
         imreblur = sconv(impure, x, y, imdepth)
         imdiff = abs(imreblur - imblur)
         avg_kernel = ones((window, window))
-        imdiff = fftconvolve(avg_kernel, imdiff, mode='same')
-        dgrad = imdiff #- old_diff
+        imdiff = fftconvolve(imdiff, avg_kernel, mode='same')
+        dgrad = imdiff - old_diff
         dgrad_max = max(0.0001, abs(dgrad).max()) 
         dgrad /= dgrad_max
-        Image.fromarray(dgrad*255.0/dgrad.max()
+        Image.fromarray(imdepth
             ).convert('RGB').save('../tmp/steer/im%d.bmp'%i)
         old_diff = imdiff
         #imdepth = (1-dgrad)*imdepth
