@@ -87,6 +87,8 @@ if __name__ == '__main__':
 	#depth = linspace(10, 10000, ydim)
 	#for idx in range(ydim):
 	#	dmap[:,idx] = depth[idx]
+	dmax = hypot(x,y).max() * dmap.max()
+	# Restrict yourself to a maximum kernel diameter of 10
 	Image.fromarray(dmap*255.0/dmap.max()).show()
-	imblur = sconv(impure, x, y, dmap*100)
+	imblur = sconv(impure, x, y, dmap*5/dmax)
 	Image.fromarray(imblur).convert('RGB').save('../tmp/space_variant_blur.bmp')

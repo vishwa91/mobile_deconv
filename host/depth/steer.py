@@ -12,6 +12,7 @@ from scipy.ndimage import *
 from numpy import fft
 
 import Image
+#import lbp
 
 accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
@@ -257,7 +258,7 @@ def compute_gradient(im1, im2, method='corr', window=5, xw=8, yw=8):
     if method == 'diff':
         avg_kernel = ones((window, window), dtype=float)
         avg_kernel /= avg_kernel.sum()
-        diff = fftconvolve(abs(im1 - im2), avg_kernel, mode='same')
+        diff = fftconvolve(abs(im1 - im2)**2, avg_kernel, mode='same')
         return diff
     elif method == 'corr':
         xdim, ydim = im1.shape
@@ -269,6 +270,53 @@ def compute_gradient(im1, im2, method='corr', window=5, xw=8, yw=8):
                 imcorr[x:x+xw, y:y+yw] = xcorr
         return imcorr
 
+def advanced_iterative_depth(impure, imblur, xpos, ypos):
+    ''' 
+        Advanced iterative depth estimation. We use a low pass filtering for 
+        the 'time' varying pixel signal. The depth is not the point of least
+        difference, but the point of smallest diff, smallest absolute first 
+        differentiation and largest second differentiation. 
+    '''
+    imdepth = zeros_like(impure)
+    xdim, ydim = impure.shape
+    # The difference images need to be stacked.
+    imdiff = zeros((xdim, ydim, 100))
+    # The low pass filter is a simple FIR with 5 taps. 
+    lpf = array([ 0.02010371,  0.23086668,  0.49805922,
+                  0.23086668,  0.02010371])
+    count = 0
+    w = 20
+    avg_filter = ones((w,w))/(w*w*1.0)
+    for depth in linspace(10, 10000, 100):
+        print 'Iteration for %d depth'%depth
+        kernel = construct_kernel(xpos, ypos, depth)
+        imreblur = fftconvolve(impure, kernel, mode='same')
+        imsave = fftconvolve(abs(imreblur - imblur)**2, avg_filter, mode='same')
+        imdiff[:,:, count] = imsave
+        count += 1
+    # Now that we have the stack, we first low pass filter it.
+    imdiff = convolve1d(imdiff, lpf, axis=2)[:,:,2:-2] # Neglect the head and tail
+    # Get the first order and second order differentiations.
+    imdiff1 = diff(imdiff, n=1, axis=2); imdiff2 = diff(imdiff, n=2, axis=2)
+
+    # Seems like there is no option but to iterate through each slice.
+    imbest = zeros_like(impure); imbest[:,:] = float('inf')
+    imbest1 = zeros_like(impure); imbest2 = zeros_like(impure)
+    imbest1[:,:] = float('inf')
+    count = 0
+    for depth in linspace(10, 10000, 100):
+        print 'Estimating depth from %d slice'%count
+        x, y = where( (imdiff[:,:,count] < imbest) & (
+                      abs(imdiff1[:,:,count]) < imbest1) & (
+                      imdiff2[:,:,count] > imbest2) )
+        imdepth[x, y] = depth
+        imbest[x, y] = imdiff[x, y, count]
+        imbest1[x, y] = imdiff1[x, y, count]
+        imbest2[x, y] = imdiff2[x, y, count]
+        count += 1
+    return imdepth
+
+
 def iterative_depth(impure, imblur, xpos, ypos):
     ''' Estimate the depth using multiple iterations. Rudimentary, but expected
         to work.
@@ -276,20 +324,29 @@ def iterative_depth(impure, imblur, xpos, ypos):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
+    w = 20
+    avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
-    for depth in range(10, 10000, 100):
+    dmax = hypot(xpos, ypos).max()
+    count = 0
+    diff_array1 = []; diff_array2 = []
+    for depth in arange(10, 23000, 200):
         print 'Iteration for %d depth'%depth
         kernel = construct_kernel(xpos, ypos, depth)
         imreblur = fftconvolve(impure, kernel, mode='same')
-        imsave = abs(imreblur - imblur)
-        Image.fromarray(imsave*10).convert('RGB').save(
-            '../tmp/depth/im%d.bmp'%depth)
-        imdiff_curr = gaussian_filter(abs(imreblur-imblur), 2.0, 1)
+        imsave = abs(imreblur - imblur)**2
+        Image.fromarray(sqrt(imsave)).convert('RGB').save(
+            '../tmp/depth/im%d.bmp'%count)
+        imdiff_curr = fftconvolve(avg_filter, imsave, mode='same')
+        diff_array1.append(imdiff_curr[274, 470])
+        diff_array2.append(imdiff_curr[304, 493])
+        #imdiff_curr = gaussian_filter(imsave, 3.0)
         x, y = where(imdiff_curr < imdiff)
         imdepth[x, y] = depth
         imdiff[x, y] = imdiff_curr[x, y]
-    return imdepth
+        count += 1
+    return imdepth, diff_array1, diff_array2
 
 if __name__ == '__main__':
     try:
@@ -318,24 +375,30 @@ if __name__ == '__main__':
     imdiff = zeros_like(imblur); imdiff[:,:] = float('inf')
     old_diff = zeros_like(imblur)
 
-    niters = 20
+    niters = 10
     window = 4
-
-    imdepth = iterative_depth(impure, imblur, x, y)
+    
+    imdepth = advanced_iterative_depth(impure, imblur, x, y)
+    print imdepth.max(), imdepth.min()
     Image.fromarray(imdepth*255.0/imdepth.max()).show()
+    Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
+        '../tmp/imdepth.bmp')
+    #plot(diff_array1); plot(diff_array2); show() 
+    #savetxt('../tmp/depth_var.dat', diff_array2)
     '''
     for i in range(niters):
         print 'Iteration %d'%i
         imreblur = sconv(impure, x, y, imdepth)
-        imdiff = compute_gradient(imreblur, imblur, method='lap', xw=32, yw=32)
+        imdiff = compute_gradient(imreblur, imblur, method='diff', xw=25, yw=25)
         dgrad = imdiff - old_diff
         dgrad_max = max(0.0001, abs(dgrad).max())
-        dgrad /= dgrad.max()
-        Image.fromarray(imdiff*255.0/imdiff.max()
-            ).convert('RGB').save('../tmp/steer/im%d.bmp'%i)
+        dgrad /= dgrad_max
+        Image.fromarray(imdiff).convert('RGB').save('../tmp/steer/im%d.bmp'%i)
         old_diff = imdiff
-        imdepth = (1+dgrad)*imdepth
+        imdepth = (1-dgrad)*imdepth
+        #xp, yp = where(dgrad > 0); xn, yn = where(dgrad < 0)
+        #imdepth[xp, yp] *= 0.5; imdepth[xn, yn] = 4
     print imdepth.max(), imdepth.min()
     imdepth *= 255/imdepth.max()
-    Image.fromarray(255-imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
+    Image.fromarray(imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
     '''
