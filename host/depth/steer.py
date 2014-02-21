@@ -282,8 +282,9 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
     # The difference images need to be stacked.
     imdiff = zeros((xdim, ydim, 100))
     # The low pass filter is a simple FIR with 5 taps. 
-    lpf = array([ 0.02010371,  0.23086668,  0.49805922,
-                  0.23086668,  0.02010371])
+    lpf = array([-0.00521554, -0.00804016,  0.01335863,  0.10573869,  0.24054812,
+        0.30722052,  0.24054812,  0.10573869,  0.01335863, -0.00804016,
+       -0.00521554])
     count = 0
     w = 20
     avg_filter = ones((w,w))/(w*w*1.0)
@@ -294,26 +295,29 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
         imsave = fftconvolve(abs(imreblur - imblur)**2, avg_filter, mode='same')
         imdiff[:,:, count] = imsave
         count += 1
+    print count
     # Now that we have the stack, we first low pass filter it.
-    imdiff = convolve1d(imdiff, lpf, axis=2)[:,:,2:-2] # Neglect the head and tail
+    imdiff = convolve1d(imdiff, lpf, axis=2) # Neglect the head and tail
     # Get the first order and second order differentiations.
     imdiff1 = diff(imdiff, n=1, axis=2); imdiff2 = diff(imdiff, n=2, axis=2)
 
     # Seems like there is no option but to iterate through each slice.
-    imbest = zeros_like(impure); imbest[:,:] = float('inf')
+    plot(imdiff[400,400,:-2])
+    show()
+    imbest = zeros_like(impure); #imbest[:,:] = float('inf')
     imbest1 = zeros_like(impure); imbest2 = zeros_like(impure)
     imbest1[:,:] = float('inf')
+    print imdiff.shape, imdiff1.shape, imdiff2.shape
     count = 0
-    for depth in linspace(10, 10000, 100):
+    for count in range(98):
         print 'Estimating depth from %d slice'%count
-        x, y = where( (imdiff[:,:,count] < imbest) & (
-                      abs(imdiff1[:,:,count]) < imbest1) & (
-                      imdiff2[:,:,count] > imbest2) )
-        imdepth[x, y] = depth
-        imbest[x, y] = imdiff[x, y, count]
-        imbest1[x, y] = imdiff1[x, y, count]
-        imbest2[x, y] = imdiff2[x, y, count]
-        count += 1
+        #x, y = where( (imdiff[:,:,count] < imbest) & (
+        #              imdiff2[:,:,count] > imbest2) )
+        x, y = where((imdiff2[:,:,count]/imdiff[:,:,count]) > imbest)
+        imdepth[x, y] = count
+        imbest[x, y] = imdiff2[x,y,count]/imdiff[x, y, count]
+        #imbest1[x, y] = imdiff1[x, y, count]
+        #imbest2[x, y] = imdiff2[x, y, count]
     return imdepth
 
 
@@ -353,10 +357,10 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    #impure = imread('../output/cam/preview_im.bmp', flatten=True)
-    #imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-    impure = imread('../synthetic/random_dot.jpg', flatten=True)
-    imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
+    impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    #impure = imread('../synthetic/random_dot.jpg', flatten=True)
+    #imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
     
 
     # Load the acceleration data.
@@ -378,7 +382,7 @@ if __name__ == '__main__':
     niters = 10
     window = 4
     
-    imdepth = advanced_iterative_depth(impure, imblur, x, y)
+    imdepth, _, _ = iterative_depth(impure, imblur, x, y)
     print imdepth.max(), imdepth.min()
     Image.fromarray(imdepth*255.0/imdepth.max()).show()
     Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
