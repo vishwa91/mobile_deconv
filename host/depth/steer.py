@@ -286,13 +286,13 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
         0.30722052,  0.24054812,  0.10573869,  0.01335863, -0.00804016,
        -0.00521554])
     count = 0
-    w = 20
+    w = 2
     avg_filter = ones((w,w))/(w*w*1.0)
     for depth in linspace(10, 10000, 100):
         print 'Iteration for %d depth'%depth
         kernel = construct_kernel(xpos, ypos, depth)
         imreblur = fftconvolve(impure, kernel, mode='same')
-        imsave = fftconvolve(abs(imreblur - imblur)**2, avg_filter, mode='same')
+        imsave = gaussian_filter(abs(imreblur-imblur)**2, 3.1)#fftconvolve(abs(imreblur - imblur)**2, avg_filter, mode='same')
         imdiff[:,:, count] = imsave
         count += 1
     print count
@@ -304,7 +304,7 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
     # Seems like there is no option but to iterate through each slice.
     plot(imdiff[400,400,:-2])
     show()
-    imbest = zeros_like(impure); #imbest[:,:] = float('inf')
+    imbest = zeros_like(impure); imbest[:,:] = float('inf')
     imbest1 = zeros_like(impure); imbest2 = zeros_like(impure)
     imbest1[:,:] = float('inf')
     print imdiff.shape, imdiff1.shape, imdiff2.shape
@@ -313,9 +313,9 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
         print 'Estimating depth from %d slice'%count
         #x, y = where( (imdiff[:,:,count] < imbest) & (
         #              imdiff2[:,:,count] > imbest2) )
-        x, y = where((imdiff2[:,:,count]/imdiff[:,:,count]) > imbest)
+        x, y = where(imdiff[:,:,count] < imbest)
         imdepth[x, y] = count
-        imbest[x, y] = imdiff2[x,y,count]/imdiff[x, y, count]
+        imbest[x, y] = imdiff[x, y, count]
         #imbest1[x, y] = imdiff1[x, y, count]
         #imbest2[x, y] = imdiff2[x, y, count]
     return imdepth
@@ -328,23 +328,23 @@ def iterative_depth(impure, imblur, xpos, ypos):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 20
+    w = 4
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    for depth in arange(10, 23000, 200):
+    for depth in arange(10, 10000, 100):
         print 'Iteration for %d depth'%depth
         kernel = construct_kernel(xpos, ypos, depth)
         imreblur = fftconvolve(impure, kernel, mode='same')
-        imsave = abs(imreblur - imblur)**2
+        imsave = gaussian_filter(abs(imreblur - imblur)**2, 2.1)
         Image.fromarray(sqrt(imsave)).convert('RGB').save(
             '../tmp/depth/im%d.bmp'%count)
-        imdiff_curr = fftconvolve(avg_filter, imsave, mode='same')
-        diff_array1.append(imdiff_curr[274, 470])
-        diff_array2.append(imdiff_curr[304, 493])
+        imdiff_curr = imsave#fftconvolve(avg_filter, imsave, mode='same')
+        diff_array1.append(imdiff_curr[330, 336])
+        diff_array2.append(imdiff_curr[323, 355])
         #imdiff_curr = gaussian_filter(imsave, 3.0)
         x, y = where(imdiff_curr < imdiff)
         imdepth[x, y] = depth
@@ -382,13 +382,14 @@ if __name__ == '__main__':
     niters = 10
     window = 4
     
-    imdepth, _, _ = iterative_depth(impure, imblur, x, y)
+    imdepth= advanced_iterative_depth(impure, imblur, x, y)
     print imdepth.max(), imdepth.min()
     Image.fromarray(imdepth*255.0/imdepth.max()).show()
     Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
         '../tmp/imdepth.bmp')
     #plot(diff_array1); plot(diff_array2); show() 
-    #savetxt('../tmp/depth_var.dat', diff_array2)
+    #savetxt('../tmp/depth_var2.dat', diff_array2)
+    #savetxt('../tmp/depth_var1.dat', diff_array1)
     '''
     for i in range(niters):
         print 'Iteration %d'%i
