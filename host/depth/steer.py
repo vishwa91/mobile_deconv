@@ -9,10 +9,11 @@ from scipy.signal import *
 from scipy.linalg import *
 from scipy.interpolate import spline
 from scipy.ndimage import *
+from scipy.special import *
 from numpy import fft
 
 import Image
-#import lbp
+import ssim
 
 accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
@@ -209,6 +210,15 @@ def sconv(im, xcoords, ycoords, dmap):
     avg_map[xz, yz] = 1
     return final_im/avg_map
 
+def max_filter(im, w):
+    ''' Filter the image using maximum filter'''
+    d = w//2
+    xdim, ydim = im.shape
+    imfiltered = zeros_like(im)
+    for x in range(d, xdim-d):
+        for y in range(d, ydim-d):
+            imfiltered[x-d:x+d, y-d:y+d] = im[x-d:x+d, y-d:y+d].min()
+    return imfiltered
 def mquantize(im, nlevels=5):
     ''' Quantize the image for the given number of levels'''
     vmin = im.min(); vmax = im.max()
@@ -279,6 +289,7 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
     '''
     imdepth = zeros_like(impure)
     xdim, ydim = impure.shape
+    dmax = hypot(xpos, ypos).max()
     # The difference images need to be stacked.
     imdiff = zeros((xdim, ydim, 100))
     # The low pass filter is a simple FIR with 5 taps. 
@@ -286,18 +297,18 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
         0.30722052,  0.24054812,  0.10573869,  0.01335863, -0.00804016,
        -0.00521554])
     count = 0
-    w = 2
+    w = 1
     avg_filter = ones((w,w))/(w*w*1.0)
-    for depth in linspace(10, 10000, 100):
+    for depth in linspace(0, 10/dmax, 100):
         print 'Iteration for %d depth'%depth
         kernel = construct_kernel(xpos, ypos, depth)
         imreblur = fftconvolve(impure, kernel, mode='same')
-        imsave = gaussian_filter(abs(imreblur-imblur)**2, 3.1)#fftconvolve(abs(imreblur - imblur)**2, avg_filter, mode='same')
+        imsave = fftconvolve(abs(imreblur - imblur)**2, avg_filter, mode='same')
         imdiff[:,:, count] = imsave
         count += 1
     print count
     # Now that we have the stack, we first low pass filter it.
-    imdiff = convolve1d(imdiff, lpf, axis=2) # Neglect the head and tail
+    imdiff = convolve1d(imdiff, lpf, axis=2) 
     # Get the first order and second order differentiations.
     imdiff1 = diff(imdiff, n=1, axis=2); imdiff2 = diff(imdiff, n=2, axis=2)
 
@@ -315,41 +326,74 @@ def advanced_iterative_depth(impure, imblur, xpos, ypos):
         #              imdiff2[:,:,count] > imbest2) )
         x, y = where(imdiff[:,:,count] < imbest)
         imdepth[x, y] = count
-        imbest[x, y] = imdiff[x, y, count]
+        imbest[x, y] = imdiff[x,y,count]
+        Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
+            '../tmp/depth/im%d.bmp'%count)
         #imbest1[x, y] = imdiff1[x, y, count]
         #imbest2[x, y] = imdiff2[x, y, count]
     return imdepth
 
+def patchy_depth(impure, imblur, xpos, ypos, w=8):
+    ''' As Prof. ANR suggested, let us check at patches and take that patches
+        which has the least error energy
+    '''
+    dmax = hypot(xpos, ypos).max()
+    imdepth = zeros_like(impure)
+    xdim, ydim = impure.shape
+    d_array = linspace(0, 20/dmax, 100)
+    dstack = []
+    # Create blur copies
+    for depth in d_array:
+        print 'Creating new blur image'
+        kernel = construct_kernel(xpos, ypos, depth, 10)
+        imreblur = fftconvolve(kernel, impure, mode='same')
+        imdiff = (imreblur - imblur)**2
+        dstack.append(imdiff)
+    imbest = zeros_like(impure); imbest[:,:] = float('inf')
+    for count in range(len(d_array)):
+        print 'Estimating new depth'
+        for x in range(w, xdim, w):
+            for y in range(w, ydim, w):
+                if imbest[x:x+w, y:y+w].sum() > dstack[count][x:x+w, y:y+w].sum():
+                    imdepth[x:x+w, y:y+w] = count
+                    imbest[x:x+w, y:y+w] = dstack[count][x:x+w, y:y+w]
+    return imdepth
 
-def iterative_depth(impure, imblur, xpos, ypos):
+def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     ''' Estimate the depth using multiple iterations. Rudimentary, but expected
         to work.
     '''
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 4
+    w = 7
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    for depth in arange(10, 10000, 100):
-        print 'Iteration for %d depth'%depth
-        kernel = construct_kernel(xpos, ypos, depth)
+    for depth in linspace(0, 20/dmax, 20):
+        print 'Iteration for %f depth'%depth
+        if mkernel == None:
+            kernel = construct_kernel(xpos, ypos, depth)
+        else:
+            kernel = zoom(mkernel, depth)
+            kernel /= (1e-5+kernel.sum())
         imreblur = fftconvolve(impure, kernel, mode='same')
-        imsave = gaussian_filter(abs(imreblur - imblur)**2, 2.1)
-        Image.fromarray(sqrt(imsave)).convert('RGB').save(
+        imsave = abs(imreblur - imblur)**2
+        #imsave = (1-ssim.calculate_ssim(imreblur, imblur))/2.0
+        Image.fromarray(imsave).convert('RGB').save(
             '../tmp/depth/im%d.bmp'%count)
-        imdiff_curr = imsave#fftconvolve(avg_filter, imsave, mode='same')
-        diff_array1.append(imdiff_curr[330, 336])
-        diff_array2.append(imdiff_curr[323, 355])
+        imdiff_curr = fftconvolve(avg_filter, imsave, mode='same')
+        diff_array1.append(imdiff_curr[139, 168])
+        diff_array2.append(imdiff_curr[125, 168])
         #imdiff_curr = gaussian_filter(imsave, 3.0)
         x, y = where(imdiff_curr < imdiff)
         imdepth[x, y] = depth
         imdiff[x, y] = imdiff_curr[x, y]
         count += 1
+    diff_array1.append(dmax); diff_array2.append(dmax)
     return imdepth, diff_array1, diff_array2
 
 if __name__ == '__main__':
@@ -357,10 +401,13 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    impure = imread('../output/cam/preview_im.bmp', flatten=True)
-    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-    #impure = imread('../synthetic/random_dot.jpg', flatten=True)
-    #imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
+    #impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    #imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    impure = imread('../synthetic/random_dot.jpg', flatten=True)
+    imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
+    #impure = imread('../synthetic/test.jpg', flatten=True)
+    #imblur = imread('../synthetic/test_sv.jpg', flatten=True)
+    #kernel = imread('../synthetic/o4_kernel.png', flatten=True)
     
 
     # Load the acceleration data.
@@ -368,8 +415,9 @@ if __name__ == '__main__':
     start = 41
     end = 63
     x, y, z, g = estimate_simple_pos(data, start, end)
-
-    #impure = register(impure, imblur)
+    k = construct_kernel(x, y, 20000)
+    Image.fromarray
+    impure = register(impure, imblur)
 
     # Save the blur image also
     Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
@@ -382,8 +430,15 @@ if __name__ == '__main__':
     niters = 10
     window = 4
     
-    imdepth= advanced_iterative_depth(impure, imblur, x, y)
+    #imdepth, diff_array1, diff_array2 = iterative_depth(impure, imblur, x, y)
+    #imdepth = advanced_iterative_depth(impure, imblur, x, y)
+    for window in range(1, 32):
+        imdepth = patchy_depth(impure, imblur, x, y, window)
+        imdepth = filters.median_filter(imdepth, (window, window))
+        Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
+            '../tmp/wintest/im%d.bmp'%window)
     print imdepth.max(), imdepth.min()
+    #imdepth = filters.median_filter(imdepth, (16,16))
     Image.fromarray(imdepth*255.0/imdepth.max()).show()
     Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
         '../tmp/imdepth.bmp')

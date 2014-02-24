@@ -6,6 +6,7 @@ from scipy import *
 from scipy.ndimage import *
 from scipy.signal import *
 from numpy import fft
+from scipy.interpolate import spline
 
 import Image
 from numba import jit, double
@@ -73,6 +74,21 @@ def estimate_g(data, start=0, end=-1):
 
     return output
 
+def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 10):
+    '''Construct the kernel from the position data'''
+    ntime = len(xpos)
+    xpos = d*spline(range(ntime), xpos,
+        linspace(0, ntime, ntime*interpolate_scale))
+    ypos = d*spline(range(ntime), ypos,
+        linspace(0, ntime, ntime*interpolate_scale))
+    ntime *= interpolate_scale
+    xpos -= mean(xpos); ypos -= mean(ypos)
+    xmax = max(abs(xpos)); ymax = max(abs(ypos))
+    kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
+    for i in range(ntime):
+        kernel[xmax+int(xpos[i]), ymax-int(ypos[i])] += 1
+    return kernel.astype(float)/(kernel.sum()*1.0)
+
 numba_sconv = jit(double[:,:](double[:,:], double[:],
 				  double[:], double[:,:]))(sconv)
 if __name__ == '__main__':
@@ -90,5 +106,12 @@ if __name__ == '__main__':
 	dmax = hypot(x,y).max() * dmap.max()
 	# Restrict yourself to a maximum kernel diameter of 10
 	Image.fromarray(dmap*255.0/dmap.max()).show()
-	imblur = sconv(impure, x, y, dmap*5/dmax)
+	imblur = sconv(impure, x, y, dmap*13/dmax)
+	'''
+	xp = 121; yp = 415
+	d = dmap[xp, yp]*13
+	print d
+	kernel = construct_kernel(x, y, d)
+	Image.fromarray(kernel*255.0/kernel.max()).convert('RGB').save('../tmp/kernel_lamp_121_415_%f.bmp'%d)
+	'''
 	Image.fromarray(imblur).convert('RGB').save('../tmp/space_variant_blur.bmp')
