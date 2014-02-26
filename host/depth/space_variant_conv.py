@@ -92,19 +92,22 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 10):
 numba_sconv = jit(double[:,:](double[:,:], double[:],
 				  double[:], double[:,:]))(sconv)
 if __name__ == '__main__':
- 	impure = imread('../synthetic/random_dot.jpg', flatten=True)
- 	data = loadtxt(accel_data_file)
-	start = 41
-	end = 63
-	xpos, ypos, zpos, g = estimate_simple_pos(data, start, end)
-	xdim, ydim = impure.shape
-	# Create a dmap
-	dmap = imread('../synthetic/depth.gif', flatten=True)
-	#depth = linspace(10, 10000, ydim)
-	#for idx in range(ydim):
-	#	dmap[:,idx] = depth[idx]
-	dmax = hypot(xpos,ypos).max() * dmap.max()
-	# Restrict yourself to a maximum kernel diameter of 10
-	Image.fromarray(dmap*255.0/dmap.max()).show()
-	imblur = sconv(impure, xpos, ypos, dmap*3/dmax)
-	Image.fromarray(imblur).convert('RGB').save('../tmp/space_variant_blur.bmp')
+    impure = imread('../synthetic/random_dot.jpg', flatten=True)
+    data = loadtxt(accel_data_file)
+    start = 41
+    end = 63
+    xpos, ypos, zpos, g = estimate_simple_pos(data, start, end)
+    # Remove the mean
+    xpos -= mean(xpos); ypos -= mean(ypos)
+    xdim, ydim = impure.shape
+    # Create a dmap
+    dmap = imread('../synthetic/depth.gif', flatten=True)
+    #dmap[:,:] = 1
+    dmax = hypot(xpos,ypos).max() * dmap.max()
+    # Restrict yourself to a maximum kernel diameter of 3
+    Image.fromarray(dmap*255.0/dmap.max()).show()
+    for maxscale in range(1, 15):
+        print 'Creating synthetic image for %d max scale'%maxscale
+        imblur = sconv(impure, xpos, ypos, dmap*maxscale/dmax)
+        Image.fromarray(imblur).convert('RGB').save(
+            '../tmp/synthetic_blur/space_variant_blur%d.bmp'%maxscale)
