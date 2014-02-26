@@ -96,22 +96,15 @@ if __name__ == '__main__':
  	data = loadtxt(accel_data_file)
 	start = 41
 	end = 63
-	x, y, z, g = estimate_simple_pos(data, start, end)
+	xpos, ypos, zpos, g = estimate_simple_pos(data, start, end)
 	xdim, ydim = impure.shape
 	# Create a dmap
 	dmap = imread('../synthetic/depth.gif', flatten=True)
 	#depth = linspace(10, 10000, ydim)
 	#for idx in range(ydim):
 	#	dmap[:,idx] = depth[idx]
-	dmax = hypot(x,y).max() * dmap.max()
+	dmax = hypot(xpos,ypos).max() * dmap.max()
 	# Restrict yourself to a maximum kernel diameter of 10
 	Image.fromarray(dmap*255.0/dmap.max()).show()
-	imblur = sconv(impure, x, y, dmap*13/dmax)
-	'''
-	xp = 121; yp = 415
-	d = dmap[xp, yp]*13
-	print d
-	kernel = construct_kernel(x, y, d)
-	Image.fromarray(kernel*255.0/kernel.max()).convert('RGB').save('../tmp/kernel_lamp_121_415_%f.bmp'%d)
-	'''
+	imblur = sconv(impure, xpos, ypos, dmap*3/dmax)
 	Image.fromarray(imblur).convert('RGB').save('../tmp/space_variant_blur.bmp')

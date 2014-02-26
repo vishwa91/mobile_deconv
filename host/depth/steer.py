@@ -13,7 +13,7 @@ from scipy.special import *
 from numpy import fft
 
 import Image
-import ssim
+#import ssim
 
 accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
@@ -101,7 +101,7 @@ def estimate_g(data, start=0, end=-1):
 
     return output
 
-def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 10):
+def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     '''Construct the kernel from the position data'''
     ntime = len(xpos)
     xpos = d*spline(range(ntime), xpos,
@@ -250,16 +250,16 @@ def spacial_ifft(im, xw=8, yw=8):
 
 def spacial_corr(imblur, imreblur, xw=8, yw=8):
     '''Find the correlation map of the two images'''
-    IMBLUR = spacial_fft(imblur)
-    IMREBLUR = spacial_fft(imreblur)
+    IMBLUR = spacial_fft(imblur, xw, yw)
+    IMREBLUR = spacial_fft(imreblur, xw, yw)
 
     IMCORR = IMBLUR*conj(IMREBLUR)/(abs(IMBLUR*IMREBLUR))
-    imcorr = spacial_ifft(IMCORR)
+    imcorr = spacial_ifft(IMCORR, xw, yw)
     xdim, ydim = imcorr.shape
     for x in range(0, xdim, xw):
         for y in range(0, ydim, yw):
             imcorr[x:x+xw,y:y+yw] = imcorr[x,y]
-    return imcorr
+    return real(imcorr)
 
 def compute_gradient(im1, im2, method='corr', window=5, xw=8, yw=8):
     '''Compute the gradient image for the given two images. As of now, we have
@@ -346,7 +346,8 @@ def patchy_depth(impure, imblur, xpos, ypos, w=8):
     for depth in d_array:
         print 'Creating new blur image'
         kernel = construct_kernel(xpos, ypos, depth, 10)
-        imreblur = fftconvolve(kernel, impure, mode='same')
+        imreblur = fftconvolve(impure, kernel, mode='same')
+        imreblur = register(imreblur, imblur)
         imdiff = (imreblur - imblur)**2
         dstack.append(imdiff)
     imbest = zeros_like(impure); imbest[:,:] = float('inf')
@@ -366,14 +367,14 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 7
+    w = 12
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    for depth in linspace(0, 20/dmax, 20):
+    for depth in linspace(0, 10/dmax, 50):
         print 'Iteration for %f depth'%depth
         if mkernel == None:
             kernel = construct_kernel(xpos, ypos, depth)
@@ -381,13 +382,13 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
             kernel = zoom(mkernel, depth)
             kernel /= (1e-5+kernel.sum())
         imreblur = fftconvolve(impure, kernel, mode='same')
-        imsave = abs(imreblur - imblur)**2
-        #imsave = (1-ssim.calculate_ssim(imreblur, imblur))/2.0
-        Image.fromarray(imsave).convert('RGB').save(
+        imsave = abs(imreblur - imblur)
+        imdiff_curr = fftconvolve(imsave, avg_filter, mode='same')
+        #imdiff_curr = gaussian_filter(imsave, 3.1)
+        Image.fromarray(imreblur).convert('RGB').save(
             '../tmp/depth/im%d.bmp'%count)
-        imdiff_curr = fftconvolve(avg_filter, imsave, mode='same')
-        diff_array1.append(imdiff_curr[139, 168])
-        diff_array2.append(imdiff_curr[125, 168])
+        diff_array1.append(imdiff_curr[182, 398])
+        diff_array2.append(imdiff_curr[186, 311])
         #imdiff_curr = gaussian_filter(imsave, 3.0)
         x, y = where(imdiff_curr < imdiff)
         imdepth[x, y] = depth
@@ -401,10 +402,10 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    #impure = imread('../output/cam/preview_im.bmp', flatten=True)
-    #imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-    impure = imread('../synthetic/random_dot.jpg', flatten=True)
-    imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
+    impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    #impure = imread('../synthetic/random_dot.jpg', flatten=True)
+    #imblur = imread('../tmp/space_variant_blur.bmp', flatten=True)
     #impure = imread('../synthetic/test.jpg', flatten=True)
     #imblur = imread('../synthetic/test_sv.jpg', flatten=True)
     #kernel = imread('../synthetic/o4_kernel.png', flatten=True)
@@ -419,9 +420,17 @@ if __name__ == '__main__':
     Image.fromarray
     impure = register(impure, imblur)
 
+    # See if normalization helps
+    mp = mean(impure); mb = mean(imblur)
+    vp = variance(impure); vb = variance(imblur)
+    impure = (impure - mp)/sqrt(vp)
+    imblur = (imblur - mb)/sqrt(vb)
+
     # Save the blur image also
-    Image.fromarray(imblur).convert('RGB').save('../tmp/steer/imblur.bmp')
-    Image.fromarray(impure).convert('RGB').save('../tmp/steer/imbure.bmp')
+    Image.fromarray(imblur*sqrt(vb) + mb).convert('RGB').save(
+        '../tmp/steer/imblur.bmp')
+    Image.fromarray(impure*sqrt(vp) + mp).convert('RGB').save(
+        '../tmp/steer/imbure.bmp')
 
     imdepth = zeros_like(imblur); imdepth[:,:] = 1000
     imdiff = zeros_like(imblur); imdiff[:,:] = float('inf')
@@ -430,18 +439,16 @@ if __name__ == '__main__':
     niters = 10
     window = 4
     
-    #imdepth, diff_array1, diff_array2 = iterative_depth(impure, imblur, x, y)
+    imdepth, diff_array1, diff_array2 = iterative_depth(impure, imblur, x, y)
     #imdepth = advanced_iterative_depth(impure, imblur, x, y)
-    for window in range(1, 32):
-        imdepth = patchy_depth(impure, imblur, x, y, window)
-        imdepth = filters.median_filter(imdepth, (window, window))
-        Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
-            '../tmp/wintest/im%d.bmp'%window)
     print imdepth.max(), imdepth.min()
-    #imdepth = filters.median_filter(imdepth, (16,16))
+    imdepth = filters.median_filter(imdepth, (16,16))
+    imreblur = sconv(impure*sqrt(vp) + mp, x, y, imdepth)
+
     Image.fromarray(imdepth*255.0/imdepth.max()).show()
     Image.fromarray(imdepth*255.0/imdepth.max()).convert('RGB').save(
         '../tmp/imdepth.bmp')
+    Image.fromarray(imreblur).convert('RGB').save('../tmp/steer/imreblur.bmp')
     #plot(diff_array1); plot(diff_array2); show() 
     #savetxt('../tmp/depth_var2.dat', diff_array2)
     #savetxt('../tmp/depth_var1.dat', diff_array1)
