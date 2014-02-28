@@ -113,7 +113,7 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[int(xpos[i]), int(ypos[i])] += 1
+        kernel[xmax + int(xpos[i]), int(ymax - ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)
 
 def estimate_simple_pos(accel, start, end):
@@ -367,14 +367,14 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 15
+    w = 1
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    for depth in linspace(0, 20/dmax, 40):
+    for depth in linspace(0, 20/dmax, 20):
         print 'Iteration for %f depth'%depth
         if mkernel == None:
             kernel = construct_kernel(xpos, ypos, depth)
@@ -383,11 +383,11 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
             kernel /= (1e-5+kernel.sum())
         imreblur = fftconvolve(impure, kernel, mode='same')
         #imreblur = register(imreblur, imblur)
-        imsave = abs(imreblur - imblur)**2
-        #imsave = (1-ssim.calculate_ssim(imreblur, imblur))/2.0
+        imsave = (imreblur - imblur)**2
+        #imsave = abs(1-ssim.calculate_ssim(imreblur, imblur, 16))/2.0
         imdiff_curr = fftconvolve(imsave, avg_filter, mode='same')
         #imdiff_curr = gaussian_filter(imsave, 3.1)
-        Image.fromarray(imreblur).convert('RGB').save(
+        Image.fromarray(imsave).convert('RGB').save(
             '../tmp/depth/im%d.bmp'%count)
         diff_array1.append(imdiff_curr[27, 136])
         diff_array2.append(imdiff_curr[27, 159])
@@ -416,7 +416,7 @@ if __name__ == '__main__':
     data = loadtxt(accel_data_file)
     start = 41
     end = 63
-    y, x, z, g = estimate_simple_pos(data, start, end)
+    x, y, z, g = estimate_simple_pos(data, start, end)
     x -= mean(x); y -= mean(y)
 
     imdepth = zeros_like(impure); imdepth[:,:] = 1000
@@ -432,7 +432,7 @@ if __name__ == '__main__':
         imdepth, diff_array1, diff_array2 = iterative_depth(impure, imblur, x, y)
         #imdepth = advanced_iterative_depth(impure, imblur, x, y)
         print imdepth.max(), imdepth.min()
-        #imdepth = filters.median_filter(imdepth, (16,16))
+        imdepth = filters.median_filter(imdepth, (16,16))
         #imreblur = sconv(impure, x, y, imdepth)
 
         Image.fromarray(imdepth*255.0/imdepth.max()).show()
