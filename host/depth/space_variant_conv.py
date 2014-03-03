@@ -96,10 +96,13 @@ if __name__ == '__main__':
     data = loadtxt(accel_data_file)
     start = 41
     end = 63
-    xpos, ypos, zpos, g = estimate_simple_pos(data, start, end)
+    ypos, xpos, zpos, g = estimate_simple_pos(data, start, end)
     # Remove the mean
     xpos -= mean(xpos); ypos -= mean(ypos)
     xdim, ydim = impure.shape
+    im = construct_kernel(xpos, ypos, 4800, 10)
+    im *= 255.0/im.max()
+    Image.fromarray(im.astype(uint8)).save('../tmp/kernel.bmp')
     # Create a dmap
     dmap = imread('../synthetic/depth.gif', flatten=True)
     #dmap[:,:] = 1

@@ -367,14 +367,14 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 15
+    w = 63
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    for depth in linspace(0, 10/dmax, 20):
+    for depth in linspace(0, 20/dmax, 80):
         print 'Iteration for %f depth'%depth
         if mkernel == None:
             kernel = construct_kernel(xpos, ypos, depth)
