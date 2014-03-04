@@ -100,7 +100,7 @@ if __name__ == '__main__':
     # Remove the mean
     xpos -= mean(xpos); ypos -= mean(ypos)
     xdim, ydim = impure.shape
-    im = construct_kernel(xpos, ypos, 4800, 10)
+    im = construct_kernel(xpos, ypos, 60000, 10)
     im *= 255.0/im.max()
     Image.fromarray(im.astype(uint8)).save('../tmp/kernel.bmp')
     # Create a dmap

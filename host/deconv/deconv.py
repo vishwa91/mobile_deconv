@@ -11,9 +11,9 @@ from numpy import fft
 import Image
 
 TMP_DIR = '../tmp/deconv'
-kernel_name = '../tmp/cam/0_kernel_0.002000_0.018000_20000.000000.bmp'
+kernel_name = '../tmp/kernel.bmp'
 testim_name = '../tmp/cam/0_im.bmp'
-goodim_name = '../output/cam/dot.bmp'
+goodim_name = '../synthetic/test.jpg'
 
 def wiener_deconv(kernel, im, nsr=0.1):
     """ Wiener deconvolution method"""
@@ -58,7 +58,7 @@ def reg_deconv(kernel, im, reg_filters = None, alpha=0.1):
     return imout*255.0/imout.max()
 
 if __name__ == '__main__':
-    kernel = imread(kernel_name, flatten=True)
+    kernel = zoom(imread(kernel_name, flatten=True), 0.2)
     #testim = imread(testim_name, flatten=True)
     goodim = imread(goodim_name, flatten=True)
     
@@ -77,13 +77,9 @@ if __name__ == '__main__':
 		os.mkdir(TMP_DIR)
     except OSError:
 		pass
-    alpha = 0.0001
-    Image.fromarray(testim).convert('RGB').save(
-                os.path.join(TMP_DIR, 'blurred.bmp'))
-    for scale in arange(0.5, 2, 0.1):
-        print 'Deblurring for scale =', scale
-        deblur_im = wiener_deconv(zoom(kernel, scale), testim, nsr=alpha)
-        #deblur_im = reg_deconv(zoom(kernel, scale), testim, None, alpha)
-        Image.fromarray(deblur_im.astype(uint8)
-            ).save(os.path.join(TMP_DIR, 'im%d.bmp'%count))
-        count += 1
+    alpha = 0.01
+    Image.fromarray(testim).convert('RGB').save('../tmp/deconv/blurred.bmp')
+    imdeconv = wiener_deconv(zoom(kernel, 0.5), testim, alpha)
+    imreconv = fftconvolve(imdeconv, zoom(kernel, 1.5))
+    kernel /= kernel.sum()
+    Image.fromarray(imreconv).convert('RGB').save('../tmp/deconv/reblur.bmp')
