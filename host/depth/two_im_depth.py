@@ -116,7 +116,7 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[int(xmax-xpos[i]), int(ymax+ypos[i])] += 1
+        kernel[int(xmax+xpos[i]), int(ymax-ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)
 
 def estimate_simple_pos(accel, start, end):
@@ -200,7 +200,7 @@ def sconv(im, xcoords, ycoords, dmap):
         for yidx in range(ydim):
             # For each pixel, 'Spread' it and add it to the empty image.
             xshifts = xidx + dmap[xidx, yidx]*xcoords
-            yshifts = yidx + dmap[xidx, yidx]*ycoords
+            yshifts = yidx - dmap[xidx, yidx]*ycoords
             illegalx = where((xshifts>=xdim))
             illegaly = where((yshifts>=ydim))
             xshifts[illegalx] = xdim-1; yshifts[illegaly] = ydim-1;
@@ -380,39 +380,41 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 15
+    w = 31
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    nlevels = 40
+    nlevels = 20
     for depth in linspace(0, nlevels/dmax, nlevels):
-        print 'Iteration for %f depth'%depth
-        if mkernel == None:
-            kernel = construct_kernel(xpos, ypos, depth)
-        else:
-            kernel = zoom(mkernel, depth)
-            kernel /= (1e-5+kernel.sum())
-        imreblur = fftconvolve(impure, kernel, mode='same')
-        imreblur = register(imreblur, imblur, kernel)
-        imsave = norm_diff(imreblur, imblur)
-        #imsave = (1-ssim.calculate_ssim(imreblur, imblur, 16))/2.0
-        imdiff_curr = fftconvolve(imsave, avg_filter, mode='same')
-        #imdiff_curr = gaussian_filter(imsave, 3.1)
-        xdim, ydim = imblur.shape
-        imtemp = zeros((xdim, ydim*2), dtype=uint8)
-        imtemp[:, :ydim] = imblur; imtemp[:, ydim:] = imreblur#imsave*255.0/imsave.max()
-        Image.fromarray(imtemp).convert('RGB').save(
-            '../tmp/depth/im%d.bmp'%count)
-        diff_array1.append(imdiff_curr[191, 344])
-        diff_array2.append(imdiff_curr[168, 344])
-        #imdiff_curr = gaussian_filter(imsave, 3.0)
-        x, y = where(imdiff_curr < imdiff)
-        imdepth[x, y] = depth
-        imdiff[x, y] = imdiff_curr[x, y]
-        count += 1
+        for xshift in [0]:#range(-10, 10, 3):
+            for yshift in [0]:#range(-10, 10, 3):
+                print 'Iteration for %f depth'%depth
+                if mkernel == None:
+                    kernel = construct_kernel(xpos, ypos, depth)
+                else:
+                    kernel = zoom(mkernel, depth)
+                    kernel /= (1e-5+kernel.sum())
+                imreblur = fftconvolve(impure, kernel, mode='same')
+                #imreblur = register(imreblur, imblur, kernel)
+                imsave = norm_diff(imreblur, shift(imblur, [xshift, yshift]))
+                imdiff_curr = fftconvolve(imsave, avg_filter, mode='same')
+                #imdiff_curr = gaussian_filter(imsave, 3.1)
+                xdim, ydim = imblur.shape
+                imtemp = zeros((xdim, ydim*2), dtype=uint8)
+                imtemp[:, :ydim] = imblur
+                imtemp[:, ydim:] = imreblur#imsave*255.0/imsave.max()
+                Image.fromarray(imtemp).convert('RGB').save(
+                    '../tmp/depth/im%d.bmp'%count)
+                diff_array1.append(imdiff_curr[72, 525])
+                diff_array2.append(imdiff_curr[72, 448])
+                #imdiff_curr = gaussian_filter(imsave, 3.0)
+                x, y = where(imdiff_curr < imdiff)
+                imdepth[x, y] = depth
+                imdiff[x, y] = imdiff_curr[x, y]
+                count += 1
     diff_array1.append(dmax); diff_array2.append(dmax)
     return imdepth, diff_array1, diff_array2
 
@@ -432,8 +434,8 @@ if __name__ == '__main__':
     # Load the acceleration data.
     data = loadtxt(accel_data_file)
     start = 41
-    end = 93
-    y, x, z, g = estimate_simple_pos(data, start, end)
+    end = 63
+    x, y, z, g = estimate_simple_pos(data, start, end)
     x -= mean(x); y -= mean(y)
 
     imdepth = zeros_like(impure); imdepth[:,:] = 1000
@@ -444,15 +446,19 @@ if __name__ == '__main__':
     window = 4
     for mscale in [0]:
         #imblur = imread('../tmp/synthetic_blur/space_variant_blur%d.bmp'%mscale, flatten=True)
-        #impure = register(impure, imblur)
+        impure = register(impure, imblur)
     
         imdepth, diff_array1, diff_array2 = iterative_depth(impure, imblur, x, y)
         #imdepth = advanced_iterative_depth(impure, imblur, x, y)
         print imdepth.max(), imdepth.min()
         #imdepth = filters.median_filter(imdepth, (8,8))
-        #imreblur = sconv(impure, x, y, imdepth)
-        #Image.fromarray(imreblur).convert('RGB').save(
-        #    '../tmp/depth/imreblur.bmp')
+        imreblur = sconv(impure, x, y, imdepth)
+        xdim, ydim = imreblur.shape
+        imsave = zeros((xdim, ydim*2), dtype=uint8)
+        imsave[:, :ydim] = imblur
+        imsave[:, ydim:] = imreblur
+        Image.fromarray(imsave).convert('RGB').save(
+            '../tmp/depth/imcmp.bmp')
         imdepth = 255*imdepth/imdepth.max()
         Image.fromarray(imdepth).show()
         Image.fromarray(imdepth).convert('RGB').save(

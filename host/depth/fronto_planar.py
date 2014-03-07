@@ -21,6 +21,9 @@ G = 9.8
 
 def register(impure, imblur, kernel=None):
     ''' Register and shift the pure image using fourier correlation method.'''
+    # Normalize the two images first
+    impure = (impure - mean(impure))/sqrt(variance(impure))
+    imblur = (imblur - mean(imblur))/sqrt(variance(imblur))
     IMPURE = fft.fft2(impure)
     IMBLUR = fft.fft2(imblur)
 
@@ -73,7 +76,11 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[int(xmax+xpos[i]), int(ymax-ypos[i])] += 1
+        kernel[int(xmax-xpos[i]), int(ymax+ypos[i])] += 1
+    x, y = where(kernel == kernel.max())
+    ktemp = zeros((2*x[0]+1, 2*y[0]+1))
+    ktemp[0,0] = 1
+    kernel = fftconvolve(kernel, ktemp)
     return kernel.astype(float)/(kernel.sum()*1.0)
 
 def estimate_simple_pos(accel, start, end):
@@ -130,18 +137,24 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     return best_depth
 
 if __name__ == '__main__':
-	# Load images
-	impure = imread('../output/cam/preview_im.bmp', flatten=True)
-	imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-	# Load the acceleration data.
-	data = loadtxt(accel_data_file)
-	start = 41
-	end = 93
-	x, y, z, g = estimate_simple_pos(data, start, end)
-	x -= mean(x); y -= mean(y)
+    # Load images
+    impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    # Load the acceleration data.
+    data = loadtxt(accel_data_file)
+    start = 41
+    end = 63
+    y, x, z, g = estimate_simple_pos(data, start, end)
+    x -= mean(x); y -= mean(y)
 
-	best_depth = iterative_depth(impure, imblur, x, y)
-	print best_depth
-	kernel = construct_kernel(x, y, best_depth, 10)
-	imreblur = fftconvolve(kernel, impure)
-	Image.fromarray(imreblur).convert('RGB').save('../tmp/imreblur.bmp')
+    best_depth = iterative_depth(impure, imblur, x, y)
+    print best_depth
+    kernel = construct_kernel(x, y, best_depth, 10)
+    ksave = kernel*255.0/kernel.max()
+    Image.fromarray(ksave.astype(uint8)).convert('RGB').save(
+        '../tmp/best_kernel.bmp')
+    imreblur = fftconvolve(kernel, impure, mode='same')
+    xdim, ydim = imblur.shape
+    imtemp = zeros((xdim, ydim*2))
+    imtemp[:, :ydim] = imblur; imtemp[:, ydim:] = imreblur
+    Image.fromarray(imtemp).convert('RGB').save('../tmp/imcmp.bmp')
