@@ -86,7 +86,7 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 10):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[xmax+int(xpos[i]), ymax-int(ypos[i])] += 1
+        kernel[xmax+int(xpos[i]), ymax+int(ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)
 
 numba_sconv = jit(double[:,:](double[:,:], double[:],
@@ -96,11 +96,12 @@ if __name__ == '__main__':
     data = loadtxt(accel_data_file)
     start = 41
     end = 63
-    ypos, xpos, zpos, g = estimate_simple_pos(data, start, end)
+    xpos, ypos, zpos, g = estimate_simple_pos(data, start, end)
     # Remove the mean
-    xpos -= mean(xpos); ypos -= mean(ypos)
+    #xpos -= mean(xpos); ypos -= mean(ypos)
     xdim, ydim = impure.shape
-    im = construct_kernel(xpos, ypos, 60000, 10)
+    dmax = hypot(xpos, ypos).max()
+    im = construct_kernel(xpos, ypos, 10/dmax, 10)
     im *= 255.0/im.max()
     Image.fromarray(im.astype(uint8)).save('../tmp/kernel.bmp')
     # Create a dmap

@@ -27,6 +27,15 @@ def tv(im):
 	diffy[:, :-1] = im[:, 1:] - im[:, :-1]
 	tv_mat = hypot(diffx, diffy)
 	return tv_mat.sum()
+
+def l2_norm(y, h, x):
+	''' Calculate |y-h*x|^2'''
+	y_hat = fftconvolve(h, x, mode='same')
+	ydiff = (y - y_hat)**2
+	return ydiff.sum()
 	
-def tv_deconv(im, kernel):
+def tv_deconv(im, kernel, alpha, niters=10):
 	''' Deconvolve the image using Total Variation. '''
+	x_t = im.copy
+	for i in range(niters):
+		
