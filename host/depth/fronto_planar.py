@@ -76,7 +76,7 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[int(xmax-xpos[i]), int(ymax+ypos[i])] += 1
+        kernel[int(xmax+xpos[i]), int(ymax-ypos[i])] += 1
     x, y = where(kernel == kernel.max())
     ktemp = zeros((2*x[0]+1, 2*y[0]+1))
     ktemp[0,0] = 1

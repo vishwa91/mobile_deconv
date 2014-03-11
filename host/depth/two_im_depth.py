@@ -380,43 +380,39 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 31
+    w = 7
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    nlevels = 20
+    nlevels = 40
+    save_data = zeros((xdim, ydim, nlevels))
     for depth in linspace(0, nlevels/dmax, nlevels):
-        for xshift in [0]:#range(-10, 10, 3):
-            for yshift in [0]:#range(-10, 10, 3):
-                print 'Iteration for %f depth'%depth
-                if mkernel == None:
-                    kernel = construct_kernel(xpos, ypos, depth)
-                else:
-                    kernel = zoom(mkernel, depth)
-                    kernel /= (1e-5+kernel.sum())
-                imreblur = fftconvolve(impure, kernel, mode='same')
-                #imreblur = register(imreblur, imblur, kernel)
-                imsave = norm_diff(imreblur, shift(imblur, [xshift, yshift]))
-                imdiff_curr = fftconvolve(imsave, avg_filter, mode='same')
-                #imdiff_curr = gaussian_filter(imsave, 3.1)
-                xdim, ydim = imblur.shape
-                imtemp = zeros((xdim, ydim*2), dtype=uint8)
-                imtemp[:, :ydim] = imblur
-                imtemp[:, ydim:] = imreblur#imsave*255.0/imsave.max()
-                Image.fromarray(imtemp).convert('RGB').save(
-                    '../tmp/depth/im%d.bmp'%count)
-                diff_array1.append(imdiff_curr[72, 525])
-                diff_array2.append(imdiff_curr[72, 448])
-                #imdiff_curr = gaussian_filter(imsave, 3.0)
-                x, y = where(imdiff_curr < imdiff)
-                imdepth[x, y] = depth
-                imdiff[x, y] = imdiff_curr[x, y]
-                count += 1
-    diff_array1.append(dmax); diff_array2.append(dmax)
-    return imdepth, diff_array1, diff_array2
+        print 'Iteration for %f depth'%depth
+        if mkernel == None:
+            kernel = construct_kernel(xpos, ypos, depth)
+        else:
+            kernel = zoom(mkernel, depth)
+            kernel /= (1e-5+kernel.sum())
+        imreblur = fftconvolve(impure, kernel, mode='same')
+        #imreblur = register(imreblur, imblur, kernel)
+        imsave = norm_diff(imreblur, imblur)
+        imdiff_curr = fftconvolve(imsave, avg_filter, mode='same')
+        #imdiff_curr = gaussian_filter(imsave, 3.1)
+        save_data[:,:,count] = imdiff_curr
+        xdim, ydim = imblur.shape
+        imtemp = zeros((xdim, ydim*2), dtype=uint8)
+        imtemp[:, :ydim] = imblur
+        imtemp[:, ydim:] = imreblur#imsave*255.0/imsave.max()
+        Image.fromarray(imtemp).convert('RGB').save(
+            '../tmp/depth/im%d.bmp'%count)
+        x, y = where(imdiff_curr < imdiff)
+        imdepth[x, y] = depth
+        imdiff[x, y] = imdiff_curr[x, y]
+        count += 1
+    return imdepth, save_data
 
 if __name__ == '__main__':
     try:
@@ -425,11 +421,6 @@ if __name__ == '__main__':
         pass
     impure = imread('../output/cam/preview_im.bmp', flatten=True)
     imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-    #impure = imread('../synthetic/random_dot.jpg', flatten=True)
-    #impure = imread('../synthetic/test.jpg', flatten=True)
-    #imblur = imread('../synthetic/test_sv.jpg', flatten=True)
-    #kernel = imread('../synthetic/o4_kernel.png', flatten=True)
-    
 
     # Load the acceleration data.
     data = loadtxt(accel_data_file)
@@ -438,48 +429,15 @@ if __name__ == '__main__':
     x, y, z, g = estimate_simple_pos(data, start, end)
     x -= mean(x); y -= mean(y)
 
-    imdepth = zeros_like(impure); imdepth[:,:] = 1000
-    imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
-    old_diff = zeros_like(impure)
-
     niters = 10
     window = 4
-    for mscale in [0]:
-        #imblur = imread('../tmp/synthetic_blur/space_variant_blur%d.bmp'%mscale, flatten=True)
-        impure = register(impure, imblur)
-    
-        imdepth, diff_array1, diff_array2 = iterative_depth(impure, imblur, x, y)
-        #imdepth = advanced_iterative_depth(impure, imblur, x, y)
-        print imdepth.max(), imdepth.min()
-        #imdepth = filters.median_filter(imdepth, (8,8))
-        imreblur = sconv(impure, x, y, imdepth)
-        xdim, ydim = imreblur.shape
-        imsave = zeros((xdim, ydim*2), dtype=uint8)
-        imsave[:, :ydim] = imblur
-        imsave[:, ydim:] = imreblur
-        Image.fromarray(imsave).convert('RGB').save(
-            '../tmp/depth/imcmp.bmp')
-        imdepth = 255*imdepth/imdepth.max()
-        Image.fromarray(imdepth).show()
-        Image.fromarray(imdepth).convert('RGB').save(
-            '../tmp/steer/imdepth%d.bmp'%mscale)
-    plot(diff_array1); plot(diff_array2); show() 
-    savetxt('../tmp/depth_var2.dat', diff_array2)
-    savetxt('../tmp/depth_var1.dat', diff_array1)
-    '''
-    for i in range(niters):
-        print 'Iteration %d'%i
-        imreblur = sconv(impure, x, y, imdepth)
-        imdiff = compute_gradient(imreblur, imblur, method='diff', xw=25, yw=25)
-        dgrad = imdiff - old_diff
-        dgrad_max = max(0.0001, abs(dgrad).max())
-        dgrad /= dgrad_max
-        Image.fromarray(imdiff).convert('RGB').save('../tmp/steer/im%d.bmp'%i)
-        old_diff = imdiff
-        imdepth = (1-dgrad)*imdepth
-        #xp, yp = where(dgrad > 0); xn, yn = where(dgrad < 0)
-        #imdepth[xp, yp] *= 0.5; imdepth[xn, yn] = 4
-    print imdepth.max(), imdepth.min()
-    imdepth *= 255/imdepth.max()
-    Image.fromarray(imdepth).convert('RGB').save('../tmp/steer/imdepth.bmp')
-    '''
+
+    impure = register(impure, imblur)
+
+    imdepth, save_data = iterative_depth(impure, imblur, x, y)
+    save('../tmp/diff_data', save_data)
+    #imdepth = filters.median_filter(imdepth, (8,8))
+    imdepth = 255*imdepth/imdepth.max()
+    Image.fromarray(imdepth).show()
+    Image.fromarray(imdepth).convert('RGB').save(
+        '../tmp/steer/imdepth.bmp')
