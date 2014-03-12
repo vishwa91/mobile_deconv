@@ -373,6 +373,14 @@ def norm_diff(im1, im2):
     diff_im = (imnorm1 - imnorm2)**2
     return diff_im
 
+def fft_diff(im1, im2, w=8):
+    ''' Calculate the difference of the two images using spacial fft'''
+    IMFFT1 = spacial_fft(im1, w, w)
+    IMFFT2 = spacial_fft(im2, w, w)
+    IMDIFF = abs(IMFFT1) - abs(IMFFT2)
+    imdiff = real(spacial_ifft(IMDIFF, w, w))
+    return imdiff
+
 def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     ''' Estimate the depth using multiple iterations. Rudimentary, but expected
         to work.
@@ -380,14 +388,14 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     imdepth = zeros_like(impure)
     imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
     imdiff_curr = zeros_like(impure)
-    w = 7
+    w = 31
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    nlevels = 40
+    nlevels = 30
     save_data = zeros((xdim, ydim, nlevels))
     for depth in linspace(0, nlevels/dmax, nlevels):
         print 'Iteration for %f depth'%depth
@@ -399,7 +407,7 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
         imreblur = fftconvolve(impure, kernel, mode='same')
         #imreblur = register(imreblur, imblur, kernel)
         imsave = norm_diff(imreblur, imblur)
-        imdiff_curr = fftconvolve(imsave, avg_filter, mode='same')
+        imdiff_curr = sqrt(fftconvolve(imsave, avg_filter, mode='same'))
         #imdiff_curr = gaussian_filter(imsave, 3.1)
         save_data[:,:,count] = imdiff_curr
         xdim, ydim = imblur.shape
@@ -421,13 +429,20 @@ if __name__ == '__main__':
         pass
     impure = imread('../output/cam/preview_im.bmp', flatten=True)
     imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    #impure = imread('../test_output/synthetic4/preview_im.jpg', flatten=True)
+    #imblur = imread('../test_output/synthetic4/saved_im.jpg', flatten=True)
+    #impure = imread('../synthetic/test.jpg', flatten=True)
+    #imblur = imread('../tmp/synthetic_blur/space_variant_blur10.bmp', flatten=True)
+
 
     # Load the acceleration data.
     data = loadtxt(accel_data_file)
     start = 41
     end = 63
     x, y, z, g = estimate_simple_pos(data, start, end)
-    x -= mean(x); y -= mean(y)
+
+    #y = range(-4, 5)
+    #x = [0]*len(y)
 
     niters = 10
     window = 4
@@ -436,7 +451,7 @@ if __name__ == '__main__':
 
     imdepth, save_data = iterative_depth(impure, imblur, x, y)
     save('../tmp/diff_data', save_data)
-    #imdepth = filters.median_filter(imdepth, (8,8))
+    
     imdepth = 255*imdepth/imdepth.max()
     Image.fromarray(imdepth).show()
     Image.fromarray(imdepth).convert('RGB').save(

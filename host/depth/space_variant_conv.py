@@ -41,6 +41,21 @@ def sconv(im, xcoords, ycoords, dmap):
 	avg_map[x, y] = 1
 	return final_im/avg_map
 
+def sconv2(impure, dmap, xpos, ypos, nlevels=2, scale=1):
+    ''' Return spacially convolved image'''
+    dmap /= dmap.max()
+    levels = linspace(0, 1.1, nlevels)
+    xdim, ydim = impure.shape
+    imblurred = zeros_like(impure)
+    for level in levels:
+        x, y = where(dmap < level)
+        depth = level
+        dmap[x, y] = float('inf')
+        kernel = construct_kernel(xpos, ypos, depth*scale)
+        imtemp = fftconvolve(impure, kernel, mode='same')
+        imblurred[x, y] = imtemp[x, y]
+    return imblurred
+
 def estimate_simple_pos(accel, start, end):
     ''' Simple calculation of position using just integration'''
     if end == len(accel[:,0]):
@@ -86,13 +101,13 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 10):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[xmax+int(xpos[i]), ymax+int(ypos[i])] += 1
+        kernel[xmax+int(xpos[i]), ymax-int(ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)
 
 numba_sconv = jit(double[:,:](double[:,:], double[:],
 				  double[:], double[:,:]))(sconv)
 if __name__ == '__main__':
-    impure = imread('../synthetic/random_dot.jpg', flatten=True)
+    impure = imread('../synthetic/test.jpg', flatten=True)
     data = loadtxt(accel_data_file)
     start = 41
     end = 63
@@ -101,17 +116,15 @@ if __name__ == '__main__':
     #xpos -= mean(xpos); ypos -= mean(ypos)
     xdim, ydim = impure.shape
     dmax = hypot(xpos, ypos).max()
-    im = construct_kernel(xpos, ypos, 10/dmax, 10)
-    im *= 255.0/im.max()
-    Image.fromarray(im.astype(uint8)).save('../tmp/kernel.bmp')
-    # Create a dmap
     dmap = imread('../synthetic/depth.gif', flatten=True)
-    #dmap[:,:] = 1
-    dmax = hypot(xpos,ypos).max() * dmap.max()
-    # Restrict yourself to a maximum kernel diameter of 3
+    dmax = hypot(xpos,ypos).max()
+    # Restrict yourself to a maximum kernel diameter of 10
     Image.fromarray(dmap*255.0/dmap.max()).show()
-    for maxscale in range(1, 15):
-        print 'Creating synthetic image for %d max scale'%maxscale
-        imblur = sconv(impure, xpos, ypos, dmap*maxscale/dmax)
-        Image.fromarray(imblur).convert('RGB').save(
-            '../tmp/synthetic_blur/space_variant_blur%d.bmp'%maxscale)
+    dmap /= dmap.max()
+    maxscale = 10
+    imblur = sconv(impure, xpos, ypos, dmap*maxscale/dmax)
+    imblur = sconv2(impure, dmap, xpos, ypos, nlevels=4, scale=maxscale/dmax)
+    Image.fromarray(imblur).convert('RGB').save(
+        '../tmp/synthetic_blur/space_variant_blur.bmp')
+    print (xpos*maxscale/dmax).astype(int)
+    print (ypos*maxscale/dmax).astype(int)
