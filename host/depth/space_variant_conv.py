@@ -112,8 +112,7 @@ if __name__ == '__main__':
     start = 41
     end = 63
     xpos, ypos, zpos, g = estimate_simple_pos(data, start, end)
-    # Remove the mean
-    #xpos -= mean(xpos); ypos -= mean(ypos)
+    
     xdim, ydim = impure.shape
     dmax = hypot(xpos, ypos).max()
     dmap = imread('../synthetic/depth.gif', flatten=True)

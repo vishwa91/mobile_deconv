@@ -395,7 +395,7 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    nlevels = 30
+    nlevels = 20
     save_data = zeros((xdim, ydim, nlevels))
     for depth in linspace(0, nlevels/dmax, nlevels):
         print 'Iteration for %f depth'%depth
@@ -414,8 +414,8 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
         imtemp = zeros((xdim, ydim*2), dtype=uint8)
         imtemp[:, :ydim] = imblur
         imtemp[:, ydim:] = imreblur#imsave*255.0/imsave.max()
-        Image.fromarray(imtemp).convert('RGB').save(
-            '../tmp/depth/im%d.bmp'%count)
+        #Image.fromarray(imtemp).convert('RGB').save(
+        #    '../tmp/depth/im%d.bmp'%count)
         x, y = where(imdiff_curr < imdiff)
         imdepth[x, y] = depth
         imdiff[x, y] = imdiff_curr[x, y]
@@ -427,12 +427,12 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    impure = imread('../output/cam/preview_im.bmp', flatten=True)
-    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
+    #impure = imread('../output/cam/preview_im.bmp', flatten=True)
+    #imblur = imread('../output/cam/saved_im.bmp', flatten=True)
     #impure = imread('../test_output/synthetic4/preview_im.jpg', flatten=True)
     #imblur = imread('../test_output/synthetic4/saved_im.jpg', flatten=True)
-    #impure = imread('../synthetic/test.jpg', flatten=True)
-    #imblur = imread('../tmp/synthetic_blur/space_variant_blur10.bmp', flatten=True)
+    impure = imread('../synthetic/test.jpg', flatten=True)
+    imblur = imread('../tmp/synthetic_blur/space_variant_blur10.bmp', flatten=True)
 
 
     # Load the acceleration data.
@@ -447,10 +447,10 @@ if __name__ == '__main__':
     niters = 10
     window = 4
 
-    impure = register(impure, imblur)
+    #impure = register(impure, imblur)
 
     imdepth, save_data = iterative_depth(impure, imblur, x, y)
-    save('../tmp/diff_data', save_data)
+    #save('../tmp/diff_data', save_data)
     
     imdepth = 255*imdepth/imdepth.max()
     Image.fromarray(imdepth).show()

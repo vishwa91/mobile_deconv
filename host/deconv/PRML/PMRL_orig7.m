@@ -2,6 +2,9 @@
 % Thangamani
 % modified by Sahana 14/5/13
 
+% Add test_cases path
+addpath(genpath('./test_cases'));
+
 clc; clear all; close all;
 BlurIm = double(imread('corn_flakes_set2.png'));
 load TSF_align_corn_flakes_AB;
@@ -27,15 +30,18 @@ for S = [4]
         B_Err = blurredimgener_inc_my_segs(Err,tsf,ty_loc,tx_loc,ang_loc,scal_loc,1,1,normal_fn);
         for n = 1:3
             %         for n = 1
-            [gx, gy] = derivative5(I(:,:,n),'x','y');
+            %[gx, gy] = derivative5(I(:,:,n),'x','y');
+            [gx, gy] = gradient(I(:,:,n));
             normg = sqrt(gx.^2  +gy.^2);
             normg(normg==0) = 1;
             gx = gx./ normg;
             gy = gy./normg;
-            gxx = derivative5(gx,'x');
-            gxy = derivative5(gy,'x');
-            gyx = derivative5(gx,'y');
-            gyy = derivative5(gy,'y');
+            %gxx = derivative5(gx,'x');
+            %gxy = derivative5(gy,'x');
+            %gyx = derivative5(gx,'y');
+            %gyy = derivative5(gy,'y');
+            [gxx, gxy] = gradient(gx);
+            [gyx, gyy] = gradient(gy);
             R(:,:,n) = gxx+gxy+gyx+gyy;
         end
         I = (I./(1+ lamda*R)).*B_Err;
