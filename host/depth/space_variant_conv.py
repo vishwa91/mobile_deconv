@@ -41,6 +41,23 @@ def sconv(im, xcoords, ycoords, dmap):
 	avg_map[x, y] = 1
 	return final_im/avg_map
 
+def linear_convolve(im, kernel):
+    ''' Convolve the two images in linear fashion but return only the 
+        actual image size
+    '''
+    imout = fftconvolve(im, kernel, 'full')
+    kx, ky = kernel.shape
+    xdim, ydim = imout.shape
+    if kx%2 == 1:
+        kx1, kx2 = kx//2, kx//2
+    else:
+        kx1 = (kx-1)//2; kx2 = kx//2
+    if ky%2 == 1:
+        ky1, ky2 = ky//2, ky//2
+    else:
+        ky1 = (ky-1)//2; ky2 = ky//2
+    return imout[kx1:xdim-kx2, ky1:ydim-ky2]
+
 def sconv2(impure, dmap, xpos, ypos, nlevels=2, scale=1):
     ''' Return spacially convolved image'''
     dmap /= dmap.max()
@@ -52,7 +69,7 @@ def sconv2(impure, dmap, xpos, ypos, nlevels=2, scale=1):
         depth = level
         dmap[x, y] = float('inf')
         kernel = construct_kernel(xpos, ypos, depth*scale)
-        imtemp = fftconvolve(impure, kernel, mode='same')
+        imtemp = linear_convolve(impure, kernel)
         imblurred[x, y] = imtemp[x, y]
     return imblurred
 
@@ -104,8 +121,6 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 10):
         kernel[xmax+int(xpos[i]), ymax-int(ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)
 
-numba_sconv = jit(double[:,:](double[:,:], double[:],
-				  double[:], double[:,:]))(sconv)
 if __name__ == '__main__':
     impure = imread('../synthetic/test.jpg', flatten=True)
     data = loadtxt(accel_data_file)
@@ -120,7 +135,7 @@ if __name__ == '__main__':
     # Restrict yourself to a maximum kernel diameter of 10
     Image.fromarray(dmap*255.0/dmap.max()).show()
     dmap /= dmap.max()
-    maxscale = 10
+    maxscale = 20
     imblur = sconv(impure, xpos, ypos, dmap*maxscale/dmax)
     imblur = sconv2(impure, dmap, xpos, ypos, nlevels=4, scale=maxscale/dmax)
     Image.fromarray(imblur).convert('RGB').save(
