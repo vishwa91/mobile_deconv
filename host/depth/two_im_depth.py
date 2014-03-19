@@ -13,7 +13,7 @@ from scipy.special import *
 from numpy import fft
 
 import Image
-import ssim
+from image3d import *
 
 accel_data_file = '../output/cam/saved_ac.dat'
 T = 10e-3
@@ -116,7 +116,7 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[int(xmax+xpos[i]), int(ymax-ypos[i])] += 1
+        kernel[int(xmax+xpos[i]), int(ymax+ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)
 
 def estimate_simple_pos(accel, start, end):
@@ -402,17 +402,17 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     ''' Estimate the depth using multiple iterations. Rudimentary, but expected
         to work.
     '''
-    imdepth = zeros_like(impure)
-    imdiff = zeros_like(impure); imdiff[:,:] = float('inf')
-    imdiff_curr = zeros_like(impure)
-    w = 31
+    w = 15
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
+    imdepth = zeros((xdim, ydim))
+    imdiff = zeros((xdim, ydim)); imdiff[:,:] = float('inf')
+    imdiff_curr = zeros((xdim, ydim))
     xw = 32; yw = 32
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    nlevels = 40
+    nlevels = 30
     save_data = zeros((xdim, ydim, nlevels))
     for depth in linspace(0, nlevels/dmax, nlevels):
         print 'Iteration for %f depth'%depth
@@ -423,17 +423,17 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
             kernel /= (1e-5+kernel.sum())
         imreblur = linear_convolve(impure, kernel)
         #imreblur = register(imreblur, imblur, kernel)
+        # imsave is a 2d image
         imsave = norm_diff(imreblur, imblur)
         imdiff_curr = sqrt(linear_convolve(imsave, avg_filter))
         #imdiff_curr = gaussian_filter(imsave, 3.1)
         #save_data[:,:,count] = imdiff_curr
-        xdim, ydim = imblur.shape
         imtemp = zeros((xdim, ydim*2), dtype=uint8)
         imtemp[:, :ydim] = imblur
         imtemp[:, ydim:] = imreblur#imsave*255.0/imsave.max()
         Image.fromarray(imtemp).convert('RGB').save(
             '../tmp/depth/im%d.bmp'%count)
-        x, y = where(imdiff_curr < imdiff)
+        x, y = where(imdiff_curr <= imdiff)
         imdepth[x, y] = depth
         imdiff[x, y] = imdiff_curr[x, y]
         count += 1
@@ -444,31 +444,40 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    impure = imread('../output/cam/preview_im.bmp', flatten=True)
-    imblur = imread('../output/cam/saved_im.bmp', flatten=True)
-    #impure = imread('../test_output/synthetic5/preview_im.bmp', flatten=True)
-    #imblur = imread('../test_output/synthetic5/saved_im.bmp', flatten=True)
-    #impure = imread('../synthetic/test.jpg', flatten=True)
-    #imblur = imread('../tmp/synthetic_blur/space_variant_blur.bmp', flatten=True)
+    for idx in range(1,7):
+        main_dir = '../test_output/depth/case%d'%idx
+        impure = imread(os.path.join(main_dir, 'preview_im.bmp'), flatten=True)
+        imblur = imread(os.path.join(main_dir, 'saved_im.bmp'), flatten=True)
+        #impure = imread('../test_output/synthetic5/preview_im.bmp', flatten=True)
+        #imblur = imread('../test_output/synthetic5/saved_im.bmp', flatten=True)
+        #impure = imread('../synthetic/test.jpg', flatten=True)
+        #imblur = imread('../tmp/synthetic_blur/space_variant_blur.bmp', flatten=True)
 
 
-    # Load the acceleration data.
-    data = loadtxt(accel_data_file)
-    start = 41
-    end = 63
-    x, y, z, g = estimate_simple_pos(data, start, end)
+        # Load the acceleration data.
+        data = loadtxt(os.path.join(main_dir, 'saved_ac.dat'))
+        start = 41
+        end = 63
+        x, y, z, g = estimate_simple_pos(data, start, end)
+        x -= mean(x); y -= mean(y)
 
-    #y = range(-4, 5)
-    #x = [0]*len(y)
+        #y = range(-4, 5)
+        #x = [0]*len(y)
 
-    niters = 10
-    window = 4
+        niters = 10
+        window = 4
 
-    impure = register(impure, imblur)
-
-    imdepth, save_data = iterative_depth(impure, imblur, x, y)
-    #save('../tmp/diff_data', save_data)
-    
+        #impure = register(impure, imblur)
+        for xshift in range(-20, 20):
+            for yshift in range(-20, 20):
+                print 'Estimating depth for a new shift'
+                imdepth, save_data = iterative_depth(
+                    shift(impure, [xshift, yshift]), imblur, x, y)
+                imdepth *= 255.0/imdepth.max()
+                Image.fromarray(imdepth).convert('RGB').save(
+                    '../tmp/steer/%d/depth_%d_%d.bmp'%(idx,xshift,yshift))
+                #save('../tmp/diff_data', save_data)
+        
     imdepth = 255*imdepth/imdepth.max()
     Image.fromarray(imdepth).show()
     Image.fromarray(imdepth).convert('RGB').save(

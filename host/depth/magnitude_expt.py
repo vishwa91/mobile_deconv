@@ -8,6 +8,7 @@ from scipy.signal import *
 from numpy import fft
 from scipy.interpolate import spline
 
+import matplotlib.pyplot as mp
 import Image
 from numba import jit, double
 
@@ -100,5 +101,14 @@ if __name__ == '__main__':
     mag_imblur = real(fft.ifft2(abs(fft.fft2(imblur))))
     IMPURE = abs(fft.fft2(impure))
     mag_impure = real(fft.ifft2(IMPURE))
+
+    Image.fromarray(impure).show()
+    Image.fromarray(imblur).show()
+    gx, gy = gradient(imblur)
+    theta = arctan2(gy, gx)
+    xdim, ydim = theta.shape
+    theta_vec = theta.reshape((xdim*ydim, 1))
+    hog = mp.hist(theta_vec, bins=50)
+    mp.show()
 
     

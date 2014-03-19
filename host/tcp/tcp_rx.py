@@ -159,6 +159,7 @@ def save_data(dstring):
     preview_string = dstring[stip_index+len(STIP)+1:edip_index-1]
     preview_im_flat = array([ord(i) for i in preview_string])
     preview_im = preview_im_flat.reshape((480,640,4)).astype(uint8)
+    preview_im[:,:,2], preview_im[:,:,0] = [preview_im[:,:,0], preview_im[:,:,2]]
     Image.fromarray(preview_im[:,:,:3]).convert('RGB').save(
         os.path.join(OUTPUT_DIR, PREVIEW_IMAGE_NAME))
     # Save the image and the data
@@ -433,6 +434,8 @@ def my_main():
     count = 0
     dhandle.im.save(os.path.join(TMP_DIR, 'imtest.bmp'))
     
+    print 'Done logging'
+    sys.exit()
     # The right position values start from t=43 to t=43+20
     maxshift = 10e-3
     shiftstep = 2e-3
