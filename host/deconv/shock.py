@@ -38,6 +38,6 @@ def shock_filter(im, tstep=0.2, sigma=2, niters=10):
 	return imout
 
 if __name__ == '__main__':
-	im = imread('../output/cam/saved_im_preview.bmp', flatten=True)
-	imout = shock_filter(im, sigma = 0.5, niters=10)
+	im = imread('../output/cam/saved_im.bmp', flatten=True)
+	imout = shock_filter(im, sigma = 0.5, niters=100)
 	Image.fromarray(imout).show()

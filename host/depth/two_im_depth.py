@@ -402,7 +402,7 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     ''' Estimate the depth using multiple iterations. Rudimentary, but expected
         to work.
     '''
-    w = 15
+    w = 7
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     imdepth = zeros((xdim, ydim))
@@ -412,9 +412,9 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     dmax = hypot(xpos, ypos).max()
     count = 0
     diff_array1 = []; diff_array2 = []
-    nlevels = 30
+    nlevels = 25
     save_data = zeros((xdim, ydim, nlevels))
-    for depth in linspace(0, nlevels/dmax, nlevels):
+    for depth in linspace(0,1,11):#linspace(0, nlevels/dmax, nlevels):
         print 'Iteration for %f depth'%depth
         if mkernel == None:
             kernel = construct_kernel(xpos, ypos, depth)
@@ -444,12 +444,12 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    for idx in range(1,7):
+    for idx in [1]:#range(1,7):
         main_dir = '../test_output/depth/case%d'%idx
-        impure = imread(os.path.join(main_dir, 'preview_im.bmp'), flatten=True)
-        imblur = imread(os.path.join(main_dir, 'saved_im.bmp'), flatten=True)
-        #impure = imread('../test_output/synthetic5/preview_im.bmp', flatten=True)
-        #imblur = imread('../test_output/synthetic5/saved_im.bmp', flatten=True)
+        #impure = imread(os.path.join(main_dir, 'preview_im.bmp'), flatten=True)
+        #imblur = imread(os.path.join(main_dir, 'saved_im.bmp'), flatten=True)
+        impure = imread('../test_output/synthetic/case1/preview_im.bmp', flatten=True)
+        imblur = imread('../test_output/synthetic/case1/saved_im.bmp', flatten=True)
         #impure = imread('../synthetic/test.jpg', flatten=True)
         #imblur = imread('../tmp/synthetic_blur/space_variant_blur.bmp', flatten=True)
 
@@ -461,16 +461,17 @@ if __name__ == '__main__':
         x, y, z, g = estimate_simple_pos(data, start, end)
         x -= mean(x); y -= mean(y)
 
-        #y = range(-4, 5)
-        #x = [0]*len(y)
+        y = range(-4, 5) + [1]*10
+        x = linspace(0,1,len(y))
 
         niters = 10
         window = 4
 
-        #impure = register(impure, imblur)
-        for xshift in range(-20, 20):
-            for yshift in range(-20, 20):
-                print 'Estimating depth for a new shift'
+        impure = register(impure, imblur)
+        shifts = range(-2,2,1)
+        for xshift in shifts:
+            for yshift in shifts:
+                print 'Estimating depth for a (%d,%d) shift'%(xshift, yshift)
                 imdepth, save_data = iterative_depth(
                     shift(impure, [xshift, yshift]), imblur, x, y)
                 imdepth *= 255.0/imdepth.max()
