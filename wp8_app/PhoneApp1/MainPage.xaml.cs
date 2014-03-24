@@ -48,6 +48,10 @@ namespace PhoneApp1
         List<float> accelY = new List<float>();
         List<float> accelZ = new List<float>();
 
+        // Storage variables for gravity vector
+        float gx = 0, gy = 0, gz = 0;
+        // Constant for the low pass filtering operation. emperical
+        const float alpha = 0.98F;
         // Bool variable to enable logging.
         bool accel_log = false;
         // Bool variable to enable preview image capture;
@@ -223,15 +227,19 @@ namespace PhoneApp1
             if (app_camera.cam_busy == true)
             {
                 focus_slider.IsEnabled = false;
-                accelX.Add(accel.X);
-                accelY.Add(accel.Y);
-                accelZ.Add(accel.Z);
+                accelX.Add(accel.X - gx);
+                accelY.Add(accel.Y - gy);
+                accelZ.Add(accel.Z - gz);
             }
             if ((app_camera.cam_busy == false) && (app_camera.transmit == true))
             {
                 Log("Camera capture complete", UpdateType.DebugSection);
                 if (app_comsocket != null)
                 {
+                    // Send gravity vector data
+                    app_comsocket.Send("STGR\n");
+                    app_comsocket.Send(gx.ToString() + ";" + gy.ToString() + ";" + gz.ToString() + "\n"); 
+                    app_comsocket.Send("EDGR\n");
                     // Send acceleration data
                     app_comsocket.Send("STAC\n");
                     string accel_string = "";
@@ -279,6 +287,10 @@ namespace PhoneApp1
             }
             Deployment.Current.Dispatcher.BeginInvoke(delegate()
             {
+                // Estimate gravity vector from static data
+                gx = alpha * gx + (1 - alpha) * accel.X;
+                gy = alpha * gy + (1 - alpha) * accel.Y;
+                gz = alpha * gz + (1 - alpha) * accel.Z;
                 txtAccel.Text = string.Format("x:{0}\n,y:{1}\n,z:{2}", accel.X.ToString("0.00"), accel.Y.ToString("0.00"), accel.Z.ToString("0.00"));
             });
         }

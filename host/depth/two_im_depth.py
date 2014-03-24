@@ -116,7 +116,7 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[int(xmax+xpos[i]), int(ymax+ypos[i])] += 1
+        kernel[int(xmax+xpos[i]), int(ymax-ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)
 
 def estimate_simple_pos(accel, start, end):
@@ -444,12 +444,12 @@ if __name__ == '__main__':
         os.mkdir('../tmp/steer')
     except OSError:
         pass
-    for idx in range(1,7):
+    for idx in [6]:
         main_dir = '../test_output/depth/case%d'%idx
         impure = imread(os.path.join(main_dir, 'preview_im.bmp'), flatten=True)
         imblur = imread(os.path.join(main_dir, 'saved_im.bmp'), flatten=True)
-        #impure = imread('../test_output/synthetic5/preview_im.bmp', flatten=True)
-        #imblur = imread('../test_output/synthetic5/saved_im.bmp', flatten=True)
+        impure = imread('../test_output/synthetic/preview_im.bmp', flatten=True)
+        imblur = imread('../test_output/synthetic/saved_im.bmp', flatten=True)
         #impure = imread('../synthetic/test.jpg', flatten=True)
         #imblur = imread('../tmp/synthetic_blur/space_variant_blur.bmp', flatten=True)
 
@@ -461,8 +461,8 @@ if __name__ == '__main__':
         x, y, z, g = estimate_simple_pos(data, start, end)
         x -= mean(x); y -= mean(y)
 
-        #y = range(-4, 5)
-        #x = [0]*len(y)
+        y = range(-4, 5)
+        x = [0]*len(y)
 
         niters = 10
         window = 4

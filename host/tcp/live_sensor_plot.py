@@ -54,6 +54,8 @@ zaccel = []
 time = []
 current_time = 0
 
+gx = 0; gy = 0; gz = 0;
+alpha = 0.99
 while 1:
     data = conn.recv(BUFFER_SIZE).replace('\x00', '')
     if 'EDLG' in data:
@@ -66,6 +68,9 @@ while 1:
         for i in ac_tokens[:-1]:
             try:
                 acx, acy, acz = i.split(';')
+                gx = alpha*gx + (1-alpha)*float(acx)
+                gy = alpha*gy + (1-alpha)*float(acy)
+                gz = alpha*gz + (1-alpha)*float(acz)
                 xaccel.append(float(acx))
                 yaccel.append(float(acy))
                 zaccel.append(float(acz))
@@ -82,9 +87,9 @@ while 1:
         liney.set_xdata(range(WINDOW_SIZE))
         linez.set_xdata(range(WINDOW_SIZE))
 
-        linex.set_ydata(xaccel[-WINDOW_SIZE:])
-        liney.set_ydata(yaccel[-WINDOW_SIZE:])
-        linez.set_ydata(zaccel[-WINDOW_SIZE:])
+        linex.set_ydata(array(xaccel[-WINDOW_SIZE:]) - gx)
+        liney.set_ydata(array(yaccel[-WINDOW_SIZE:]) - gy)
+        linez.set_ydata(array(zaccel[-WINDOW_SIZE:]) - gz)
         draw()
     
 conn.close()
