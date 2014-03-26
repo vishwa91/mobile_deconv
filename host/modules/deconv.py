@@ -37,21 +37,15 @@ def reg_deconv(kernel, im, reg_filters = None, alpha=0.1):
                          [-1,-1,-1]])
         filter2 = array([[1, 0,-1],
                          [1, 0,-1],
-                         [1, 0,-1]])          
-        
-        filter3 = array([[0, 1, 0],
-                         [1,-4, 1],
-                         [0, 1, 0]])
-        
-        reg_filters = [filter1, filter2, filter3]
-		
+                         [1, 0,-1]])         
+        reg_filters = [filter1, filter2]		
     xdim, ydim = im.shape
     IM = fft.fft2(im, s=(xdim, ydim))
     K  = fft.fft2(kernel, s=(xdim, ydim))
     Y = zeros_like(IM)
     for reg_filter in reg_filters:
         temp = fft.fft2(reg_filter, s=(xdim, ydim))
-        Y += (abs(temp)**2)/3.0
+        Y += (abs(temp)**2)
     IMOUT = conj(K)*IM/(abs(K)**2 + alpha*Y)
     imout = fft.ifft2(IMOUT)
     return imout*255.0/imout.max()

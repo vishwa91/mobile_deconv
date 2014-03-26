@@ -53,4 +53,6 @@ def equalize(blind_kernel, xpos, ypos):
 	xhist_new = _equalize(xhist_blind, xhist_accel)
 	yhist_new = _equalize(yhist_blind, yhist_accel)
 
+	
+
 
