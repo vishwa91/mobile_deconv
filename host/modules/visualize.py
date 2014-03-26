@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+'''
+    Routines in this file are used for visualizing data.
+'''
 import os, sys
 import commands
 
@@ -14,10 +17,8 @@ from numpy import fft
 
 import Image
 
-data_filename = '../tmp/diff_data.npy'
-
-class Datahandle(object):
-	''' Class to handle the data'''
+class DiffDatahandle(object):
+	''' Class to handle the data for visualizing image difference'''
 	def __init__(self, fname):
 		'''Initialize the class by loading the data'''
 		self.data = load(fname)
@@ -38,8 +39,3 @@ class Datahandle(object):
 			plot(plot_data, label='(%d, %d)'%(x,y))
 		legend()
 		show()
-
-if __name__ == '__main__':
-	im = imread('../tmp/steer/imdepth.bmp', flatten=True)
-	Image.fromarray(im).show()
-	dhandle = Datahandle(data_filename)

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+    Routines in this file are used for handling RGB images instead of grayscale
+    images.
+'''
 import os, sys
 import commands
 

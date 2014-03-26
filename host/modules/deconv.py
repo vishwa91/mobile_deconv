@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+    Routines in this file are mostly concerned with deconvolution of an image
+    using non-blind methods.
+'''
 import os, sys
 
 from scipy import *
@@ -9,11 +13,6 @@ from scipy import random
 from numpy import fft
 
 import Image
-
-TMP_DIR = '../tmp/deconv'
-kernel_name = '../tmp/kernel.bmp'
-testim_name = '../tmp/cam/0_im.bmp'
-goodim_name = '../synthetic/test.jpg'
 
 def wiener_deconv(kernel, im, nsr=0.1):
     """ Wiener deconvolution method"""
@@ -56,30 +55,3 @@ def reg_deconv(kernel, im, reg_filters = None, alpha=0.1):
     IMOUT = conj(K)*IM/(abs(K)**2 + alpha*Y)
     imout = fft.ifft2(IMOUT)
     return imout*255.0/imout.max()
-
-if __name__ == '__main__':
-    kernel = zoom(imread(kernel_name, flatten=True), 0.2)
-    #testim = imread(testim_name, flatten=True)
-    goodim = imread(goodim_name, flatten=True)
-    
-    kernel = kernel/sum(kernel)
-    
-    # Synthetically create the image.
-    testim = fftconvolve(goodim, kernel)
-    
-    # Add noise.
-    s = testim.shape
-    noise = random.normal(0, 3, s)
-    testim += noise
-    count = 0
-    # Try making the tmp directory
-    try:
-		os.mkdir(TMP_DIR)
-    except OSError:
-		pass
-    alpha = 0.01
-    Image.fromarray(testim).convert('RGB').save('../tmp/deconv/blurred.bmp')
-    imdeconv = wiener_deconv(zoom(kernel, 0.5), testim, alpha)
-    imreconv = fftconvolve(imdeconv, zoom(kernel, 1.5))
-    kernel /= kernel.sum()
-    Image.fromarray(imreconv).convert('RGB').save('../tmp/deconv/reblur.bmp')
