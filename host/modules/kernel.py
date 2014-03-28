@@ -59,7 +59,6 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     ypos = d*spline(range(ntime), ypos,
         linspace(0, ntime, ntime*interpolate_scale))
     ntime *= interpolate_scale
-    #xpos -= mean(xpos); ypos -= mean(ypos)
     xmax = max(abs(xpos)); ymax = max(abs(ypos))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
