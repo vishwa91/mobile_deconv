@@ -7,6 +7,10 @@ import os, sys, time
 import socket
 import commands
 
+# Seems like we have some problem with matplotlib
+import matplotlib
+matplotlib.use('TkAgg')
+
 from matplotlib.pyplot import *
 from scipy import *
 from scipy.signal import *
@@ -55,12 +59,16 @@ class AttitudeHandle(object):
             self.bufsize = 1024             # TCP buffer size
             self.t = 10e-3                  # Sampling time
             self.g = 9.8                    # Acceleration due to gravity
-            self.alpha = 0.8                # LPF constant
+            self.alpha = 0.90               # LPF constant
+            self.window = 10                # Window for velocity calculation
 
             # Data arrays
-            self.xaccel = []
-            self.yaccel = []
-            self.zaccel = []
+            self.xaccel = [0]
+            self.yaccel = [0]
+            self.zaccel = [0]
+
+            # Old velocity values.
+            self.vx = 0; self.vy = 0
 
             # Acceleration due to gravity
             self.gx = 0; self.gy = 0; self.gz = 0
@@ -71,8 +79,8 @@ class AttitudeHandle(object):
             self.ax_orient.grid(True)
 
             self.ax_pos = subplot(2,1,2, polar=False)
-            self.ax_pos.set_xlim(-2,2)
-            self.ax_pos.set_ylim(-2,2)
+            self.ax_pos.set_xlim(-1,1)
+            self.ax_pos.set_ylim(-1,1)
             self.ax_pos.grid(True)            
 
         def connect(self):
@@ -115,13 +123,17 @@ class AttitudeHandle(object):
                                        (1-self.alpha)*float(acy))
                             self.gz = (self.alpha*self.gz +
                                        (1-self.alpha)*float(acz))
-                            self.xaccel.append(float(acx))
-                            self.yaccel.append(float(acy))
-                            self.zaccel.append(float(acz))
+                            self.xaccel.append(float(acx) - self.gx)
+                            self.yaccel.append(float(acy) - self.gy)
+                            self.zaccel.append(float(acz) - self.gz)
                             #self.update_plots()
                         except ValueError:
                             pass
-                    print arctan2(self.gy, self.gx)*180/pi
+                    theta = 180 - arctan2(self.gy, self.gx)*180/pi
+                    if theta > 180:
+                        print 360 - theta
+                    else:
+                        print theta
                     self.update_plots()
         def update_plots(self):
             '''
@@ -132,16 +144,18 @@ class AttitudeHandle(object):
             self.ax_orient.clear(); self.ax_pos.clear()
             # Set the axes again.
             self.ax_orient.set_rmax(2.0); self.ax_orient.grid(True)
-            self.ax_pos.set_xlim(-2,2); self.ax_pos.set_ylim(-2,2)
+            self.ax_pos.set_xlim(-0.2,0.2); self.ax_pos.set_ylim(-0.2,0.2)
             self.ax_pos.grid(True); self.ax_pos.set_aspect('equal')
 
             # Plot data
             self.ax_orient.plot(theta, 1.0, 'bo')
-            # Let us look at position later
-            self.ax_pos.plot(0,0, 'bo')
+            vx = cumsum(self.xaccel)[-1]*self.g*self.t
+            vy = cumsum(self.yaccel)[-1]*self.g*self.t
+            self.ax_pos.plot(vy-self.vy, self.vx-vx, 'bo')
+            self.vx = 0.9*vx+(1-0.9)*self.vx
+            self.vy = 0.9*vy+(1-0.9)*self.vy
             draw()
             
-
 if __name__ == '__main__':
     ahandle = AttitudeHandle()
     ahandle.connect()
