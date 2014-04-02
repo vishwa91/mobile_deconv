@@ -56,6 +56,8 @@ namespace PhoneApp1
         bool accel_log = false;
         // Bool variable to enable preview image capture;
         bool get_preview_image = false;
+        // Bool variable to enable register mode.
+        bool register = false;
         // Constants
         const int port = 1991; 
         const string hostname = "10.21.2.208";
@@ -158,7 +160,7 @@ namespace PhoneApp1
                 accelX.Clear();
                 accelY.Clear();
                 accelZ.Clear();
-                app_camera.capture(get_preview_image);
+                app_camera.capture(get_preview_image, register);
             }
         }
         private void SocketConn_Click(object sender, RoutedEventArgs e)
@@ -184,6 +186,8 @@ namespace PhoneApp1
                         Log("Connection Established.", UpdateType.Information);
                         app_comsocket.Send("STRT\n");
                         app_comsocket.Send("ACKR\n");
+                        // Change button content
+                        SocketConn.Content = "Disconnect";
                     }
                     else
                     {
@@ -191,10 +195,13 @@ namespace PhoneApp1
                         app_comsocket = null;
                     }
                 }
-                else
+                else if (app_comsocket != null)
                 {
-                    app_comsocket.Send("ACKR");
-                    Log("Connection already established", UpdateType.Information);
+                    app_comsocket.Send("NCKR"); // End of transmission
+                    Log("Connection closed", UpdateType.Information);
+                    app_comsocket.Close();      // Close the connection
+                    app_comsocket = null;
+                    SocketConn.Content = "Connect";                    
                 }
                 
             }
@@ -324,6 +331,19 @@ namespace PhoneApp1
             {
                 get_preview_image = false;
                 get_preview_button.Content = "Get preview";
+            }
+        }
+        private void get_register(object sender, RoutedEventArgs e)
+        {
+            if (register == false)
+            {
+                register = true;
+                register_button.Content = "Disable register";
+            }
+            else
+            {
+               register = false;
+               register_button.Content = "Enable register";
             }
         }
     }

@@ -49,7 +49,7 @@ namespace PhoneApp1.modules
             // Wait for the camera to initialize.
             await _camera.PrepareCaptureSequenceAsync(_camsequence);
         }
-        public async void capture(bool get_preview)
+        public async void capture(bool get_preview, bool register)
         {
             if (get_preview == true)
             {
@@ -57,6 +57,11 @@ namespace PhoneApp1.modules
             }
             // Take a picture. Flag busy meanwhile.
             cam_busy = true;
+            // If register mode is enabled, sleep for 500ms.
+            if (register == true)
+            {
+                await System.Threading.Tasks.Task.Delay(500);
+            }
             await _camsequence.StartCaptureAsync();
             cam_busy = false;
             transmit = true;

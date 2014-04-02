@@ -35,6 +35,7 @@
         </StackPanel>
         <Button Content="Start sensor log" Name="sensor_button" Margin="414,287,10,121" Click="start_log"/>
         <Button Content="Get preview" Name="get_preview_button" Margin="414,233,10,177" Click="get_preview"/>
+        <Button Content="Enable Register" Name="register_button" Margin="414,179,10,231" Click="get_register"/>
         <Slider Name="focus_slider" Margin="140,373,182,-45" Minimum="0" Maximum="100" SmallChange="1" Value="50"/>
 
         <TextBlock Canvas.Left="10" TextWrapping="Wrap" Text="Debug Section" Name="txtDebug" RenderTransformOrigin="0.463,0.481" Margin="12,147,8,275" Grid.Column="1"/>
@@ -44,7 +45,7 @@
         <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" HorizontalAlignment="Left" Height="58" Margin="9,147,0,0" VerticalAlignment="Top" Width="145">
 
         </Border>
-        <Button Name="SocketConn" Content="Socketconn" HorizontalAlignment="Left" Margin="638,347,-5,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="SocketConn_Click"/>
+        <Button Name="SocketConn" Content="Connect" HorizontalAlignment="Left" Margin="638,347,-6,0" VerticalAlignment="Top" Grid.ColumnSpan="2" Click="SocketConn_Click" Width="168"/>
         <TextBlock Grid.Column="1" HorizontalAlignment="Left" Margin="14,212,0,0" TextWrapping="Wrap" Text="Accelerometer" Name="txtAccel" VerticalAlignment="Top" Height="76" Width="136"/>
         <Border BorderBrush="White" BorderThickness="1" Grid.Column="1" Height="77" Margin="10,212,6,0" VerticalAlignment="Top"/>
         <TextBox Name="txtPort" HorizontalAlignment="Left" Height="72" Margin="39,408,0,0" TextWrapping="Wrap" Text="1991" VerticalAlignment="Top" Width="121" Grid.Column="1"/>
