@@ -48,6 +48,11 @@ namespace PhoneApp1
         List<float> accelY = new List<float>();
         List<float> accelZ = new List<float>();
 
+        // Lists for saving average acceleration values during shutter open.
+        List<float> gX = new List<float>();
+        List<float> gY = new List<float>();
+        List<float> gZ = new List<float>();
+
         // Storage variables for gravity vector
         float gx = 0, gy = 0, gz = 0;
         // Constant for the low pass filtering operation. emperical
@@ -58,6 +63,8 @@ namespace PhoneApp1
         bool get_preview_image = false;
         // Bool variable to enable register mode.
         bool register = false;
+        // Bool variable to enable image logging.
+        bool imlog = false;
         // Constants
         const int port = 1991; 
         const string hostname = "10.21.2.208";
@@ -160,6 +167,7 @@ namespace PhoneApp1
                 accelX.Clear();
                 accelY.Clear();
                 accelZ.Clear();
+                gX.Clear(); gY.Clear(); gZ.Clear();
                 app_camera.capture(get_preview_image, register);
             }
         }
@@ -228,15 +236,35 @@ namespace PhoneApp1
             {
                 if (app_comsocket != null)
                 {
-                    app_comsocket.Send(accel.X.ToString() + ";" + accel.Y.ToString() + ";" + accel.Z.ToString() + ";;");
+                    if (imlog == true)
+                    {
+                        app_comsocket.Send("STFR\n");
+                        app_comsocket.Send("STAC\n");
+                        app_comsocket.Send(accel.X.ToString() + ";" + accel.Y.ToString() + ";" + accel.Z.ToString() + ";;");
+                        app_comsocket.Send("EDAC\n");
+                        // Log image frames also.
+                        app_camera._camera.GetPreviewBufferArgb(app_camera.preview_image);
+                        byte[] byte_preview = new byte[app_camera.preview_image.Length * sizeof(int)];
+                        System.Buffer.BlockCopy(app_camera.preview_image, 0, byte_preview, 0, byte_preview.Length);
+                        app_comsocket.Send("STIM\n");
+                        app_comsocket.Send(byte_preview);
+                        app_comsocket.Send("EDIM\n");
+                        app_comsocket.Send("EDFR\n");
+                    }
+                    else
+                        app_comsocket.Send(accel.X.ToString() + ";" + accel.Y.ToString() + ";" + accel.Z.ToString() + ";;");
                 }
             }
             if (app_camera.cam_busy == true)
             {
                 focus_slider.IsEnabled = false;
-                accelX.Add(accel.X - gx);
-                accelY.Add(accel.Y - gy);
-                accelZ.Add(accel.Z - gz);
+                accelX.Add(accel.X);
+                accelY.Add(accel.Y);
+                accelZ.Add(accel.Z);
+
+                gX.Add(gx);
+                gY.Add(gy);
+                gZ.Add(gz);
             }
             if ((app_camera.cam_busy == false) && (app_camera.transmit == true))
             {
@@ -251,7 +279,8 @@ namespace PhoneApp1
                     app_comsocket.Send("STAC\n");
                     string accel_string = "";
                     for (int i = 0; i < accelX.Count; i++)
-                        accel_string += accelX[i].ToString() + ";" + accelY[i].ToString() + ";" + accelZ[i].ToString() + ";;";
+                        accel_string += accelX[i].ToString() + ";" + accelY[i].ToString() + ";" + accelZ[i].ToString() + ";"
+                            + gX[i].ToString() + ";" + gY[i].ToString() + ";" + gZ[i].ToString() + ";;";
                     accel_string += "\n";
                     app_comsocket.Send(accel_string);
                     app_comsocket.Send("EDAC\n");
@@ -344,6 +373,19 @@ namespace PhoneApp1
             {
                register = false;
                register_button.Content = "Enable register";
+            }
+        }
+        private void get_imlog(object sender, RoutedEventArgs e)
+        {
+            if (imlog == false)
+            {
+                imlog = true;
+                imlog_button.Content = "Stop logging";
+            }
+            else
+            {
+                imlog = false;
+                imlog_button.Content = "Log images";
             }
         }
     }

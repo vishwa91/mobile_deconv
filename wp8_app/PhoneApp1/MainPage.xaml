@@ -36,6 +36,7 @@
         <Button Content="Start sensor log" Name="sensor_button" Margin="414,287,10,121" Click="start_log"/>
         <Button Content="Get preview" Name="get_preview_button" Margin="414,233,10,177" Click="get_preview"/>
         <Button Content="Enable Register" Name="register_button" Margin="414,179,10,231" Click="get_register"/>
+        <Button Content="Log images" Name="imlog_button" Margin="414,124,10,286" Click="get_imlog"/>
         <Slider Name="focus_slider" Margin="140,373,182,-45" Minimum="0" Maximum="100" SmallChange="1" Value="50"/>
 
         <TextBlock Canvas.Left="10" TextWrapping="Wrap" Text="Debug Section" Name="txtDebug" RenderTransformOrigin="0.463,0.481" Margin="12,147,8,275" Grid.Column="1"/>

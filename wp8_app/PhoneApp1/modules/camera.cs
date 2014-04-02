@@ -39,8 +39,8 @@ namespace PhoneApp1.modules
             cam_open_busy = true;
             _camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, available_res[count-1]);
             cam_open_busy = false;
-            // Set the exposure time to 200ms
-            _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 200000);
+            // Set the exposure time to 50ms
+            _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 50000);
             // Create a new sequence
             _camsequence = _camera.CreateCaptureSequence(1);
             // Create a new memory stream.

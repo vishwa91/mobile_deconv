@@ -45,6 +45,7 @@ def estimate_simple_pos(accel, start, end):
     # Convert acceleration into m/s^2
     accel *= G
     xaccel = accel[:,0]; yaccel = accel[:,1]; zaccel = accel[:,2]
+    gx = accel[:,3]; gy = accel[:,4]; gz = accel[:,5]
     raw_xpos = cumsum(cumsum(xaccel[start:end]))*T*T
     raw_ypos = cumsum(cumsum(yaccel[start:end]))*T*T
     raw_zpos = cumsum(cumsum(zaccel[start:end]))*T*T

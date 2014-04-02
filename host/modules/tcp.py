@@ -8,6 +8,7 @@ import os, sys
 import shutil
 import commands
 import socket
+import time
 from StringIO import StringIO
 
 from matplotlib.pyplot import *
@@ -362,6 +363,28 @@ def get_tcp_data():
     dstring = tcp_listen();
     save_data(dstring);
     return TCPDataHandle(dstring)
+
+def dummy_recv():
+    '''Print a message everytime a new token arrives'''
+    # Wait till you get a socket client
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print 'Waiting for a client'
+    s.bind((HOST, PORT))
+    s.listen(1)
+    conn, addr = s.accept()
+
+    print 'Connection address:', addr
+    time_old = time.clock()
+
+    while 1:
+        data = conn.recv(BUFFER_SIZE)
+        time_delay = time.clock() - time_old
+        time_old = time.clock()
+        if 'S\x00T\x00F\x00R\x00' in data:
+            print 'got a new frame at ', time_old
+        if 'E\x00D\x00L\x00G\x00' in data:
+            print 'Stopped logging data'
+            conn.close()
 
 def live_sensors():
     """This function should be called for plotting the sensor data dynamically.
