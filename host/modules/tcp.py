@@ -135,14 +135,15 @@ class TCPDataHandle(object):
             acstring = dstring[stac_index+len(STAC)+1:edac_index-1]
             acstring = acstring.replace('\x00', '')
             self.xaccel, self.yaccel, self.zaccel = [], [], []
+            self.gx, self.gy, self.gz = [], [], []
 
             acvals = acstring.split(';;')
             for ac in acvals:
                 try:
-                    ax, ay, az = [float(i) for i in ac.split(';')]
-                    self.xaccel.append(ax)
-                    self.yaccel.append(ay)
-                    self.zaccel.append(az)
+                    ax, ay, az, gx, gy, gz = [float(i) for i in ac.split(';')]
+                    self.xaccel.append(ax); self.gx.append(gx) 
+                    self.yaccel.append(ay); self.gy.append(gy)
+                    self.zaccel.append(az); self.gz.append(gz)
                 except ValueError:
                     print 'Invalid acceleration value. Skipping'
         else:
