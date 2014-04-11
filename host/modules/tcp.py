@@ -11,6 +11,9 @@ import socket
 import time
 from StringIO import StringIO
 
+import matplotlib
+matplotlib.use('TkAgg')
+
 from matplotlib.pyplot import *
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -465,9 +468,9 @@ def live_sensors():
             liney.set_xdata(range(WINDOW_SIZE))
             linez.set_xdata(range(WINDOW_SIZE))
 
-            linex.set_ydata(array(xaccel[-WINDOW_SIZE:]) - gx)
-            liney.set_ydata(array(yaccel[-WINDOW_SIZE:]) - gy)
-            linez.set_ydata(array(zaccel[-WINDOW_SIZE:]) - gz)
+            linex.set_ydata(cumsum(array(xaccel[-WINDOW_SIZE:]) - gx))
+            liney.set_ydata(cumsum(array(yaccel[-WINDOW_SIZE:]) - gy))
+            linez.set_ydata(cumsum(array(zaccel[-WINDOW_SIZE:]) - gz))
             draw()
         
     conn.close()
