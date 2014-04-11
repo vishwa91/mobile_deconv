@@ -365,7 +365,7 @@ def get_tcp_data():
     save_data(dstring);
     return TCPDataHandle(dstring)
 
-def dummy_recv():
+def dummy_recv(start_token, end_token, frame_token, save_path):
     '''Print a message everytime a new token arrives'''
     # Wait till you get a socket client
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -376,16 +376,44 @@ def dummy_recv():
 
     print 'Connection address:', addr
     time_old = time.clock()
-
+    data_string = ''
     while 1:
         data = conn.recv(BUFFER_SIZE)
+        data_string += data
         time_delay = time.clock() - time_old
         time_old = time.clock()
-        if 'S\x00T\x00F\x00R\x00' in data:
+        if start_token in data:
+            print 'Started logging'
+        if frame_token in data:
             print 'got a new frame at ', time_old
-        if 'E\x00D\x00L\x00G\x00' in data:
+        if end_token in data:
             print 'Stopped logging data'
             conn.close()
+            break
+    # Save the data
+    f = open(save_path, 'w')
+    f.write(data_string)
+    f.close()
+
+def extract_images(load_path, nimages, fstart, fend, save_path='.'):
+    ''' Extract images from saved data'''
+    data = open(load_path).read()
+
+    # Extract nimages
+    for i in range(1,nimages):
+        print 'Extracting %d image'%i
+        stidx_raw = fstart+str(i)+'\n'; stidx = ''
+        edidx_raw = fend+str(i)+'\n'; edidx = ''
+        for p in stidx_raw:
+            stidx += p + '\x00'
+        for p in edidx_raw:
+            edidx += p + '\x00'
+        start = data.index(stidx)
+        end = data.index(edidx)
+        imdat = array([ord(k) for k in data[start+len(stidx):end]])
+        im = imdat.reshape((480,640))
+        Image.fromarray(im).convert('RGB').save(
+            os.path.join(save_path, 'im%d.bmp'%i))
 
 def live_sensors():
     """This function should be called for plotting the sensor data dynamically.

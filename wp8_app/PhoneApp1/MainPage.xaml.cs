@@ -38,7 +38,6 @@ namespace PhoneApp1
          */
         // Create a camera instance
         AppCamera app_camera;
-        bool transmit = false;
         // Create sensors instances
         AppAccelerometer accelerometer;
         AppGyroscope gyroscope;
@@ -53,8 +52,12 @@ namespace PhoneApp1
         List<float> gY = new List<float>();
         List<float> gZ = new List<float>();
 
+        // Timer value for accelerometer timer in ms
+        int accel_time = 10;
         // Storage variables for gravity vector
         float gx = 0, gy = 0, gz = 0;
+        // Focus sweep counter
+        int focus_counter = 0;
         // Constant for the low pass filtering operation. emperical
         const float alpha = 0.98F;
         // Bool variable to enable logging.
@@ -65,6 +68,8 @@ namespace PhoneApp1
         bool register = false;
         // Bool variable to enable image logging.
         bool imlog = false;
+        // Bool variable to enable manual focus.
+        bool man_focus = false;
         // Constants
         const int port = 1991; 
         const string hostname = "10.21.2.208";
@@ -94,7 +99,7 @@ namespace PhoneApp1
             else
             {
                 accel_timer = new DispatcherTimer();
-                accel_timer.Interval = TimeSpan.FromMilliseconds(10);
+                accel_timer.Interval = TimeSpan.FromMilliseconds(accel_time);
                 accel_timer.Tick += new EventHandler(accelerometer_timer);
                 accel_timer.Start();
             }
@@ -224,8 +229,41 @@ namespace PhoneApp1
                 viewfinderBrush.SetSource(app_camera._camera);
                 app_camera.source_set = true;
             }
-            // Focus the camera
-            if (app_camera.focus_busy == false && app_camera.cam_busy == false)
+            // If we are doing a focus sweep, it needs to be done once every 10 ms, not faster
+            if (man_focus == true)
+            {
+                // A 100 is a complete sweep done. 
+                if (focus_counter >= 99)
+                {
+                    man_focus = false;
+                    sweep_button.IsEnabled = true;
+                    if (app_comsocket != null)
+                        app_comsocket.Send("EDFS\n");
+                }
+                if (focus_counter == 0)
+                {
+                    if (app_comsocket != null)
+                        app_comsocket.Send("STFS\n");
+                }
+                // Keep getting a new image with changed focus value
+                byte[] preview_im = new byte[app_camera.imheight * app_camera.imwidth];
+                // increment the counter
+                focus_counter += 1;
+                Log(focus_counter.ToString(), UpdateType.DebugSection);
+                // Focus the camera
+                app_camera.set_focus(focus_counter);
+                // Get the Y buffer
+                app_camera._camera.GetPreviewBufferY(preview_im);
+                // Send the image over tcp
+                if (app_comsocket != null)
+                {
+                    app_comsocket.Send("STFR" + focus_counter.ToString() + "\n");
+                    app_comsocket.Send(preview_im);
+                    app_comsocket.Send("EDFR" + focus_counter.ToString() + "\n");
+                }
+            }
+            // Focus the camera only if it is not in manual mode
+            if (app_camera.focus_busy == false && app_camera.cam_busy == false && man_focus == false)
             {
                 app_camera.set_focus(focus_slider.Value);
                 Log(focus_slider.Value.ToString(), UpdateType.DebugSection);
@@ -316,6 +354,7 @@ namespace PhoneApp1
                     app_comsocket.Send("ENDT\n");
                     app_comsocket.Close();
                     app_comsocket = null;
+                    SocketConn.Content = "Connect";
                 }
                 Log("Total readings: " + accelX.Count.ToString(), UpdateType.Information);
                 app_camera.transmit = false;
@@ -367,12 +406,12 @@ namespace PhoneApp1
             if (register == false)
             {
                 register = true;
-                register_button.Content = "Disable register";
+                register_button.Content = "Disable delay";
             }
             else
             {
                register = false;
-               register_button.Content = "Enable register";
+               register_button.Content = "Enable delay";
             }
         }
         private void get_imlog(object sender, RoutedEventArgs e)
@@ -387,6 +426,46 @@ namespace PhoneApp1
                 imlog = false;
                 imlog_button.Content = "Log images";
             }
+        }
+
+        private void depricated_start_focus_sweep(object sender, RoutedEventArgs e)
+        {
+            // Enable manual focus
+            man_focus = true;
+            // Preview image buffer
+            byte[] preview_im = new byte[app_camera.imheight * app_camera.imwidth * sizeof(int)];
+            // Signal that we are sending our frames
+            if (app_comsocket != null)
+                app_comsocket.Send("STFS\n");
+            // Sweep focus from 1 to 100 in steps of 1. Each  time, send the image through TCP
+            for (int i = 1; i <= 100; i++)
+            {
+                app_camera.set_focus(i);
+                // Load the buffer
+                app_camera._camera.GetPreviewBufferY(preview_im);
+                // Send the image over TCP
+                if (app_comsocket != null)
+                {
+                    app_comsocket.Send("STFR" + i.ToString() + "\n");
+                    app_comsocket.Send(preview_im);
+                    app_comsocket.Send("EDFR" + i.ToString() + "\n");
+                }
+            }
+            // Done with sending data
+            if (app_comsocket != null)
+                app_comsocket.Send("EDFS\n");
+            // Done. Re-enable automatic focus.
+            man_focus = false;
+        }
+        private void start_focus_sweep(object sender, RoutedEventArgs e)
+        {
+            // Enable manual focus
+            man_focus = true;
+            // Reset counter
+            focus_counter = 0;
+            // disable button
+            sweep_button.IsEnabled = false;
+
         }
     }
     
