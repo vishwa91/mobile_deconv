@@ -39,8 +39,8 @@ namespace PhoneApp1.modules
             cam_open_busy = true;
             _camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, available_res[count-1]);
             cam_open_busy = false;
-            // Set the exposure time to 50ms
-            _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 50000);
+            // Set the exposure time to 200ms
+            _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 200000);
             // Create a new sequence
             _camsequence = _camera.CreateCaptureSequence(1);
             // Create a new memory stream.
@@ -73,7 +73,6 @@ namespace PhoneApp1.modules
             try
             {
                 CameraCapturePropertyRange range = PhotoCaptureDevice.GetSupportedPropertyRange(CameraSensorLocation.Back, KnownCameraGeneralProperties.ManualFocusPosition);
-                //double value = (UInt32)range.Min;
                 double value = (UInt32)range.Min + (focus_val / 100.0) * ((UInt32)range.Max - (UInt32)range.Min);
                 focus_min = (UInt32)range.Min;
                 focus_max = (UInt32)range.Max;

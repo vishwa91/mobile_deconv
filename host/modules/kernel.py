@@ -46,9 +46,12 @@ def estimate_simple_pos(accel, start, end):
     accel *= G
     xaccel = accel[:,0]; yaccel = accel[:,1]; zaccel = accel[:,2]
     gx = accel[:,3]; gy = accel[:,4]; gz = accel[:,5]
-    raw_xpos = cumsum(cumsum(xaccel[start:end]))*T*T
-    raw_ypos = cumsum(cumsum(yaccel[start:end]))*T*T
-    raw_zpos = cumsum(cumsum(zaccel[start:end]))*T*T
+    x = (xaccel - gx)[start:end]
+    y = (yaccel - gy)[start:end]
+    z = (zaccel - gz)[start:end]
+    raw_xpos = cumsum(cumsum(x))*T*T
+    raw_ypos = cumsum(cumsum(y))*T*T
+    raw_zpos = cumsum(cumsum(z))*T*T
 
     return raw_xpos, raw_ypos, raw_zpos
 

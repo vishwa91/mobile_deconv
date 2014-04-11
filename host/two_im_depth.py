@@ -37,9 +37,9 @@ if __name__ == '__main__':
 
         # Load the acceleration data.
         data = loadtxt(os.path.join(main_dir, 'saved_ac.dat'))
-        start = 0
-        end = 24
-        y, x, z, g = estimate_simple_pos(data, start, end)
+        start = 5
+        end = 30
+        x, y, z = estimate_simple_pos(data, start, end)
         x -= mean(x); y -= mean(y)
 
         #y = range(-4, 5) + [1]*10
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         window = 4
 
         impure = register(impure, imblur)
-        shifts = range(-2,2,1)
+        shifts = range(-5,5,1)
         for xshift in shifts:
             for yshift in shifts:
                 print 'Estimating depth for a (%d,%d) shift'%(xshift, yshift)
