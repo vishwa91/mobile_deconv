@@ -24,3 +24,10 @@ wp8_app/bluetooth_example/c#/SimplePhoneSocketClient/SimplePhoneSocketClient/obj
 host/output
 host/tmp
 host/tools/depth_ukf/depth
+# Latex files
+*.aux
+*.dvi
+*.lof
+*.log
+*.lot
+*.toc
