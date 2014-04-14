@@ -368,7 +368,7 @@ def get_tcp_data():
     save_data(dstring);
     return TCPDataHandle(dstring)
 
-def dummy_recv(start_token, end_token, frame_token, save_path):
+def continuous_recv(start_token, end_token, frame_token, save_path):
     '''Print a message everytime a new token arrives'''
     # Wait till you get a socket client
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -415,8 +415,8 @@ def extract_images(load_path, nimages, fstart, fend, save_path='.'):
         end = data.index(edidx)
         imdat = array([ord(k) for k in data[start+len(stidx):end]])
         im = imdat.reshape((480,640))
-        Image.fromarray(im).convert('RGB').save(
-            os.path.join(save_path, 'im%d.bmp'%i))
+        Image.fromarray(im).convert('L').save(
+            os.path.join(save_path, 'im%d.pgm'%i))
 
 def live_sensors():
     """This function should be called for plotting the sensor data dynamically.

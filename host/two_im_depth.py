@@ -25,42 +25,36 @@ T = 10e-3
 G = 9.8
 
 if __name__ == '__main__':
-    try:
-        os.mkdir('../tmp/steer')
-    except OSError:
-        pass
-    for idx in [1]:#range(1,7):
-        main_dir = 'output/cam'
-        impure = imread(os.path.join(main_dir, 'preview_im.bmp'), flatten=True)
-        imblur = imread(os.path.join(main_dir, 'saved_im.bmp'), flatten=True)
+    main_dir = 'output/cam'; idx = 1
+    impure = imread(os.path.join(main_dir, 'preview_im.bmp'), flatten=True)
+    imblur = imread(os.path.join(main_dir, 'saved_im.bmp'), flatten=True)
 
+    # Load the acceleration data.
+    data = loadtxt(os.path.join(main_dir, 'saved_ac.dat'))
+    start = 10
+    end = 35
+    x, y, z = estimate_simple_pos(data, start, end)
+    x -= mean(x); y -= mean(y)
+    dmax = hypot(x, y).max()
+    #bp_depth(impure, imblur, y*10/dmax, x*10/dmax, 0.25)
+    
+    niters = 10
+    window = 4
 
-        # Load the acceleration data.
-        data = loadtxt(os.path.join(main_dir, 'saved_ac.dat'))
-        start = 5
-        end = 30
-        x, y, z = estimate_simple_pos(data, start, end)
-        x -= mean(x); y -= mean(y)
-
-        #y = range(-4, 5) + [1]*10
-        #x = linspace(0,1,len(y))
-
-        niters = 10
-        window = 4
-
-        impure = register(impure, imblur)
-        shifts = range(-5,5,1)
-        for xshift in shifts:
-            for yshift in shifts:
-                print 'Estimating depth for a (%d,%d) shift'%(xshift, yshift)
-                imdepth, save_data = iterative_depth(
-                    shift(impure, [xshift, yshift]), imblur, x, y)
-                imdepth *= 255.0/imdepth.max()
-                Image.fromarray(imdepth).convert('RGB').save(
-                    'tmp/steer/%d/depth_%d_%d.bmp'%(idx,xshift,yshift))
-                #save('../tmp/diff_data', save_data)
+    impure = register(impure, imblur)
+    shifts = range(-2,2,1)
+    for xshift in shifts:
+        for yshift in shifts:
+            print 'Estimating depth for a (%d,%d) shift'%(xshift, yshift)
+            imdepth, save_data = iterative_depth(
+                shift(impure, [xshift, yshift]), imblur, x, y)
+            imdepth *= 255.0/imdepth.max()
+            Image.fromarray(imdepth).convert('RGB').save(
+                'tmp/steer/%d/depth_%d_%d.bmp'%(idx,xshift,yshift))
+            #save('../tmp/diff_data', save_data)
         
     imdepth = 255*imdepth/imdepth.max()
     Image.fromarray(imdepth).show()
     Image.fromarray(imdepth).convert('RGB').save(
         'tmp/steer/imdepth.bmp')
+    

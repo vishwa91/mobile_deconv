@@ -125,3 +125,98 @@ def estimate_planar_depth(impure, imblur, xpos, ypos, mkernel=None):
         	curr_diff = imsave
         count += 1
     return best_depth
+
+def bp_depth(impure, imblur, x, y, scale = 0.4):
+    ''' Estimate depth using belief propagation. The executable has been 
+        provided by Karthik and is based on Prof. ANR's paper on
+        Depth from motion blur using Unscented Kalman Filter (name not accurate)
+    '''
+    # Large images give a memory out error
+    im1 = zoom(impure, scale)
+    im2 = zoom(imblur, scale)
+
+    # save the data
+    savetxt('tmp/bf_depth/tx.txt', x)
+    savetxt('tmp/bf_depth/ty.txt', y)
+
+    Image.fromarray(im1).convert('L').save('tmp/bf_depth/im1.pgm')
+    Image.fromarray(im2).convert('L').save('tmp/bf_depth/im2.pgm')
+
+    # Execute the commands
+    os.system('tools/depth_ukf/depth tmp/bf_depth/tx.txt tmp/bf_depth/ty.txt\
+        tmp/bf_depth/im1.pgm tmp/bf_depth/im2.pgm tmp/bf_depth/depth.pgm')
+
+def sml_focus_depth(imdir, smldir, idx1, idx2):
+    ''' Calculate the depth of a scene using Sum Modified Laplacian operator,
+        given a set of images, which are refocused in every image
+    '''
+    imdepth = zeros((480, 640))
+    imdepth[:,:] = float('inf')
+    im_max = zeros_like(imdepth)
+    imfocus = zeros_like(imdepth)
+    window = 15
+    kx = array([[0,1,0],
+                [0,-2,0],
+                [0,1,0]])
+    ky = array([[0,0,0],
+                [1,-2,1],
+                [0,0,0]])
+    scale_array = linspace(1.0, 1.05, idx2+1)[:-1]
+    for i in range(idx1, idx2):
+        print 'Reading image %d'%i
+        im = imread(os.path.join(imdir, 'im%d.pgm'%i), flatten=True)
+        x1, y1 = im.shape; tx = x1//2; ty = y1//2
+        imzoom = zoom(im, scale_array[i])
+        x2, y2 = imzoom.shape; cx = x2//2; cy = y2//2
+        im = imzoom[cx-tx:cx+tx, cy-ty:cy+ty]
+        gxx = linear_convolve(im, kx)
+        gyy = linear_convolve(im, ky)
+        imlap = abs(gxx) + abs(gyy)
+        mfilter = ones((window, window), dtype=float)/float(window*window)
+        imlap = linear_convolve(imlap, mfilter)
+        #imlap = gaussian_filter(imlap, 3.0)
+        x, y = where(imlap > im_max)
+        im_max[x, y] = imlap[x, y]
+        imdepth[x, y] = i
+        imfocus[x,y] = im[x,y]
+        Image.fromarray((imlap*255.0/imlap.max()).astype(uint8)).save(
+            os.path.join(smldir, 'im%d.pgm'%i))
+    return imdepth*255.0/imdepth.max(), imfocus
+
+def _calc_local_var(im, window):
+    ''' Calculate the local variance of an image'''
+    xdim, ydim = im.shape
+    tx = window//2
+    imvar = zeros_like(im)
+    for i in range(tx,xdim-tx):
+        for j in range(tx,ydim-tx):
+            imvar[i, j] = variance(im[i-tx:i+tx,i-tx:i+tx])
+    return imvar
+
+def var_focus_depth(imdir, smldir, idx1, idx2, window=8):
+    ''' Calculate the depth of a scene using local variance,
+        given a set of images, which are refocused in every image
+    '''
+    imdepth = zeros((480, 640))
+    imdepth[:,:] = float('inf')
+    im_max = zeros_like(imdepth)
+    imfocus = zeros_like(imdepth)
+    scale_array = linspace(1.0, 1.05, idx2+1)[:-1]
+    for i in range(idx1, idx2):
+        print 'Reading image %d'%i
+        im = imread(os.path.join(imdir, 'im%d.pgm'%i), flatten=True)
+        x1, y1 = im.shape; tx = x1//2; ty = y1//2
+        imzoom = zoom(im, scale_array[i])
+        x2, y2 = imzoom.shape; cx = x2//2; cy = y2//2
+        im = imzoom[cx-tx:cx+tx, cy-ty:cy+ty]
+        imlap = _calc_local_var(im, window)
+        mfilter = ones((window, window), dtype=float)/float(window*window)
+        imlap = linear_convolve(imlap, mfilter)
+        #imlap = gaussian_filter(imlap, 3.0)
+        x, y = where(imlap > im_max)
+        im_max[x, y] = imlap[x, y]
+        imdepth[x, y] = i
+        imfocus[x,y] = im[x,y]
+        Image.fromarray((imlap*255.0/imlap.max()).astype(uint8)).save(
+            os.path.join(smldir, 'im%d.pgm'%i))
+    return imdepth*255.0/imdepth.max(), imfocus

@@ -1,0 +1,149 @@
+% Use the IITM Dissertion class
+\documentclass[BTech]{iitmdiss}
+\usepackage{times}
+\usepackage{t1enc}
+
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage[hypertex]{hyperref} % hyperlinks for references.
+\usepackage{amsmath} % easier math formulae, align, subequations \ldots
+
+\begin{document}
+%----------- Title page ------------------------------------------------
+\title{Analyzing motion sensors on mobile platform for image restoration}
+\author{Saragadam R V Vishwanath}
+\date{MAY 2014}
+\department{ELECTRICAL ENGINEERING}
+\maketitle
+\pagebreak
+
+%----------- Certificate -----------------------------------------------
+\certificate
+
+\vspace*{0.5in}
+
+\noindent This is to certify that the thesis titled {\bf Analyzing
+ motion sensors on mobile platform for image restoration}, submitted by
+  {\bf Saragadam Raja Venkata Vishwanath}, 
+  to the Indian Institute of Technology, Madras, for
+the award of the degree of {\bf Bachelor of Technology}, is a bona fide
+record of the research work done by him under our supervision.  The
+contents of this thesis, in full or in parts, have not been submitted
+to any other Institute or University for the award of any degree or
+diploma.
+
+\vspace*{1.5in}
+
+\begin{singlespacing}
+\hspace*{-0.25in}
+\parbox{2.5in}{
+\noindent {\bf Prof. A. N. Rajagopalan} \\
+\noindent Research Guide \\ 
+\noindent Professor \\
+\noindent Dept. of Electrical Engineering\\
+\noindent IIT-Madras, 600 036 \\
+} 
+\hspace*{1.0in} 
+\end{singlespacing}
+\vspace*{0.25in}
+\noindent Place: Chennai\\
+Date: 12th May 2014
+
+\pagebreak
+
+%----------- Acknowledgement -------------------------------------------
+\acknowledgements
+
+I would like to thank all my friends and my family for supporting me 
+through the project. I am indebted to my lab mates who have constantly 
+helped me come over every obstacle in the project. I would also like to 
+thank Prof. A N Rajagopalan for constantly following up with my project
+and giving me valuable advice.
+
+%----------- Abstract --------------------------------------------------
+\abstract
+We explore various image restoration and registration techniques using 
+a mobile device. We present various methods for depth estimation of the 
+scene, image registration for translation and rotation and image 
+deconvolution. For this purpose, we have used a Nokia Lumia 520 mobile
+device which features Windows Phone 8 operating system. 
+
+%----------- Table of content ------------------------------------------
+\begin{singlespace}
+\tableofcontents
+\thispagestyle{empty}
+
+\listoftables
+\addcontentsline{toc}{chapter}{LIST OF TABLES}
+\listoffigures
+\addcontentsline{toc}{chapter}{LIST OF FIGURES}
+\end{singlespace}
+\pagebreak
+
+%----------- Abbrevations ----------------------------------------------
+\abbreviations
+
+\noindent 
+\begin{tabbing}
+xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
+\textbf{IITM}   \> Indian Institute of Technology, Madras \\
+\textbf{WP8}    \> Windows Phone 8 \\
+\end{tabbing}
+
+\pagebreak
+
+%----------- Notations -------------------------------------------------
+\chapter*{\centerline{NOTATION}}
+\addcontentsline{toc}{chapter}{NOTATION}
+
+\begin{singlespace}
+\begin{tabbing}
+xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
+\textbf{$f$}    \> Latent image \\
+\textbf{$g$}    \> Observer/blurred image \\
+\textbf{$k$}    \> Blur kernel \\
+\end{tabbing}
+\end{singlespace}
+
+\pagebreak
+
+% Start numbering the pages from now.
+\pagenumbering{arabic}
+
+%----------- Introduction ----------------------------------------------
+\chapter{INTRODUCTION}
+\label{chap:intro}
+There has been a recent shift in computation from traditional computers
+to ubiquitous mobiles. With the ever increasing power of the mobiles, 
+executing many of the image processing algorithms on mobile has been 
+possible. Further, the many peripherals available for the mobile, like
+the inertial sensors, controllable focus, TCP, bluetooth etc., 
+computational photography is greatly advanced. 
+
+To understand the potential of a mobile for computational photography, 
+we choose to evaluate various algorithms on the mobile and evaluate the 
+performance. For this purpose, we have chosen the Nokia Lumia 520 mobile
+which features Windows Phone 8 operating system. 
+
+The project report consists of the following part. The chapter on 
+\textbf{THEORY} presents a brief background of the various algorithms
+and the mathematics involved in the project. \textbf{DEVICE} gives an
+in-depth account of the mobile platform, the application written for the
+mobile platform and the host side software. \textbf{DEBLURRING} 
+explains the implementation of the deblurring algorithm using the data
+obtained from the mobile. \textbf{DEPTH ESTIMATION} has two parts, 
+\emph{Depth estimation using motion blur} and \emph{Depth estimation 
+using focus measure}. \textbf{IMAGE REGISTRATION} discusses about how
+inertial sensor data can be used to reduce the search space of image 
+registration process. 
+
+The end of the project report has in-depth discussion regarding future
+usage of the mobile application as a general prototyping platform and a
+brief discussion of the \emph{github} version control system.
+
+%----------- Basic Theory ----------------------------------------------
+\chapter{BASIC THEORY}
+\label{chap:basic_theory}
+In this chapter, we look briefly at the back ground which is necessary 
+to understand the forthecoming chapters. 
+\end{document}
