@@ -14,7 +14,9 @@ if __name__ == '__main__':
     #continuous_recv(strt_token, end_token, frame_token, 'tmp/focus/tokens.dat')
     #extract_images('tmp/focus/tokens.dat', 100, fstart, fend, 'tmp/focus/src')
     imdepth, imfocus = sml_focus_depth('tmp/focus/src', 'tmp/focus/sml', 3, 100)
-    Image.fromarray(imdepth).convert('L').save('tmp/focus/imdepth.pgm')
+    immask = abs(laplace(imfocus))
+    immask = 1.0 - immask/immask.max()
+    Image.fromarray(imdepth*immask).convert('L').save('tmp/focus/imdepth.pgm')
     Image.fromarray(imfocus).convert('L').save('tmp/focus/imfocus.pgm')
     '''
     im1 = imread('tmp/focus/src/im3.pgm')

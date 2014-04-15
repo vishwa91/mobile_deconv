@@ -154,7 +154,7 @@ def sml_focus_depth(imdir, smldir, idx1, idx2):
     imdepth[:,:] = float('inf')
     im_max = zeros_like(imdepth)
     imfocus = zeros_like(imdepth)
-    window = 15
+    window = 31
     kx = array([[0,1,0],
                 [0,-2,0],
                 [0,1,0]])
