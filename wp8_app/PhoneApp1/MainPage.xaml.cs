@@ -58,6 +58,8 @@ namespace PhoneApp1
         float gx = 0, gy = 0, gz = 0;
         // Focus sweep counter
         int focus_counter = 0;
+        // Image logging counter
+        int im_counter = 0;
         // Constant for the low pass filtering operation. emperical
         const float alpha = 0.98F;
         // Bool variable to enable logging.
@@ -276,18 +278,18 @@ namespace PhoneApp1
                 {
                     if (imlog == true)
                     {
-                        app_comsocket.Send("STFR\n");
-                        app_comsocket.Send("STAC\n");
+                        app_comsocket.Send("STFR"+im_counter.ToString()+"\n");
+                        app_comsocket.Send("STAC" + im_counter.ToString() + "\n");
                         app_comsocket.Send(accel.X.ToString() + ";" + accel.Y.ToString() + ";" + accel.Z.ToString() + ";;");
-                        app_comsocket.Send("EDAC\n");
+                        app_comsocket.Send("EDAC" + im_counter.ToString() + "\n");
                         // Log image frames also.
-                        app_camera._camera.GetPreviewBufferArgb(app_camera.preview_image);
-                        byte[] byte_preview = new byte[app_camera.preview_image.Length * sizeof(int)];
-                        System.Buffer.BlockCopy(app_camera.preview_image, 0, byte_preview, 0, byte_preview.Length);
-                        app_comsocket.Send("STIM\n");
+                        byte[] byte_preview = new byte[app_camera.imheight*app_camera.imwidth];
+                        app_camera._camera.GetPreviewBufferY(byte_preview);
+                        app_comsocket.Send("STIM" + im_counter.ToString() + "\n");
                         app_comsocket.Send(byte_preview);
-                        app_comsocket.Send("EDIM\n");
-                        app_comsocket.Send("EDFR\n");
+                        app_comsocket.Send("EDIM" + im_counter.ToString() + "\n");
+                        app_comsocket.Send("EDFR" + im_counter.ToString() + "\n");
+                        im_counter += 1;
                     }
                     else
                         app_comsocket.Send(accel.X.ToString() + ";" + accel.Y.ToString() + ";" + accel.Z.ToString() + ";;");
@@ -420,43 +422,20 @@ namespace PhoneApp1
             {
                 imlog = true;
                 imlog_button.Content = "Stop logging";
+                im_counter = 0;
+                if (app_comsocket != null)
+                    app_comsocket.Send("STIG\n");
             }
             else
             {
                 imlog = false;
                 imlog_button.Content = "Log images";
+                if (app_comsocket != null)
+                    app_comsocket.Send("EDIG\n");
+
             }
         }
 
-        private void depricated_start_focus_sweep(object sender, RoutedEventArgs e)
-        {
-            // Enable manual focus
-            man_focus = true;
-            // Preview image buffer
-            byte[] preview_im = new byte[app_camera.imheight * app_camera.imwidth * sizeof(int)];
-            // Signal that we are sending our frames
-            if (app_comsocket != null)
-                app_comsocket.Send("STFS\n");
-            // Sweep focus from 1 to 100 in steps of 1. Each  time, send the image through TCP
-            for (int i = 1; i <= 100; i++)
-            {
-                app_camera.set_focus(i);
-                // Load the buffer
-                app_camera._camera.GetPreviewBufferY(preview_im);
-                // Send the image over TCP
-                if (app_comsocket != null)
-                {
-                    app_comsocket.Send("STFR" + i.ToString() + "\n");
-                    app_comsocket.Send(preview_im);
-                    app_comsocket.Send("EDFR" + i.ToString() + "\n");
-                }
-            }
-            // Done with sending data
-            if (app_comsocket != null)
-                app_comsocket.Send("EDFS\n");
-            // Done. Re-enable automatic focus.
-            man_focus = false;
-        }
         private void start_focus_sweep(object sender, RoutedEventArgs e)
         {
             // Enable manual focus

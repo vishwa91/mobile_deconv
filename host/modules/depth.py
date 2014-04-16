@@ -154,7 +154,7 @@ def sml_focus_depth(imdir, smldir, idx1, idx2):
     imdepth[:,:] = float('inf')
     im_max = zeros_like(imdepth)
     imfocus = zeros_like(imdepth)
-    window = 31
+    window = 9
     kx = array([[0,1,0],
                 [0,-2,0],
                 [0,1,0]])
@@ -173,8 +173,8 @@ def sml_focus_depth(imdir, smldir, idx1, idx2):
         gyy = linear_convolve(im, ky)
         imlap = abs(gxx) + abs(gyy)
         mfilter = ones((window, window), dtype=float)/float(window*window)
-        imlap = linear_convolve(imlap, mfilter)
-        #imlap = gaussian_filter(imlap, 3.0)
+        #imlap = linear_convolve(imlap, mfilter)
+        imlap = gaussian_filter(imlap, 3.0)
         x, y = where(imlap > im_max)
         im_max[x, y] = imlap[x, y]
         imdepth[x, y] = i
