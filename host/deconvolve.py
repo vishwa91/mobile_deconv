@@ -33,7 +33,10 @@ if __name__ == '__main__':
 
 				kernel = construct_kernel(xtemp, ytemp, depth, 10)
 
-				imout = reg_deconv(kernel, im)
-				Image.fromarray(imout.astype(uint8)).convert('RGB').save(
-					'tmp/deconv/im%d.bmp'%count)
+				#imout = reg_deconv(kernel, im)
+				#Image.fromarray(imout.astype(uint8)).convert('RGB').save(
+				#	'tmp/deconv/im%d.bmp'%count)
+				cmd_op = non_blind_deconv(kernel, im, 
+				                'tmp/deconv/im%d.bmp'%count)
+				print cmd_op
 				count += 1

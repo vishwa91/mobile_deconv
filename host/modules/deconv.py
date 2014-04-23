@@ -4,7 +4,7 @@
     Routines in this file are mostly concerned with deconvolution of an image
     using non-blind methods.
 '''
-import os, sys
+import os, sys, commands
 
 from scipy import *
 from scipy.signal import *
@@ -14,6 +14,20 @@ from numpy import fft
 
 import Image
 
+def non_blind_deconv(kernel, im, output_name):
+    ''' Deconvolve using the non_blind_deconv executable'''
+    
+    # Save the data first
+    Image.fromarray(kernel).convert('L').save('tmp/kernel.bmp')
+    Image.fromarray(im).convert('L').save('tmp/imblur.bmp')
+    
+    # Execute the command
+    exec_cmd = ('wine tools/non_blind_deblur/robust_deconv.exe ' 
+                'tmp/imblur.bmp tmp/kernel.bmp %s 0 0.001 5'%output_name) 
+    print exec_cmd
+    cmd_op = commands.getoutput(exec_cmd)
+    return cmd_op
+    
 def wiener_deconv(kernel, im, nsr=0.1):
     """ Wiener deconvolution method"""
     xdim, ydim = im.shape

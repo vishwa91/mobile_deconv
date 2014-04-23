@@ -11,5 +11,5 @@ if __name__ == '__main__':
     frame_token = 'S\x00T\x00I\x00M\x00'
     fstart = 'STIM'
     fend = 'EDIM'
-    #continuous_recv(strt_token, end_token, frame_token, 'tmp/burst/tokens.dat')
+    continuous_recv(strt_token, end_token, frame_token, 'tmp/burst/tokens.dat')
     extract_images('tmp/burst/tokens.dat', 100, fstart, fend, 'tmp/burst/src')
