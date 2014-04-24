@@ -15,14 +15,14 @@ if __name__ == '__main__':
 
 	im = imread(os.path.join(main_dir, im_name), flatten=True)
 	data = loadtxt(os.path.join(main_dir, ac_name))
-	xpos, ypos, zpos = estimate_simple_pos(data, 0, 24)
+	xpos, ypos, zpos = estimate_simple_pos(data, 5, 27)
 
 	dmax = hypot(xpos, ypos).max()
 
-	xshifts = linspace(0, abs(xpos).max()*0.2, 5)
-	yshifts = linspace(0, abs(ypos).max()*0.2, 5)
+	xshifts = linspace(0, abs(xpos).max(), 5)
+	yshifts = linspace(0, abs(ypos).max(), 5)
 
-	depths  = linspace(0, 50/dmax, 10)
+	depths  = linspace(0, 10/dmax, 10)
 	count = 0
 	for xshift in xshifts:
 		for yshift in yshifts:
@@ -33,10 +33,10 @@ if __name__ == '__main__':
 
 				kernel = construct_kernel(xtemp, ytemp, depth, 10)
 
-				#imout = reg_deconv(kernel, im)
-				#Image.fromarray(imout.astype(uint8)).convert('RGB').save(
-				#	'tmp/deconv/im%d.bmp'%count)
-				cmd_op = non_blind_deconv(kernel, im, 
-				                'tmp/deconv/im%d.bmp'%count)
-				print cmd_op
+				imout = wiener_deconv(kernel, im, alpha=0.0015)
+				Image.fromarray(imout.astype(uint8)).convert('RGB').save(
+					'tmp/deconv/im%d.bmp'%count)
+				#cmd_op = non_blind_deconv(kernel, im, 
+				#                'tmp/deconv/im%d.bmp'%count)
+				#print cmd_op
 				count += 1

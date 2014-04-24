@@ -28,16 +28,16 @@ def non_blind_deconv(kernel, im, output_name):
     cmd_op = commands.getoutput(exec_cmd)
     return cmd_op
     
-def wiener_deconv(kernel, im, nsr=0.1):
+def wiener_deconv(kernel, im, alpha=0.1):
     """ Wiener deconvolution method"""
     xdim, ydim = im.shape
     K = fft.fft2(kernel, s=(xdim, ydim))
     IM = fft.fft2(im, s=(xdim, ydim))
 
-    IMOUT = IM*conj(K)/(K*conj(K) + nsr)
+    IMOUT = IM*conj(K)/(K*conj(K) + alpha)
     imout = fft.ifft2(IMOUT)
     
-    return (imout*255.0/imout.max()).astype(uint8)
+    return (imout).astype(uint8)
 
 def reg_deconv(kernel, im, reg_filters = None, alpha=0.1):
     '''Deconvolution using regularization. The concept is to use 
@@ -62,4 +62,4 @@ def reg_deconv(kernel, im, reg_filters = None, alpha=0.1):
         Y += (abs(temp)**2)
     IMOUT = conj(K)*IM/(abs(K)**2 + alpha*Y)
     imout = fft.ifft2(IMOUT)
-    return imout*255.0/imout.max()
+    return imout#*255.0/imout.max()
