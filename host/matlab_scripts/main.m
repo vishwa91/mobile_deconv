@@ -17,27 +17,27 @@ save_dir = '../tmp/matlab_deconv/';
 %% Load the data
 imblur = double(rgb2gray(imread(strcat(main_dir, imblur_name))));
 [acx, acy, acz, gx, gy, gz] = load_accel(strcat(main_dir, acdat_name));
-[x_mm, y_mm] = get_position(acx, acy, acz, gx, gy, gz, 1, 21);
+[y_mm, x_mm] = get_position(acx, acy, acz, gx, gy, gz, 1, 21);
 
 %% Main iterations
 dist_max = max(hypot(x_mm, y_mm));
 count = 0;
 
-for depth=linspace(2/dist_max, 10/dist_max, 20)
-    for xshift=linspace(0, max(abs(x_mm)), 5)
-        for yshift=linspace(0, max(abs(y_mm)), 5)
-            fprintf('Depth = %f, xshift = %f, yshift = %f\n', depth, ...
-                                xshift, yshift);
+for depth=linspace(2/dist_max, 10/dist_max, 10)
+    %for xshift=linspace(0, max(abs(x_mm)), 5)
+        %for yshift=linspace(0, max(abs(y_mm)), 5)
+            %fprintf('Depth = %f, xshift = %f, yshift = %f\n', depth, ...
+            %                    xshift, yshift);
             % Subtract the shifts
-            x = x_mm - linspace(0, xshift, length(x_mm));
-            y = y_mm - linspace(0, yshift, length(y_mm));
+            x = x_mm; %- linspace(0, xshift, length(x_mm));
+            y = y_mm; %- linspace(0, yshift, length(y_mm));
             
             tx = depth*x; ty = depth*y;
             k_size = uint8(max(hypot(tx, ty)));
-            imlatent = sparse_deconv(tx, ty, imblur/255.0, k_size)*10.0;
+            imlatent = sparse_deconv(tx, ty, imblur/255.0, k_size)*20.0;
             imwrite(imlatent, strcat(save_dir, ...
                     sprintf('im%d.bmp', count)));
             count = count + 1;
-        end
-    end
+        %end
+    %end
 end

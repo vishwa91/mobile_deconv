@@ -3,7 +3,8 @@ function I=shock(I0,iter,dt,h,meth,Par)
 %% private function (by Guy Gilboa)
 %% input: image,  #iterations, dt, h, method, parameters
 %% output: evolved image
-%% dt - time step size (default = 0.1)
+%% dt - time step size (default = 0.1)
+
 %% h  - size of grid steps (default = 1)
 %% Method: 'org' - original (Osher-Rudin)
 %%         'alv' - Alavarez-Mazorra  
@@ -18,7 +19,8 @@ function I=shock(I0,iter,dt,h,meth,Par)
 %%        a -   slope of arctan (soft sign)
 %%        theta - phase angle of complex part (default pi/1000)
 %% example: I=shock(I0,iter,dt,h,'cmp',[lam,lam_tld,a])
-%%
+%%
+
 
 if ~exist('dt')
    dt=0.1;
@@ -75,7 +77,8 @@ for i=1:iter,  %% do iterations
       i=sqrt(-1); lam=lam*exp(i*theta);  
       I_t = -atan(a/theta*imag(I)).*a_grad_I/h + lam*I_nn/h_2 + lam_tld*I_ee/h_2;
    elseif (meth=='alv')
-   	c=Par(1); sigma2=Par(2);     
+   	c=Par(1); sigma2=Par(2);
+     
       g_I_nn=gauss(I_nn,51,sigma2);  
       I_t = - sign(g_I_nn).*a_grad_I/h + c*I_ee/h_2;
    else 
