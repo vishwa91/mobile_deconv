@@ -20,7 +20,6 @@ wp8_app/bluetooth_example/c#/SimplePhoneSocketClient/SimplePhoneSocketClient/obj
 *.jpg
 *.dat
 *.bmp
-*.png
 host/output
 host/tmp
 host/tools/depth_ukf/depth

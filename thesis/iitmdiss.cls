@@ -102,15 +102,15 @@
 % 
 % natbib allows easy switching of citation style and using it along
 % with the iitm.bst makes things perfect.
-\RequirePackage[authoryear,round]{natbib} 
+%\RequirePackage[authoryear,round]{natbib} 
 %\RequirePackage[numbers,square]{natbib} 
-\bibliographystyle{iitm}
+%\bibliographystyle{iitm}
 
-\newcommand{\bibstyle@iitm}{\bibpunct{(}{)}{;}{a}{,}{,}%
-     \gdef\NAT@biblabel##1{##1. }}
+%\newcommand{\bibstyle@iitm}{\bibpunct{(}{)}{;}{a}{,}{,}%
+%     \gdef\NAT@biblabel##1{##1. }}
 %
-\setlength{\bibhang}{0pt}
-\citestyle{iitm}
+%\setlength{\bibhang}{0pt}
+%\citestyle{iitm}
 %\citestyle{unsrt_newen}
 
 
@@ -196,7 +196,7 @@
 
   \vspace*{0.75in}
   %\centerline{\psfig{figure=emblem.ps}}
-%  \centerline{\includegraphics{iitm.eps}}
+%  \centerline{\includegraphics{iitm.png}}
   \centerline{\includegraphics[scale=1.]{iitm}}
   \vspace*{-0.15in}
   \begin{center}
@@ -219,6 +219,11 @@
    \def\quotations{\chapter*{\centerline{QUOTATIONS}}
    %\addcontentsline{toc}{chapter}{QUOTATIONS}
    }
+
+	% adding a new command for references
+	%\def\quotations{\chapter*{\centerline{REFERENCES}}
+	%\addcontentsline{toc}{chapter}{REFERENCES}
+	%}
 
    % DEDICATION
    %
@@ -302,7 +307,7 @@
            \normalbaselines
            \chapter*{\centerline{LIST OF PAPERS BASED ON THESIS}}
            \markboth{LIST OF PAPERS BASED ON THESIS}{LIST OF PAPERS BASED ON THESIS}
-           %\addcontentsline{toc}{chapter}{LIST OF PAPERS BASED ON THESIS}
+           \addcontentsline{toc}{chapter}{LIST OF PAPERS BASED ON THESIS}
    }
 
    

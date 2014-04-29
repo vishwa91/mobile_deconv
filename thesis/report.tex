@@ -220,6 +220,74 @@ brief discussion of the \emph{github} version control system.
 In this chapter, we look briefly at the back ground which is necessary 
 to understand the forthecoming chapters. 
 
+\section{Image blur}
+\label{basic_theory:image_blur}
+Image blur is equivalent to low pass filtering in 1D signals. While 
+image blur is desired in some applications like animation, it is 
+undesirable when taking still photos. Two types of blurs are of interest
+in this project, namely motion blur and defocus blur
+
+\subsection{Defocus blur}
+\label{basic_theory:image_blur:optical}
+Defocus blur is caused when the image plane does not match with the 
+optical plane of the object. This arises only in real aperture cases
+when the focal length of the lens is finite and objects are at varied
+distances. 
+
+The blur that arises due to defocus can be modeled as a 2D gaussian
+filtering operation. Hence, the point spread function can be modeled as
+
+\begin{align*}
+h(x,y) = \frac{1}{2\pi\sigma^2}e^\frac{-(x^2+y^2)}{2\sigma^2}
+\end{align*}
+Where $\sigma$ depends on the depth of the object from the lens. For a 
+given lens to sensor distance, $\sigma$ increases with increasing depth.
+
+The defocus blur can be used in the shape from focus method, which 
+varies one particular parameter of the system like the lens position or
+the object position to bring the object in focus. This variation gives 
+an estimate of the depth. Further discussion about shape from focus will
+be carried out in the chapter on Depth Estimation.
+
+\subsection{Motion blur}
+Motion blur occurs due to relative motion between the scene and the 
+camera during the exposure time. This could mean the object in the scene
+is moving or there is a camera shake. This report deals with the problem
+of camera shake.
+
+The process of camera shake can be considered as an averaging of 
+multiple sharp images shifted due to the camera motion. Hence for a 
+planar scene, 
+\begin{align*}
+\hat{im}(x,y) = \Sigma_tim(x-x_t,y-y_t)\\
+\implies\hat{im}(x,y) = \Sigma_t\delta(x_t, y_t)*im(x,y)
+\end{align*}
+where $\delta(x_t, y_t)$ is an impulse at $(x_t, y_t)$ and $\hat{im}$ is
+the observed image.
+
+This can be rewritten as
+\begin{align*}
+\hat{im}(x,y) = (\Sigma_t\delta(x_t, y_t))*im(x,y)\\
+\implies \hat{im}(x,y) = h(x,y)*im(x,y)
+\end{align*}
+
+$h(x,y)$ is called the point spread function. If the image is not a 
+planar scene, then every point in the scene moves by a different amount
+due to the camera shake. If we assume that there is no parallax error,
+we have,
+% Do we need to write about why they move by different lengths?
+\begin{align*}
+\hat{im}(x,y) = \Sigma_t\delta(x_t.k(x,y), y_t.k(x,y))*im(x,y)
+\end{align*}
+where $k(x,y)$ is the depth of the image at $(x,y)$. This space variant
+blurring operation can be used to calculate depth information from the 
+images, as objects at different depths will be blurred to a different
+extent. Calculating $k(x,y)$ gives the depth map of the image
+
+\section{Image deconvolution}
+\label{basic_theory:deconv}
+
+
 %----------- Device ----------------------------------------------------
 \chapter{DEVICE}
 \label{chap:device}
@@ -228,7 +296,7 @@ features
 \begin{itemize}
 \item The device should be low cost. We are looking at a mobile which
 would not cost above Rs. 15,000. This gave us the option to choose 
-Android mobiles of the low end Windows Phone Mobiles.
+Android mobiles or the low end Windows Phone Mobiles.
 \item The device should have a good Software Development Kit. Android
 and Windows Phone both have a very good SDK.
 \item The device should have accelerometer, gyroscope and manual focus
@@ -267,7 +335,7 @@ added multiple features to capture images. A screenshot of the
 application is given below.
 \begin{figure}[htpb]
     \begin{center}
-        \resizebox{100mm}{!} {\includegraphics *{images/app_screenshot.eps}}
+        \resizebox{100mm}{!} {\includegraphics *{images/app_screenshot.png}}
         \caption {A screenshot of the application}
         \label{fig:app_screenshot}
     \end{center}
@@ -275,11 +343,11 @@ application is given below.
 The top right, \textbf{Information block} serves as a debugging block 
 during the image capturing process. For example, when taking images with
 long exposure, it indicates the number of samples of accelerometer data
-obtained. The next box, which has \textbf{50} written in it, indicates 
-the focus position. The focus position can be controlled by the yellow
+obtained. The \textbf{Debug section} box indicates the focus position and other
+debug information. The focus position can be controlled by the yellow
 slide bar which is situated at the bottom of the application. 
 
-The next box, which has \textbf{x:... y:...} in the box indicates the
+The \textbf{Accelerometer} box indicates the
 current value of the accelerometer. The button titled \textbf{Click} is 
 used for capturing a single long exposure image. \textbf{Connect} button
 is used for connecting to the computer using the TCP protocol. The Host
@@ -471,10 +539,18 @@ case to a small sector(it is not a straight line due to the drift
 associated with the accelerometer readings) with the help of
 accelerometer data. 
 
-The following images are an output of the algorithm. While the overlap
+The following images are example outputs of the algorithm. While the overlap
 is not exact, the finer registration can be done with more sophisticated
 algorithm. 
-% Insert translation registration images here.
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=300pt]{images/imreg/shift/eg1/imreg.png}
+\caption{Example 1: Registered image pairs}
+\includegraphics[width=300pt]{images/imreg/shift/eg2/imreg.png}
+\caption{Example 2: Registered image pairs}
+\end{center}
+\end{figure}
 
 \section{Pure rotation}
 \label{image_registration:pure_rotation}
@@ -499,11 +575,32 @@ angle difficult. We hence use normalized cross correlation, which is
 independent of the shift. Thus,
 \begin{align*}
 % Bonkers. This does not make sense. 
-\theta=argmax_t\{\frac{IM_1IM_2^*}{|IM_1||IM2|}\}
+\theta=argmax_t\big\{ifft(\frac{fft(im_1).fft(rotate(im_2,\theta_t))^*}
+{|fft(im_1).fft(rotate(im_2,\theta_t))|})\}
 \end{align*}
-Where $IM$ is the FFT of $im$.
+Where $fft(.)$ is the 2D discrete fourier transform, $ifft(.)$ is the 2D 
+discrete inverse fourier transform and $rotate(im, \theta)$ rotates the image
+by $\theta$ degrees.
+
+The following images serve as an example for the algorithm. In the first and
+second example, the first image, which is taken with long exposure is a highly
+blurred image. As is evident from the images, the algorithm performs very good. 
+The third image is a small rotation case and our algorithm performs well for
+that case too.
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
+\caption{Example 1: Very high blur and rotation}
+\includegraphics[width=300pt]{images/imreg/rotation/eg2/imreg.png}
+\caption{Example 2: Moderate blur and rotation}
+\includegraphics[width=300pt]{images/imreg/rotation/eg3/imreg.png}
+\caption{Example 3: Very small blur and rotation}
+\end{center}
+\end{figure}
+
 \pagebreak
-%----------- Deblurring-------------------------------------------------
+%----------- Image superresolution ---------------------------------------------
 \chapter{IMAGE SUPERRESOLUTION}
 \label{chap:image_superresolution}
 \pagebreak

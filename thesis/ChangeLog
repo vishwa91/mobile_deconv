@@ -1,0 +1,6 @@
+2005-06-02  Prabhu Ramachandran  <prabhu_r@users.sf.net>
+
+	* Incorporated changes from Prof. G. Venkatarathnam to use Times
+	as the default font and to use singlespacing for the advisors
+	details in the certificate page.
+
