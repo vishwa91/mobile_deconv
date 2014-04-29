@@ -23,7 +23,7 @@ def non_blind_deconv(kernel, im, output_name):
     
     # Execute the command
     exec_cmd = ('wine tools/non_blind_deblur/robust_deconv.exe ' 
-                'tmp/imblur.bmp tmp/kernel.bmp %s 0 0.001 5'%output_name) 
+                'tmp/imblur.bmp tmp/kernel.bmp %s 0 0.001 10'%output_name) 
     print exec_cmd
     cmd_op = commands.getoutput(exec_cmd)
     return cmd_op

@@ -13,7 +13,7 @@ acdat_name = 'saved_ac.dat';
 save_dir = '../tmp/matlab_deconv/';
 
 %% Load the data
-imblur = double(imread(strcat(main_dir, imblur_name)));
+imblur = double(rgb2gray(imread(strcat(main_dir, imblur_name))));
 [acx, acy, acz, gx, gy, gz] = load_accel(strcat(main_dir, acdat_name));
 [x_mm, y_mm] = get_position(acx, acy, acz, gx, gy, gz, 1, 21);
 
@@ -22,31 +22,36 @@ dist_max = max(hypot(x_mm, y_mm));
 count = 0;
 
 % Create weight matrix which will reduce ringing
-imweight = edge(rgb2gray(imblur), 'sobel', 0.1);
+imweight = edge(imblur, 'sobel', 0.1);
 se = strel('disk', 2);
 imweight = double(imdilate(imweight, se));
 [xdim, ydim] = size(imweight);
-weight = zeros(xdim, ydim, 3);
-weight(:,:,1) = imweight;
-weight(:,:,2) = imweight;
-weight(:,:,3) = imweight;
+%weight = zeros(xdim, ydim, 3);
+%weight(:,:,1) = imweight;
+%weight(:,:,2) = imweight;
+%weight(:,:,3) = imweight;
     
-for depth=linspace(0, 10/dist_max, 20)
-    count
-    % Subtract the shifts
-    x = x_mm;
-    y = y_mm;
+for depth=linspace(2/dist_max, 8/dist_max, 8)
+    for xshift=linspace(0, max(abs(x_mm)), 5)
+        for yshift=linspace(0, max(abs(y_mm)), 5)
+            fprintf('depth = %f at count %d\n', depth, count);
+            % Subtract the shifts
+            x = x_mm - linspace(0, xshift, length(x_mm));
+            y = y_mm - linspace(0, xshift, length(y_mm));
 
-    % Construct the PSF
-    psf = construct_kernel(y, x, depth);
-    % Start blind deconvolution
-    [im, bpsf] = deconvblind(imblur, psf, 30, [], weight);
-    % Save the data
-    imwrite(uint8(im), ...
-        strcat(save_dir, sprintf('im%d.ppm',count)));
-    imwrite(uint8(bpsf*300), ...
-        strcat(save_dir, sprintf('psf%d.ppm',count)));
-    count = count + 1;
+            % Construct the PSF
+            psf = construct_kernel(x, y, depth);
+            % Start non-blind deconvolution
+            %[im, bpsf] = deconvblind(imblur, psf);
+            im = deconvreg(imblur, psf);
+            % Save the data
+            imwrite(uint8(im*20), ...
+                strcat(save_dir, sprintf('im%d.bmp',count)));
+            %imwrite(uint8(bpsf*300), ...
+            %    strcat(save_dir, sprintf('psf%d.bmp',count)));
+            count = count + 1;
+        end
+    end
 end
 
 
