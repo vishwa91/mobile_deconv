@@ -109,11 +109,11 @@ hold me in good stead in my future endeavors. I am indebted to him for
 patiently sitting with me at times when I could not see any path forward
 . 
 
-I also thank all my lab mates for being extremely helpful and for their
+\noindent I also thank all my lab mates for being extremely helpful and for their
 patience and guiding me through difficult tasks. I had the privilege of 
 working with some of the best minds in the department.
 
-I would also like to thank my parents and my brother for giving me 
+\noindent I would also like to thank my parents and my brother for giving me 
 feedback on my project work by evaluating my mobile application.
 
 % Need to write my name on the right side.
@@ -224,51 +224,53 @@ to understand the forthecoming chapters.
 \chapter{DEVICE}
 \label{chap:device}
 While choosing the mobile platform, we wanted to look at the following
- features
- \begin{itemize}
- \item The device should be low cost. We are looking at a mobile which
- would not cost above Rs. 15,000. This gave us the option to choose 
- Android mobiles of the low end Windows Phone Mobiles.
- \item The device should have a good Software Development Kit. Android
- and Windows Phone both have a very good SDK.
- \item The device should have accelerometer, gyroscope and manual focus
- ability. Almost all the mobiles which come today have these features 
- and hence was not very critical.
- \item The device should have easy image handling capabilities. Here, 
- Windows Phone was a clear winner due to the powerful Nokia Imaging SDK.
- \item The device should have TCP/Bluetooth capability. Again, every 
- smart phone available today has these features. 
- \end{itemize}
+features
+\begin{itemize}
+\item The device should be low cost. We are looking at a mobile which
+would not cost above Rs. 15,000. This gave us the option to choose 
+Android mobiles of the low end Windows Phone Mobiles.
+\item The device should have a good Software Development Kit. Android
+and Windows Phone both have a very good SDK.
+\item The device should have accelerometer, gyroscope and manual focus
+ability. Almost all the mobiles which come today have these features 
+and hence was not very critical.
+\item The device should have easy image handling capabilities. Here, 
+Windows Phone was a clear winner due to the powerful Nokia Imaging SDK.
+\item The device should have TCP/Bluetooth capability. Again, every 
+smart phone available today has these features. 
+\end{itemize}
  
- With the above points in mind and considering the low cost, we chose to
- go for Nokia Lumia 520 (henceforth called 520) which features a 5 MP
- camera, 3-axis accelerometer, WiFi and Blutooth support. However, the 
- tradeoff was that we could not get a gyroscope on the mobile. This 
- would be a serious hinderance for handling rotation of the mobile along
- with translation. However, since we were only evaluating the 
- possibilities of computational photography on the mobile platform, we
- chose to ignore it and see what can be done with the accelerometer 
- alone. 
+With the above points in mind and considering the low cost, we chose to
+go for Nokia Lumia 520 (henceforth called 520) which features a 5 MP
+camera, 3-axis accelerometer, WiFi and Blutooth support. However, the 
+tradeoff was that we could not get a gyroscope on the mobile. This 
+would be a serious hinderance for handling rotation of the mobile along
+with translation. However, since we were only evaluating the 
+possibilities of computational photography on the mobile platform, we
+chose to ignore it and see what can be done with the accelerometer 
+alone. 
+
+From the ease of usage perspective, the Windows Phone 8 SDK has a very
+simple interface with coding in C\# and GUI design using XAML script. 
+Visual Studio makes it very easy to create applications (apps) fast.
+
+% Device side application
+\section{Device side application}
+\label{device:device_app}
+The app is mainly used for logging information to the computer so that
+algorithms can be tested offline. The major advantage of this method is
+that it gives the power of the computer along with the flexibility to 
+experiment with various methods. 
  
- From the ease of usage perspective, the Windows Phone 8 SDK has a very
- simple interface with coding in C\# and GUI design using XAML script. 
- Visual Studio makes it very easy to create applications (apps) fast.
- 
- \section{Device side application}
- The app is mainly used for logging information to the computer so that
- algorithms can be tested offline. The major advantage of this method is
- that it gives the power of the computer along with the flexibility to 
- experiment with various methods. 
- 
- To make the application versatile and useful for future development, we
- added multiple features to capture images. A screenshot of the 
- application is given below.
- \begin{figure}[htpb]
-  \begin{center}
-    \resizebox{100mm}{!} {\includegraphics *{images/app_screenshot.eps}}
-    \caption {A screenshot of the application}
-  \label{fig:app_screenshot}
-  \end{center}
+To make the application versatile and useful for future development, we
+added multiple features to capture images. A screenshot of the 
+application is given below.
+\begin{figure}[htpb]
+    \begin{center}
+        \resizebox{100mm}{!} {\includegraphics *{images/app_screenshot.eps}}
+        \caption {A screenshot of the application}
+        \label{fig:app_screenshot}
+    \end{center}
 \end{figure}
 The top right, \textbf{Information block} serves as a debugging block 
 during the image capturing process. For example, when taking images with
@@ -306,7 +308,9 @@ thread, we found that using a timer was an easy method.
 We discuss some of the methods implemented for logging the data and 
 sending it over TCP to understand the intricacies involved.
 
+% Logging accelerometer data during exposure
 \subsection{Logging accelerometer data during exposure}
+\label{device:device_app:cam}
 When the \textbf{Click} button is toggled, a camera capture sequence
 is started, which is programmed to take a picture with an exposure time
 of 200ms (adjustable). However, by default, this suspends all other 
@@ -347,8 +351,162 @@ If an exposure time of 200ms is used, 20 accelerometer values are
 expected with a 10ms timer. However, close to 70 readings are obtained.
 This is due to the transfer time of the image data also included in the
 capture time. To overcome this problem, a fast moving image of a single
-point light source is taken. frames of 20 out of 70 samples of the
- accelerometer data is used for estimating the best start and end times.
+point light source is taken. Frames of 20 out of 70 samples of the
+accelerometer data is used for estimating the best start and end times.
+We use these start and end times for all the future kernel estimates.
+%% We could add an image for reference here.
+
+% Sending data over TCP
+\subsection{Sending data over TCP}
+\label{device:device_app:tcp}
+The TCP communication enables a communication stream between the mobile
+device and the computer. With the stream open, it can be treated as a 
+continuous information channel, with no prior information about the size
+of the data being sent. To works with this \emph{asynchronous} type of
+data transmission, we encapsulate the data in keywords which is known to
+the computer. This would boil down the problem to searching for the 
+starting and ending keyword for each data type received. For example, if
+we are sending a new image, we would use the keywords \textbf{STIM} and
+\textbf{EDIM} to encapsulate the image data. An example: 
+
+\begin{singlespacing}
+\begin{lstlisting}[style=sharpclisting]
+    // app_comsocket is the object representing the TCP connection.
+    // app_comsocket.Send is used to send data over the connection.
+    app_comsocket.Send("STIM\n");  // Start token
+    app_comsocket.Send(imdata);     // Image data
+    app_comsocket.Send("EDIM\n");  // End token
+\end{lstlisting}
+\end{singlespacing}
+
+% Host side application
+\section{Host side application}
+\label{device:host}
+Most of the host side application is written in python. The reason for 
+choosing python is the vast support available for scientific computing,
+communication protocols, image processing support and above all, python
+being free software. However, some of the deblurring codes and 
+super resolution are in Matlab.
+
+The communication from mobile to computer is done using the inbuilt
+\emph{socket} module in python. As mentioned in 
+\ref{device:device_app:tcp}, the data from the mobile is sent
+encapsulated in keywords. These keywords are used to parse the incoming
+data and split it accordingly. 
+
+\pagebreak
+
+%----------- Deblurring ------------------------------------------------
+\chapter{DEBLURRING}
+\label{chap:deblurring}
+\pagebreak
+
+%----------- Depth estimation ------------------------------------------
+\chapter{DEPTH ESTIMATION}
+\label{chap:depth_estimation}
+
+%----------- Image registration ----------------------------------------
+\chapter{IMAGE REGISTRATION}
+\label{chap:image_registration}
+When taking multiple images, it is very likely that the subsequent 
+images will be shifted and rotated. Consider the case of simple shift. 
+In the absense of noise, we could use the normalized cross correlation
+to estimate this shift. However, this method would fail when one of the 
+image is blurred. A more sophisticated method would use feature matching
+to get a good estimate of a the shift. However, the drawback is that it
+is computationally intensive.
+
+To overcome this problem, we can use the inertial sensor data on the 
+mobile to get a good estimate of the change in orientation, since the 
+inertial sensors give direct information about the motion during the 
+photography period. 
+
+Before we go into the case of pure translation, we need to understand 
+the limitation of our current setup. We have a 3-axis accelerometer 
+giving us the acceleration along ${x, y}$ and $z$ axes, relative to
+the mobile frame of reference. Since our setup constrains that we have
+only in-plane motion, the acceleration along $z$ axis does not give 
+any information. Any generic motion in the plane can be represented by
+three entities, ${t_x, t_y}$ and $R_z$. Hence, we have three unknowns
+and only two equations from the two axes, which makes it an 
+indeterminate system. Hence, we constrain the system by saying that
+either the system goes through only translation or only rotation. Hence,
+we have the following equations:
+
+\begin{align*}
+t_{x_i}=\int{\int{a_x}}\\
+t_{y_i}=\int{\int{a_y}}\\
+or\\
+{\theta}_i=tan^{-1}({a_y}/{a_x})\\
+\end{align*}
+
+We look at two cases, one of pure translation and another of pure 
+rotation.
+\section{Pure translation}
+\label{image_registration:pure_translation}
+As mentioned in \ref{device:device_app:cam}, we can determine the 
+trajectory of the device from the accelerometer data. To evaluate our
+algorithm, we take a pair of images, one without blur and one with blur
+with a 500ms duration between them. The accelerometer data will give a
+rough estimate of the final position moved given by:
+
+\begin{align*}
+x_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
+\int_{t=t_{init}}^{t_{final}}{a_xdt}\\
+y_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
+\int_{t=t_{init}}^{t_{final}}{a_ydt}
+\end{align*}
+The above final position is in mm and needs to be converted 
+into pixel dimension. However, we don't have the distance of the scene
+from the camera, which makes it an ill-posed problem. To overcome this, 
+we iterate through various scales and find out the correct scale using 
+RMS error. Hence,
+\begin{align*}
+(x_{shift}, y_{shift}) = argmax_k\{\Sigma_x\Sigma_y(im_1(x,y)
+-im_2(x-k*x_{final},y-k*y_{final}))^2\}
+\end{align*}
+Note that the maximum shift is bound due to the finite duration. Hence,
+our search space is drastically reduced from $360^o$ in the blind
+case to a small sector(it is not a straight line due to the drift 
+associated with the accelerometer readings) with the help of
+accelerometer data. 
+
+The following images are an output of the algorithm. While the overlap
+is not exact, the finer registration can be done with more sophisticated
+algorithm. 
+% Insert translation registration images here.
+
+\section{Pure rotation}
+\label{image_registration:pure_rotation}
+Assuming only in-plane rotation, we can relate the measured acceleration
+to world acceleration (in the absense of other forces) as
+\begin{align*}
+a_x=gcos\theta\\
+a_y=gsin\theta
+\end{align*}
+Where $\theta$ is the orientation of the device. Hence, the orientation
+of the mobile can be estimated as
+\begin{align*}
+\theta=tan^{-1}(\frac{a_y}{a_x})
+\end{align*}
+As in the pure translation case, we take two images, one non-blurred and
+another blurred, both separated by 500ms duration. We only rotate the 
+device during this duration. Hence, we can use the acceleration values
+estimated during this time frame to correct for the rotation. Note that
+the process of rotation will also induce a small translation in the 
+image. This makes the RMS error method of finding the appropriate
+angle difficult. We hence use normalized cross correlation, which is 
+independent of the shift. Thus,
+\begin{align*}
+% Bonkers. This does not make sense. 
+\theta=argmax_t\{\frac{IM_1IM_2^*}{|IM_1||IM2|}\}
+\end{align*}
+Where $IM$ is the FFT of $im$.
+\pagebreak
+%----------- Deblurring-------------------------------------------------
+\chapter{IMAGE SUPERRESOLUTION}
+\label{chap:image_superresolution}
+\pagebreak
 
 \end{document}
 
