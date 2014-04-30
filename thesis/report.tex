@@ -220,12 +220,72 @@ brief discussion of the \emph{github} version control system.
 In this chapter, we look briefly at the back ground which is necessary 
 to understand the forthecoming chapters. 
 
+\section{Position from acceleration data}
+\label{basic_theory:accel}
+A major part of the project involves estimating the trajectory of motion
+from accelerometer data. In the current context, we assume that we have
+access to a 3-axis accelerometer alone. The 3-axis accelerometer 
+measures physical acceleration, which is a combination of the 
+acceleration due to gravity and any external force. Further, the 
+measured values are relative to the mobiel frame of reference. Hence, 
+we can model our measured acceleration as
+\begin{align*}
+\hat{a}_x= g_x + a_x + n_x\\
+\hat{a}_y= g_y + a_y + n_y\\
+\hat{a}_z= g_z + a_z + n_z
+\end{align*}
+Where $n_x, n_y$ and $n_z$ are noise in measurements.For calculating
+ the trajectory, we need $\{a_x,a_y,a_z\}$. To obtain 
+these values, we need to subtract the acceleration due to gravity. 
+However, we have no further information apart from the above equations.
+To get a good estimate of the required acceleration, we assume that the
+gravity vector is quasi-static when there is only translation in the 
+mobile device. Hence, we estimate our gravity vector as follows
+\begin{align*}
+g_x= \alpha{g_x} + (1-\alpha)\hat{a}_x\\
+g_y= \alpha{g_y} + (1-\alpha)\hat{a}_y\\
+g_z= \alpha{g_z} + (1-\alpha)\hat{a}_z
+\end{align*}
+Once we have the device acceleration, the equation for finding the 
+trajectory of motion would be
+\begin{align*}
+x(t)=\int_0^{t}\int_0^{t}{a_x(t)dt}\\
+y(t)=\int_0^{t}\int_0^{t}{a_y(t)dt}\\
+z(t)=\int_0^{t}\int_0^{t}{a_z(t)dt}
+\end{align*}
+The discrete time approximation is
+\begin{align*}
+x[n]=({\Sigma}_{t}^{n}{\Sigma}_{t}^{n}a_x[n]){\times}T^2\\
+y[n]=({\Sigma}_{t}^{n}{\Sigma}_{t}^{n}a_y[n]){\times}T^2\\
+z[n]=({\Sigma}_{t}^{n}{\Sigma}_{t}^{n}a_z[n]){\times}T^2
+\end{align*}
+Though this gives a good estimate of the orientation of the device when
+there is no motion or the device acceleration when there is only
+translation, the method suffers from two drawbacks
+\begin{enumerate}
+\item The noise in measurement creates a random walk pattern. This might
+not be of major concern as it would only create a small disturbance in 
+the over all trajectory.
+\item If the estimate of gravity vector is not correct, it would create
+a DC offset to the device acceleration. This gives rise to drift, which
+blows up as $t^2$ which can give rise to wrong trajectory.
+\end{enumerate}
+The following graph explains how the drift can be of serious concern when
+estimating the trajectory. 
+
+<Matplotlib figure goes here>
+
+Due to lack of information regarding the orientation of the mobile, which
+gives rise to a bad estimate of gravity vector, the drift will exist 
+and make the estimate unreliable. In the forthecoming chapters, we will
+see the consequences of have a bad trajectory and possible ways to 
+rectify the problem.
 \section{Image blur}
 \label{basic_theory:image_blur}
 Image blur is equivalent to low pass filtering in 1D signals. While 
 image blur is desired in some applications like animation, it is 
 undesirable when taking still photos. Two types of blurs are of interest
-in this project, namely motion blur and defocus blur
+in this project, namely defocus blur and motion blur
 
 \subsection{Defocus blur}
 \label{basic_theory:image_blur:optical}
