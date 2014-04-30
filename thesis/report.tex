@@ -236,7 +236,6 @@ distances.
 
 The blur that arises due to defocus can be modeled as a 2D gaussian
 filtering operation. Hence, the point spread function can be modeled as
-
 \begin{align*}
 h(x,y) = \frac{1}{2\pi\sigma^2}e^\frac{-(x^2+y^2)}{2\sigma^2}
 \end{align*}
@@ -250,6 +249,7 @@ an estimate of the depth. Further discussion about shape from focus will
 be carried out in the chapter on Depth Estimation.
 
 \subsection{Motion blur}
+\label{basic_theory:image_blur:motion}
 Motion blur occurs due to relative motion between the scene and the 
 camera during the exposure time. This could mean the object in the scene
 is moving or there is a camera shake. This report deals with the problem
@@ -286,8 +286,74 @@ extent. Calculating $k(x,y)$ gives the depth map of the image
 
 \section{Image deconvolution}
 \label{basic_theory:deconv}
+The process of removing the blur in the image is known as image
+deconvolution. Deconvolution can be broadly of two types, blind and non-
+blind. If the psf is known aprior, it is known as non-blind 
+deconvolution and if it not know, it is called blind deconvolution. 
+Blind deconvolution is an ill-posed problem, as any combination of 
+latent image and psf can give rise to the observed image. Hence, various
+constraints are used when trying to retrieve the latent image. For 
+example, an image can be considered as piecewise smooth function with
+sharp images. Hence, we can try to reduce the total variance of the 
+obtained latent image. % Should we write about TV stuff?
 
+On the other hand, non-blind deconvolution is less ill posed than the
+blind case, as we have the psf estimate. As discussed in the previous 
+section, the blurred image can be represented as the convolution of 
+the psf and the latent image in case of a planar scene. This 
+transforms into multiplication in the frequency domain. Hence, we can
+simply divide the image's fourier transform with the psf's fourier
+transform to get the original image. i.e,
+\begin{align*}
+IM_{latent} = \frac{\hat{IM}}{PSF}
+\end{align*}
+Where $IM$ is the discreet fourier transform of $im$. However, the 
+observed image is further degraded by noise. Hence, the actual model of
+the observed image is
+\begin{align*}
+\hat{im}(x,y) = h(x,y)*im(x,y) + n(x,y) 
+\end{align*}
+Where $n(x,y)$ is the noise. Hence, the equation in the frequency domain
+can be loosely expressed as
+\begin{align*}
+\hat{IM} = H.IM + N\\
+IM_{latent} = \frac{\hat{IM}}{H}\\
+\implies IM_{latent} = IM + \frac{N}{H}
+\end{align*}
+Note that $h(x,y)$ has a low frequency structure and noise has a high 
+frequency structure. Hence, the division will blow up the calculated 
+image. 
 
+\subsection*{Wiener deconvolution}
+\label{basic_theory:deconv:wiener}
+Instead of simple division, we reformulate our problem as finding a 
+filter which when convolved with the observed image would return the
+latent image. Further, we wish to reduce the error between the latent
+image and the image obtained by filtering the observed image, i.e
+\begin{align*}
+minimize \hspace*{4mm} E|im(x,y)-f(x,y)*\hat{im}(x,y)|^2
+\end{align*}
+Where $f(x,y)$ is the desired filter and $E|.|$ is the expectation
+operator. Changing to frequency domain, we
+have
+\begin{align*}
+minimize \hspace*{4mm} E|IM-F.\hat{IM}|^2\\
+\hat{IM}=IM.H + N
+\end{align*}
+Differentiating with respect to $F$, we get
+\begin{align*}
+F = \frac{H^*}{|H|^2 + \alpha}\\
+\implies IM_{latent} = \hat{IM}.F\\
+=\frac{H^*.\hat{IM}}{|H|^2 + \alpha}
+\end{align*}
+Where $\alpha$ is the inverse signal to noise ratio of the image.
+% Very vague. Is that ok?
+
+\subsection{Regularized deconvolution}
+\label{basic_theory:deconv:reg}
+% bleh, I have no clue what to write
+
+\pagebreak
 %----------- Device ----------------------------------------------------
 \chapter{DEVICE}
 \label{chap:device}
