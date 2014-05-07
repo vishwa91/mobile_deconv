@@ -312,12 +312,13 @@ def _ssim(im1, im2):
 	return numerator/denominator
 
 def calculate_ssim(im1, im2, w=8):
-	''' Calculate the structural similarity of two images'''
+	''' Calculate the structural similarity index of two images'''
 	xdim, ydim = im1.shape
 	d = w//2
 	im_ssim = zeros_like(im1)
 	for x in range(d, xdim-d, d):
 		for y in range(d, ydim-d, d):
-			im_ssim[x-d:x+d, y-d:y+d] = _ssim(im1[x-d:x+d, y-d:y+d], im2[x-d:x+d, y-d:y+d])
+			im_ssim[x-d:x+d, y-d:y+d] = (
+                _ssim(im1[x-d:x+d, y-d:y+d], im2[x-d:x+d, y-d:y+d]))
 	return im_ssim
     

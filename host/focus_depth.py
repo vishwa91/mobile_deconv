@@ -34,6 +34,3 @@ if __name__ == '__main__':
         #imsave = abs(imtemp-im1)
         Image.fromarray(imsave).convert('L').save('tmp/focus/scale/im%d.pgm'%i)
     '''
-
-
-    
