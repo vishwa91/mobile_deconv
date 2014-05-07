@@ -58,7 +58,7 @@
 \begin{document}
 %----------- Title page ------------------------------------------------
 \title{Analyzing motion sensors on mobile platform for image restoration}
-\author{Saragadam R V Vishwanath}
+\author{Saragadam R V Vishwanath (EE10B035)}
 \date{MAY 2014}
 \department{ELECTRICAL ENGINEERING}
 \maketitle
@@ -109,12 +109,13 @@ hold me in good stead in my future endeavors. I am indebted to him for
 patiently sitting with me at times when I could not see any path forward
 . 
 
-\noindent I also thank all my lab mates for being extremely helpful and for their
-patience and guiding me through difficult tasks. I had the privilege of 
-working with some of the best minds in the department.
+\noindent I also thank all my lab mates for being extremely helpful and
+ for their patience and guiding me through difficult tasks. I had the
+  privilege of working with some of the best minds in the department.
 
-\noindent I would also like to thank my parents and my brother for giving me 
-feedback on my project work by evaluating my mobile application.
+\noindent I would also like to thank my parents and my brother for 
+giving me feedback on my project work by evaluating my mobile
+ application.
 
 % Need to write my name on the right side.
 \raggedright{Vishwanath}
@@ -255,9 +256,9 @@ z(t)=\int_0^{t}\int_0^{t}{a_z(t)dt}
 \end{align*}
 The discrete time approximation is
 \begin{align*}
-x[n]=({\Sigma}_{t}^{n}{\Sigma}_{t}^{n}a_x[n]){\times}T^2\\
-y[n]=({\Sigma}_{t}^{n}{\Sigma}_{t}^{n}a_y[n]){\times}T^2\\
-z[n]=({\Sigma}_{t}^{n}{\Sigma}_{t}^{n}a_z[n]){\times}T^2
+x[n]=({\sum}_{t}^{n}{\sum}_{t}^{n}a_x[n]){\times}T^2\\
+y[n]=({\sum}_{t}^{n}{\sum}_{t}^{n}a_y[n]){\times}T^2\\
+z[n]=({\sum}_{t}^{n}{\sum}_{t}^{n}a_z[n]){\times}T^2
 \end{align*}
 Though this gives a good estimate of the orientation of the device when
 there is no motion or the device acceleration when there is only
@@ -273,13 +274,69 @@ blows up as $t^2$ which can give rise to wrong trajectory.
 The following graph explains how the drift can be of serious concern when
 estimating the trajectory. 
 
-<Matplotlib figure goes here>
+\begin{figure}[ht]
+\begin{center}
+\resizebox{150mm}{!} {\includegraphics *{images/drift_image.png}}
+\caption {Plot showing the effect of DC offset to acceleration value.
+The drift was iterated from -1\% to 1\% of the maximum acceleration 
+value.}
+\label{fig:drift_example}
+\end{center}
+\end{figure}
 
 Due to lack of information regarding the orientation of the mobile, which
 gives rise to a bad estimate of gravity vector, the drift will exist 
 and make the estimate unreliable. In the forthecoming chapters, we will
 see the consequences of have a bad trajectory and possible ways to 
 rectify the problem.
+
+\section{Image registration}
+\label{basic_theory:registration}
+Image registration finds application in many areas like medical imaging,
+aerial photography and automated target recognition. In computational
+photography, image registration is used in a wide areas like panorama
+stitching, depth estimation using stereo vision and video stabilization.
+
+Image registration involves finding the transform between a pair of 
+images. The transform could be a simple translation and rotation or 
+complicated warping. For simple cases like translation only model or 
+rotation only model, many of the frequency based methods give good 
+results. For advanced models, feature based registration is used. The 
+SIFT based image registration, for example, identifies key points in
+each image. Once we have the corresponding points in both the images,
+the problem is of estimating the matrix that created this transform.
+
+Note that when there is not much information available or we have a 
+blurred and latent image pair, registration becomes difficult. Section
+\ref{chap:image_registration} has discussion about how this can be 
+simplified using data from accelerometer. In this section, we will look
+at a simple case of registering image pair which are transformed by shift
+alone. % And rotation and scale? It would be good because then we can
+% compare it in the image registration section.
+
+\subsection{Image registration using cross correlation}
+Let $im_1$ and $im_2$ be the image pairs. Since we are looking at a 
+translation only model, we have
+\begin{align*}
+im_2(x,y)=im_1(x-x_0, y-y_0)
+\end{align*}
+Given these two images, we wish to estimate $(x_0,y_0)$. A shift in the
+spacial domain reflects as a phase multiplication in the frequency domain.
+Hence, if $IM_1$ is the DFT of $im_1$, then,
+\begin{align*}
+IM_2(u,v) = IM_1(u,v)e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
+\end{align*}
+Let
+\begin{align*}
+H(u,v) = \frac{IM_1(u,v){\times}IM_2^*(u,v)}{|IM_1(u,v){\times}IM2(u,v)|}\\
+\implies H(u,v) = e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
+\end{align*}
+This gives,
+\begin{align*}
+h(x,y) = \delta(x_0, y_0)
+\end{align*}
+Hence, the location of peak in h(x,y) will give the shift between the 
+two images. 
 \section{Image blur}
 \label{basic_theory:image_blur}
 Image blur is equivalent to low pass filtering in 1D signals. While 
@@ -319,15 +376,15 @@ The process of camera shake can be considered as an averaging of
 multiple sharp images shifted due to the camera motion. Hence for a 
 planar scene, 
 \begin{align*}
-\hat{im}(x,y) = \Sigma_tim(x-x_t,y-y_t)\\
-\implies\hat{im}(x,y) = \Sigma_t\delta(x_t, y_t)*im(x,y)
+\hat{im}(x,y) = \sum_tim(x-x_t,y-y_t)\\
+\implies\hat{im}(x,y) = \sum_t\delta(x_t, y_t)*im(x,y)
 \end{align*}
 where $\delta(x_t, y_t)$ is an impulse at $(x_t, y_t)$ and $\hat{im}$ is
 the observed image.
 
 This can be rewritten as
 \begin{align*}
-\hat{im}(x,y) = (\Sigma_t\delta(x_t, y_t))*im(x,y)\\
+\hat{im}(x,y) = (\sum_t\delta(x_t, y_t))*im(x,y)\\
 \implies \hat{im}(x,y) = h(x,y)*im(x,y)
 \end{align*}
 
@@ -337,7 +394,7 @@ due to the camera shake. If we assume that there is no parallax error,
 we have,
 % Do we need to write about why they move by different lengths?
 \begin{align*}
-\hat{im}(x,y) = \Sigma_t\delta(x_t.k(x,y), y_t.k(x,y))*im(x,y)
+\hat{im}(x,y) = \sum_t\delta(x_t.k(x,y), y_t.k(x,y))*im(x,y)
 \end{align*}
 where $k(x,y)$ is the depth of the image at $(x,y)$. This space variant
 blurring operation can be used to calculate depth information from the 
@@ -412,12 +469,28 @@ Where $\alpha$ is the inverse signal to noise ratio of the image.
 \subsection{Regularized deconvolution}
 \label{basic_theory:deconv:reg}
 % bleh, I have no clue what to write
+Since we know that the image blows up at the edges, we can impose a 
+penality on the edge weights. Let $g_x$ and $g_y$ be the 
+horizontal and vertical differentiation filters . Then, we need
+\begin{align*}
+minimize \hspace*{4mm} |y-h*x|^2 + \alpha|g_x*x|^2 + \alpha|g_x*x|^2\\
+\implies minimize \hspace*{4mm} |Y-HX|^2 + \alpha|G_xX|^2 + \alpha|G_xX|^2\\
+\end{align*}
+Where $X$ represents the DFT of $x$. Differentiating the above equation
+with respect to $X$, we get
+\begin{align*}
+X=\frac{H^*Y}{|H|^2+\alpha(G_x^2+G_y^2)}
+\end{align*}
+
+This is called regularized deconvolution. 
 
 \pagebreak
 %----------- Device ----------------------------------------------------
 \chapter{DEVICE}
 \label{chap:device}
-While choosing the mobile platform, we wanted to look at the following
+Primarily, we want the device to function as an acquisition system which
+would take pictures and measure some sensor values. While choosing the
+mobile platform, we wanted to look at the following
 features
 \begin{itemize}
 \item The device should be low cost. We are looking at a mobile which
@@ -593,12 +666,161 @@ data and split it accordingly.
 %----------- Deblurring ------------------------------------------------
 \chapter{DEBLURRING}
 \label{chap:deblurring}
+As mentioned in \ref*{basic_theory:deconv}, blurring due to motion is
+not desirable and we wish to remove it. In this section, we will look at
+non blind and semi blind deconvolution techniques. 
 \pagebreak
-
 %----------- Depth estimation ------------------------------------------
 \chapter{DEPTH ESTIMATION}
 \label{chap:depth_estimation}
+When taking picture, due to the variable depth of the scene, the amount 
+of blur induced due to defocus or motion of the camera is different. 
+When estimating depth, we use this fact that one of the parameters of 
+the image is sensitive to depth. We particularly look at two types of 
+depth estimation, namely depth from motion blur and shape from focus.
 
+\section{Depth from motion blur}
+\label{depth_estimation:motion}
+Section \ref{basic_theory:image_blur:motion} gives a brief discussion 
+about how every point in the image gets blurred by a different blur 
+kernel due to the depth profile. If we neglect the parallax error, we 
+can see that the only variation in the blur kernel is the scale. Hence,
+estimating the depth profile boils down to estimating the scale of the 
+blur kernel at different points. 
+
+In this setup, we capture two images, one with very short exposure and
+another with long exposure. The short exposure image is captured by
+copying the image buffer. While a better choice would be to take capture
+an image with very short exposure, it will tend to slow down the process
+and induce more delay between the two images. 
+
+Further, along with the two images, the motion of the camera is 
+estimated by logging the accelerometer values. Thus, we have the latent
+image, the blurred image and the blur kernel. We need to estimate the 
+scale of the blur kernel at each point. Prior to estimating the depth,
+it is very important that the two images are aligned. We would show that
+misalignment could be a major reason for wrong depth profiles. However,
+for small shifts, we found that image registration using cross 
+correlation gave good results
+
+To estimate the depth at each point, we iterate through various blur
+kernel sizes and calculate the difference between the blurred image and
+the blurred latent image for each scale of the kernel. If the scale is
+correct at a given position, the error at that point will be the least
+and that would be assigned as the depth value. Hence, we can formulate
+our algorithm as
+\begin{align*}
+k(x,y) = argmin_d\{|im(x,y)_{blurred}-h(x,y,d)*im_{latent}(x,y)|^2\}
+\end{align*}
+Where $h(x,y,d)$ is the kernel with scale value of $d$. While this works
+for the ideal case, the real depth map is very noisy. Hence, we low pass
+filter the error map with a box filter. This algorithm works very well
+when there is good texture in the image. Further, it is necessary that
+the kernel is very accurate, else the depth map will go wrong. 
+
+To verify our algorithm, we first tried estimating depth map in a 
+sythetic case. We blurred an image with a known depth map
+and ran our algorithm. The following were the results obtained.
+\begin{figure}[htpb]
+\begin{center}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/preview_im.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/saved_im.png}}
+\caption{Latent image and synthetic lurred image pair.}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/depth.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/imdepth.png}}
+\caption {True depth map and estimated depth map}
+\label{fig:depth_synthetic}
+\end{center}
+\end{figure}\\
+The results verified that our was useful for estimating depth from 
+a scene. We then tried to test our algorithm for real cases. In our
+ experiment, we found that the kernel can go to a maximum size of
+$20\times20$ and hence we scaled the kernel size from $1\times1$ to 
+$20\times20$. We used a filter of size $32\times32$ for the error map.
+Some of the experimental results have been given below. 
+\begin{figure}[ht]
+\begin{center}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/preview_im.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/saved_im.png}}
+\caption{Latent image and Blurred image pair. This is an example of 
+close up shot.}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/imdepth.png}}
+\caption {Estimated depth map. Objects at the front are brighter}
+\label{fig:depth_eg1}
+\end{center}
+\end{figure}\\
+Observe that the image pair are very well aligned already and the object
+is well textured. This made estimation of depth map accurate. However,
+the following example is a failure case for estimating depth.
+% Put a failure case here. Don't know which is a good idea.
+
+To find out the reason for a bad depth map, we perturbed the kernel 
+while estimating depth in synthetic case. It was found that if the 
+images are misaligned or if the kernel is not accurate, the output depth
+map was no accurate. % Need to think if we need to write about SSIM.
+
+\section{Depth from focus}
+\label{depth_estimation:focus}
+Estimating depth from focus is termed as Structure From Focus (SFF). As
+discussed in \ref{basic_theory:image_blur:optical}, varying a parameter
+of the camera system changes the quality of the image at different depth.
+We are interested in varying the focus of the camera to vary the 
+\emph{sharpness} of the image. The sharpness of the image is measured 
+using the focus operator. A very popular and easily implementable focus 
+operator is the Sum Modified Laplacian (SML). The Modified Laplacian 
+operator is defined as
+\begin{align*}
+\Delta_mI = |I*G_x| + |I*G_y|\\
+G_x= [\begin{array}{ccc}-1 & 2 & -1\end{array}],  G_y = G_x^T
+\end{align*}
+The Sum Modified Laplacian operator does a average of the Modified
+Laplacian over the neighbors. Thus,
+\begin{align*}
+\phi(x,y) = \sum_{i=-N}^{N}\sum_{j=-N}^{N}\Delta_mI(x-i,y-i)
+\end{align*}
+When a region is in focus, the SML value is the highest. The experiment
+consists of taking 100 images with focus varying from minimum to maximum.
+For each image, the SML operator is applied and the appropriate depth
+for each pixel is when the focus operation peaks.
+
+When changing the focus value, there is a scaling in the images. The 
+robust way to correct this would be to register each image with the
+first image using Fourier Mellin Transform or feature based image
+registration. However, we found that finding the scale of the final 
+image with respect to the first image and interpolating the scale for all
+other images worked good. Further, this scaling was consistent across all
+the experiments and hence finding the necessary scaling was a one time
+operation. 
+
+The following image pair is the first and the last image in the 100 images.
+\begin{figure}[ht]
+\begin{center}
+\resizebox{60mm}{!} {\includegraphics *{images/focus/eg1/im3.png}}
+\resizebox{60mm}{!} {\includegraphics *{images/focus/eg1/im99.png}}
+\caption{First and the last image of the 100 images. Scale hasn't been
+corrected.}
+\label{fig:focus_first_last}
+\end{center}
+\end{figure}\\
+
+To evaluate our algorithm, we used a filter size of $32\times32$. Further,
+to confirm that our algorithm returns the correct depth map, we created
+an all focus image from the set of images. The following are the obtained
+results.
+\begin{figure}[ht]
+\begin{center}
+\resizebox{100mm}{!} {\includegraphics *{images/focus/eg1/imdepth.png}}
+\caption{Estimated depth map. Objects nearer are darker}
+\resizebox{100mm}{!} {\includegraphics *{images/focus/eg1/imfocus.png}}
+\caption{All focused image. }
+\label{fig:depth_focus}
+\end{center}
+\end{figure}\\
+From the depth map, we see that the objects have been segregated on the
+basis of depth. Further, the areas of low texture don't respond very
+well, as the SML operator is a high frequency measurement operator. 
+
+\pagebreak
 %----------- Image registration ----------------------------------------
 \chapter{IMAGE REGISTRATION}
 \label{chap:image_registration}
@@ -656,7 +878,7 @@ from the camera, which makes it an ill-posed problem. To overcome this,
 we iterate through various scales and find out the correct scale using 
 RMS error. Hence,
 \begin{align*}
-(x_{shift}, y_{shift}) = argmax_k\{\Sigma_x\Sigma_y(im_1(x,y)
+(x_{shift}, y_{shift}) = argmin_k\{\sum_x\sum_y(im_1(x,y)
 -im_2(x-k*x_{final},y-k*y_{final}))^2\}
 \end{align*}
 Note that the maximum shift is bound due to the finite duration. Hence,
@@ -669,7 +891,7 @@ The following images are example outputs of the algorithm. While the overlap
 is not exact, the finer registration can be done with more sophisticated
 algorithm. 
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \begin{center}
 \includegraphics[width=300pt]{images/imreg/shift/eg1/imreg.png}
 \caption{Example 1: Registered image pairs}
@@ -705,16 +927,16 @@ independent of the shift. Thus,
 {|fft(im_1).fft(rotate(im_2,\theta_t))|})\}
 \end{align*}
 Where $fft(.)$ is the 2D discrete fourier transform, $ifft(.)$ is the 2D 
-discrete inverse fourier transform and $rotate(im, \theta)$ rotates the image
-by $\theta$ degrees.
+discrete inverse fourier transform and $rotate(im, \theta)$ rotates the
+ image by $\theta$ degrees.
 
-The following images serve as an example for the algorithm. In the first and
-second example, the first image, which is taken with long exposure is a highly
-blurred image. As is evident from the images, the algorithm performs very good. 
-The third image is a small rotation case and our algorithm performs well for
-that case too.
+The following images serve as an example for the algorithm. In the first
+and second example, the first image, which is taken with long exposure
+is a highly blurred image. As is evident from the images, the algorithm
+performs very good. The third image is a small rotation case and our
+algorithm performs well for that case too.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \begin{center}
 \includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
 \caption{Example 1: Very high blur and rotation}
@@ -726,9 +948,17 @@ that case too.
 \end{figure}
 
 \pagebreak
-%----------- Image superresolution ---------------------------------------------
+%----------- Image superresolution -------------------------------------
 \chapter{IMAGE SUPERRESOLUTION}
 \label{chap:image_superresolution}
+Image super resolution involves taking multiple low resolution images
+and combining them to get a single high resolution image. For example,
+a set of four megapixel shots can be combined to get a single sixteen
+megapixel shot. This is particularly useful because creating a sensor 
+for a single sixteen megapixel camera is very costly. With introduction
+of high performance microprocessors on mobiles, the burden of high 
+resolution pictures can be shifted from the sensor to the computing side.
+In this section, we look at how we can use 
 \pagebreak
 
 \end{document}

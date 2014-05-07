@@ -14,17 +14,17 @@ if __name__ == '__main__':
 	imb = imread(os.path.join(main_dir, imbname), flatten=True)
 
 	data = loadtxt(os.path.join(main_dir, acname))
-	xshift, yshift, z = estimate_simple_pos(data, 10, 60) # Shifts
-	xblur, yblur, z = estimate_simple_pos(data, 70, 95) # Blur
+	xshift, yshift, z = estimate_simple_pos(data, 5, 25) # Shifts
+	#xblur, yblur, z = estimate_simple_pos(data, 70, 95) # Blur
 
 	dmax_shift = hypot(xshift, yshift).max()
-	dmax_blur = hypot(xblur, -yblur).max()
+	#dmax_blur = hypot(xblur, yblur).max()
 
 	shift_kernel = construct_kernel(xshift, yshift, 300/dmax_shift, 10)
-	blur_kernel = construct_kernel(xblur, yblur, 100/dmax_blur, 10)
+	#blur_kernel = construct_kernel(xblur, yblur, 100/dmax_blur, 10)
 
-	imblur = linear_convolve(imp, blur_kernel)
+	#imblur = linear_convolve(imp, blur_kernel)
 	Image.fromarray(imp).show()
 	Image.fromarray(imb).show()
 	Image.fromarray(shift_kernel*255.0/shift_kernel.max()).show()
-	Image.fromarray(blur_kernel*255.0/blur_kernel.max()).show()
+	#Image.fromarray(blur_kernel*255.0/blur_kernel.max()).show()

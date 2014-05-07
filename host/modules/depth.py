@@ -82,7 +82,8 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
         imreblur = linear_convolve(impure, kernel)
         #imreblur = register(imreblur, imblur, kernel)
         # imsave is a 2d image
-        imsave = norm_diff(imreblur, imblur)
+        #imsave = norm_diff(imreblur, imblur)
+        imsave = 1-calculate_ssim(imreblur, imblur)
         imdiff_curr = sqrt(linear_convolve(imsave, avg_filter))
         #imdiff_curr = gaussian_filter(imsave, 3.1)
         #save_data[:,:,count] = imdiff_curr
@@ -154,7 +155,7 @@ def sml_focus_depth(imdir, smldir, idx1, idx2):
     imdepth[:,:] = float('inf')
     im_max = zeros_like(imdepth)
     imfocus = zeros_like(imdepth)
-    window = 9
+    window = 32
     kx = array([[0,1,0],
                 [0,-2,0],
                 [0,1,0]])
@@ -173,8 +174,8 @@ def sml_focus_depth(imdir, smldir, idx1, idx2):
         gyy = linear_convolve(im, ky)
         imlap = abs(gxx) + abs(gyy)
         mfilter = ones((window, window), dtype=float)/float(window*window)
-        #imlap = linear_convolve(imlap, mfilter)
-        imlap = gaussian_filter(imlap, 3.0)
+        imlap = linear_convolve(imlap, mfilter)
+        #imlap = gaussian_filter(imlap, 3.0)
         x, y = where(imlap > im_max)
         im_max[x, y] = imlap[x, y]
         imdepth[x, y] = i
