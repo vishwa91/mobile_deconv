@@ -32,8 +32,8 @@ if __name__ == '__main__':
     # Load the acceleration data.
     data = loadtxt(os.path.join(main_dir, 'saved_ac.dat'))
     start = 10
-    end = 35
-    x, y, z = estimate_simple_pos(data, start, end)
+    end = 110
+    y, x, z = estimate_simple_pos(data, start, end)
     x -= mean(x); y -= mean(y)
     dmax = hypot(x, y).max()
     #bp_depth(impure, imblur, y*10/dmax, x*10/dmax, 0.25)
@@ -42,7 +42,6 @@ if __name__ == '__main__':
     window = 4
 
     impure = register(impure, imblur)
-    shifts = range(-2,2,1)
     for xshift in shifts:
         for yshift in shifts:
             print 'Estimating depth for a (%d,%d) shift'%(xshift, yshift)

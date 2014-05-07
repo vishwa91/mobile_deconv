@@ -12,6 +12,7 @@ from scipy import *
 from scipy.signal import *
 from scipy.linalg import *
 from scipy.interpolate import spline
+from scipy.integrate import *
 from scipy.ndimage import *
 from numpy import fft
 
@@ -49,9 +50,13 @@ def estimate_simple_pos(accel, start, end):
     x = (xaccel - gx)[start:end]
     y = (yaccel - gy)[start:end]
     z = (zaccel - gz)[start:end]
-    raw_xpos = cumsum(cumsum(x))*T*T
-    raw_ypos = cumsum(cumsum(y))*T*T
-    raw_zpos = cumsum(cumsum(z))*T*T
+    #raw_xpos = cumsum(cumsum(x))*T*T
+    #raw_ypos = cumsum(cumsum(y))*T*T
+    #raw_zpos = cumsum(cumsum(z))*T*T
+
+    raw_xpos = cumtrapz(cumtrapz(x))*T*T
+    raw_ypos = cumtrapz(cumtrapz(y))*T*T
+    raw_zpos = cumtrapz(cumtrapz(z))*T*T    
 
     return raw_xpos, raw_ypos, raw_zpos
 

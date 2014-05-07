@@ -49,8 +49,17 @@ namespace PhoneApp1.modules
             // Wait for the camera to initialize.
             await _camera.PrepareCaptureSequenceAsync(_camsequence);
         }
-        public async void capture(bool get_preview, bool register)
+        public async void capture(bool get_preview, bool register, int exposure_time)
         {
+            // Set exposure time.
+            try
+            {
+                _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, exposure_time * 1000);
+            }
+            catch (Exception err)
+            {
+                MessageBox.Show(err.ToString());
+            }
             if (get_preview == true)
             {
                 _camera.GetPreviewBufferArgb(preview_image);
