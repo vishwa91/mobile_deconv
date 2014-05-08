@@ -2,7 +2,7 @@
 \documentclass[BTech]{iitmdiss}
 \usepackage{times}
 \usepackage{t1enc}
-
+\usepackage{float}
 \usepackage{graphicx}
 \usepackage{epstopdf}
 \usepackage[hypertex]{hyperref} % hyperlinks for references.
@@ -152,6 +152,9 @@ on computational photography on the mobile platform.
 xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
 \textbf{IITM}   \> Indian Institute of Technology, Madras \\
 \textbf{WP8}    \> Windows Phone 8 \\
+\textbf{FFT}    \> Fast Fourier Transform \\
+\textbf{DFT}    \> Discrete Fourier Transform \\
+\textbf{SSIM}   \> Structural Similarity Measure \\
 \end{tabbing}
 
 \pagebreak
@@ -163,10 +166,11 @@ xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
 \begin{singlespace}
 \begin{tabbing}
 xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
-\textbf{$f$}    \> Latent image \\
-\textbf{$g$}    \> Observer/blurred image \\
-\textbf{$k$}    \> Blur kernel \\
 \textbf{$im(x,y)$}  \> Image intensity at location (x, y) \\
+\textbf{$\delta(x,y)$}  \> The discrete time 2D dirac delta function \\
+\textbf{$im{\Leftrightarrow}IM$} \> $IM$ and $im$ are the fourier transform 
+pairs, with $im$ being the spacial domain representation and $IM$ being
+the frequency domain representation.
 \end{tabbing}
 \end{singlespace}
 
@@ -958,7 +962,74 @@ megapixel shot. This is particularly useful because creating a sensor
 for a single sixteen megapixel camera is very costly. With introduction
 of high performance microprocessors on mobiles, the burden of high 
 resolution pictures can be shifted from the sensor to the computing side.
-In this section, we look at how we can use 
+
+Super resolution can be broken down into two problems, Image registration
+and Image restoration. The set of images need to be 
+registered very accurately initially. Registration can be done in 
+multiple ways, as was discussed in \ref{basic_theory:registration}. Note
+that we need sub-pixel accuracy and hence a simple cross correlation 
+method will not yield correct results. Information from accelerometer
+obtained along with the set of images can prove very useful as it gives
+the trajectory of motion, thus making accurate registration very easy. 
+Due to lack of time, we could not verify the usefulness of the accelerometer
+data. 
+
+ Once the images are registered, the
+super resolved image can be restored. Some of the methods include the
+interpolation methods like the bicubic method, spline interpolation or 
+even frequency methods. Simple methods like bicubic method would work 
+in the case of very high accuracy registration. 
+
+To show the proof of concept, we logged images continuously from the 
+mobile phone at an interval of around 20ms. These images were then 
+used for super resolving to a scale of 2. For this purpose, we used an
+off the shelf code by Sune et al. To compare the results, we rescaled a
+single image using bicubic interpolation. One example is presented 
+below
+
+\begin{figure}[H]
+\begin{center}
+\resizebox{120mm}{!} {\includegraphics *{images/super_resolution/imlr3.png}}
+\caption{Low resolution image scaled using bicubic interpolation}
+\resizebox{120mm}{!} {\includegraphics *{images/super_resolution/imsr3.png}}
+\caption{Super resolved image}
+\label{fig:super_resolution}
+\end{center}
+\end{figure}
+
+From the figure, it is clear that the super resolution method gives a 
+sharper output when compared to bicubic interpolation method. To quantify
+the output, we measured the SSIM between the two images and found it to
+be 0.997192, which is high, but says that the super resolved image contains
+more information as compared to the bicubic method. 
+
+\begin{figure}[H]
+\begin{center}
+\resizebox{120mm}{!} {\includegraphics *{images/super_resolution/diff.png}}
+\caption{Disparity map of the two images}
+\label{fig:super_resolution}
+\end{center}
+\end{figure}
+
+However,
+the code used was very slow. It took close to 10 minutes for calculating
+the optical flow, necessary for registering the images for 5 images of 
+size $240\times320$. The image restoration part was very fast. Due to
+absence of additional data, the optical flow calculation method was not
+fast enough. This part can be replaced by the information from the motion
+sensors to speed up the code. 
+\pagebreak
+
+%----------- Future work -----------------------------------------------
+\chapter{FUTURE WORK}
+\label{chap:future_work}
+
+\pagebreak
+
+%----------- Conclusion ------------------------------------------------
+\chapter{CONCLUSION}
+\label{chap:conclusion}
+
 \pagebreak
 
 \end{document}
