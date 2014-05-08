@@ -60,7 +60,7 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     ''' Estimate the depth using multiple iterations. Rudimentary, but expected
         to work.
     '''
-    w = 15
+    w = 31
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     imdepth = zeros((xdim, ydim))

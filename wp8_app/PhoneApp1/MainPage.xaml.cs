@@ -115,6 +115,12 @@ namespace PhoneApp1
             {
                 txtDebug.Text = "Navigating away from the main page.";
             });
+            // Stop other services also
+            accel_timer.Stop();
+            accelerometer.stop();
+            app_comsocket.Close();
+            app_camera.source_set = false;
+            app_camera.focus_busy = false;
         }
         
         // Method for easy printing to screen
@@ -175,7 +181,7 @@ namespace PhoneApp1
                 accelY.Clear();
                 accelZ.Clear();
                 gX.Clear(); gY.Clear(); gZ.Clear();
-                app_camera.capture(get_preview_image, register);
+                app_camera.capture(get_preview_image, register, int.Parse(txtExpTime.Text));
             }
         }
         private void SocketConn_Click(object sender, RoutedEventArgs e)
