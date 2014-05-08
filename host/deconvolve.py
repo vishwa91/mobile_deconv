@@ -15,12 +15,12 @@ if __name__ == '__main__':
 
 	im = imread(os.path.join(main_dir, im_name), flatten=True)
 	data = loadtxt(os.path.join(main_dir, ac_name))
-	ypos, xpos, zpos = estimate_simple_pos(data, 5, 27)
+	ypos, xpos, zpos = estimate_simple_pos(data, 10, 110)
 
 	dmax = hypot(xpos, ypos).max()
 
-	xshifts = linspace(0, abs(xpos).max(), 4)
-	yshifts = linspace(0, abs(ypos).max(), 4)
+	xshifts = linspace(0, abs(xpos).max()*0.5, 4)
+	yshifts = linspace(0, abs(ypos).max()*0.5, 4)
 
 	depths  = linspace(0, 20/dmax, 10)
 	count = 0
@@ -35,18 +35,18 @@ if __name__ == '__main__':
 
 				kernel = construct_kernel(xtemp, ytemp, depth, 10)
 
-				imout = real(reg_deconv(kernel, im, alpha=0.005))
-				Image.fromarray(imout.astype(uint8)).convert('RGB').save(
-					'tmp/deconv/im%d.bmp'%count)
-				#cmd_op = non_blind_deconv(kernel, im, 
-				#                'tmp/deconv/im%d.bmp'%count)
-				#print cmd_op
-				imx = prewitt(imout, -1)
-				imy = prewitt(imout, 0)
-				imvar = hypot(imx, imy).sum()
-				print imvar
-				if imvar < imvarmin:
-					imvarmin = imvar
-					best_feat = [xshift, yshift, depth, count]
+				#imout = real(wiener_deconv(kernel, im, alpha=0.005))
+				#Image.fromarray(imout.astype(uint8)).convert('RGB').save(
+				#	'tmp/deconv/im%d.bmp'%count)
+				cmd_op = non_blind_deconv(kernel, im, 
+				                'tmp/deconv/im%d.bmp'%count)
+				print cmd_op
+				#imx = prewitt(imout, -1)
+				#imy = prewitt(imout, 0)
+				#imvar = hypot(imx, imy).sum()
+				#print imvar
+				#if imvar < imvarmin:
+				#	imvarmin = imvar
+				#	best_feat = [xshift, yshift, depth, count]
 				count += 1
-	print best_feat
+	#print best_feat

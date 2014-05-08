@@ -40,7 +40,7 @@ namespace PhoneApp1.modules
             _camera = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, available_res[count-1]);
             cam_open_busy = false;
             // Set the exposure time to 200ms
-            _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 200000);
+            // _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, 200000);
             // Create a new sequence
             _camsequence = _camera.CreateCaptureSequence(1);
             // Create a new memory stream.
@@ -49,17 +49,8 @@ namespace PhoneApp1.modules
             // Wait for the camera to initialize.
             await _camera.PrepareCaptureSequenceAsync(_camsequence);
         }
-        public async void capture(bool get_preview, bool register, int exposure_time)
+        public async void capture(bool get_preview, bool register)
         {
-            // Set exposure time.
-            try
-            {
-                _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, exposure_time * 1000);
-            }
-            catch (Exception err)
-            {
-                MessageBox.Show(err.ToString());
-            }
             if (get_preview == true)
             {
                 _camera.GetPreviewBufferArgb(preview_image);
@@ -78,6 +69,35 @@ namespace PhoneApp1.modules
         }
         public async void set_focus(double focus_val)
         {
+            focus_busy = true;
+            try
+            {
+                CameraCapturePropertyRange range = PhotoCaptureDevice.GetSupportedPropertyRange(CameraSensorLocation.Back, KnownCameraGeneralProperties.ManualFocusPosition);
+                double value = (UInt32)range.Min + (focus_val / 100.0) * ((UInt32)range.Max - (UInt32)range.Min);
+                focus_min = (UInt32)range.Min;
+                focus_max = (UInt32)range.Max;
+                _camera.SetProperty(KnownCameraGeneralProperties.ManualFocusPosition, (UInt32)value);
+            }
+            //   
+            catch (Exception err)
+            {
+                MessageBox.Show(err.ToString());
+            }
+            await _camera.FocusAsync();
+            focus_busy = false;
+        }
+        // Override method for adjusting exposure time.
+        public async void set_focus(double focus_val, int exposure_time)
+        {
+            // Set exposure time.
+            try
+            {
+                _camera.SetProperty(KnownCameraPhotoProperties.ExposureTime, exposure_time * 1000);
+            }
+            catch (Exception err)
+            {
+                MessageBox.Show(err.ToString());
+            }
             focus_busy = true;
             try
             {

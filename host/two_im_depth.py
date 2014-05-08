@@ -25,7 +25,7 @@ T = 10e-3
 G = 9.8
 
 if __name__ == '__main__':
-    main_dir = 'output/cam'; idx = 1
+    main_dir = 'test_output/depth/case5'; idx = 1
     impure = imread(os.path.join(main_dir, 'preview_im.bmp'), flatten=True)
     imblur = imread(os.path.join(main_dir, 'saved_im.bmp'), flatten=True)
 
@@ -42,6 +42,7 @@ if __name__ == '__main__':
     window = 4
 
     impure = register(impure, imblur)
+    shifts = [-5,5,1]
     for xshift in shifts:
         for yshift in shifts:
             print 'Estimating depth for a (%d,%d) shift'%(xshift, yshift)

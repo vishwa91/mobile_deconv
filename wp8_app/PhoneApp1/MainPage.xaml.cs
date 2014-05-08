@@ -181,7 +181,7 @@ namespace PhoneApp1
                 accelY.Clear();
                 accelZ.Clear();
                 gX.Clear(); gY.Clear(); gZ.Clear();
-                app_camera.capture(get_preview_image, register, int.Parse(txtExpTime.Text));
+                app_camera.capture(get_preview_image, register);
             }
         }
         private void SocketConn_Click(object sender, RoutedEventArgs e)
@@ -273,7 +273,7 @@ namespace PhoneApp1
             // Focus the camera only if it is not in manual mode
             if (app_camera.focus_busy == false && app_camera.cam_busy == false && man_focus == false)
             {
-                app_camera.set_focus(focus_slider.Value);
+                app_camera.set_focus(focus_slider.Value, int.Parse(txtExpTime.Text));
                 Log(focus_slider.Value.ToString(), UpdateType.DebugSection);
             }
             Vector3 accel = accelerometer.getvalue();

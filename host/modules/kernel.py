@@ -48,17 +48,17 @@ def estimate_simple_pos(accel, start, end):
     accel *= G
     xaccel = accel[:,0]; yaccel = accel[:,1]; zaccel = accel[:,2]
     gx = accel[:,3]; gy = accel[:,4]; gz = accel[:,5]
-    x = (xaccel - gx)[start:end]
-    y = (yaccel - gy)[start:end]
-    z = (zaccel - gz)[start:end]
+    x = (xaccel - gx)
+    y = (yaccel - gy)
+    z = (zaccel - gz)
 
     #raw_xpos = cumsum(cumsum(x))*T*T
     #raw_ypos = cumsum(cumsum(y))*T*T
     #raw_zpos = cumsum(cumsum(z))*T*T
 
-    raw_xpos = cumtrapz(cumtrapz(x))*T*T
-    raw_ypos = cumtrapz(cumtrapz(y))*T*T
-    raw_zpos = cumtrapz(cumtrapz(z))*T*T    
+    raw_xpos = (cumtrapz(cumtrapz(x))*T*T)[start:end]
+    raw_ypos = (cumtrapz(cumtrapz(y))*T*T)[start:end]
+    raw_zpos = (cumtrapz(cumtrapz(z))*T*T)[start:end]
 
     return raw_xpos, raw_ypos, raw_zpos
 
@@ -73,5 +73,5 @@ def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
     xmax = ceil(max(abs(xpos))); ymax = ceil(max(abs(ypos)))
     kernel = zeros((2*xmax+1, 2*ymax+1), dtype=uint8)
     for i in range(ntime):
-        kernel[int(xmax-xpos[i]), int(ymax+ypos[i])] += 1
+        kernel[int(xmax-xpos[i]), int(ymax-ypos[i])] += 1
     return kernel.astype(float)/(kernel.sum()*1.0)

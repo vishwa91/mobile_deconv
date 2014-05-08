@@ -60,7 +60,7 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
     ''' Estimate the depth using multiple iterations. Rudimentary, but expected
         to work.
     '''
-    w = 31
+    w = 7
     avg_filter = ones((w,w))/(w*w*1.0)
     xdim, ydim = impure.shape
     imdepth = zeros((xdim, ydim))
@@ -82,8 +82,8 @@ def iterative_depth(impure, imblur, xpos, ypos, mkernel=None):
         imreblur = linear_convolve(impure, kernel)
         #imreblur = register(imreblur, imblur, kernel)
         # imsave is a 2d image
-        #imsave = norm_diff(imreblur, imblur)
-        imsave = 1-calculate_ssim(imreblur, imblur)
+        imsave = norm_diff(imreblur, imblur)
+        #imsave = 1-calculate_ssim(imreblur, imblur)
         imdiff_curr = sqrt(linear_convolve(imsave, avg_filter))
         #imdiff_curr = gaussian_filter(imsave, 3.1)
         #save_data[:,:,count] = imdiff_curr

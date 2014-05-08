@@ -109,13 +109,24 @@ hold me in good stead in my future endeavors. I am indebted to him for
 patiently sitting with me at times when I could not see any path forward
 . 
 
-\noindent I also thank all my lab mates for being extremely helpful and
- for their patience and guiding me through difficult tasks. I had the
-  privilege of working with some of the best minds in the department.
+I also thank all my lab mates for being extremely helpful and
+for their patience and guiding me through difficult tasks. I had the
+privilege of working with some of the best minds in the department.
 
-\noindent I would also like to thank my parents and my brother for 
-giving me feedback on my project work by evaluating my mobile
- application.
+I would also like to thank my parents for being flexible giving me moral
+support throughout my education. I believe that what I am today and what
+I will be tomorrow is a result of their wonderful upbringing. I  am also
+thankful to my brother, who constantly updates me with the latest trends
+in technology and comes forward to give constructive critisism on my
+programs. His hobby of photography has also proved very useful in 
+understanding some of the nitty-gritties of my project.
+
+Last but not the least, my wing mates have been the best 
+experience in my undergraduate life. Living with fifteen different minds
+with always something new to learn from each person, I have learnt more
+than I ever learnt anything before coming here. They have been with me
+throughout my undergraduate studies, with healthy debates, joyful times,
+tough exams and quintessential assignments. I owe a lot to them.
 
 % Need to write my name on the right side.
 \raggedright{Vishwanath}
@@ -143,7 +154,6 @@ on computational photography on the mobile platform.
 \end{singlespace}
 \pagebreak
 
-% We might not need abbrevations and notations.
 %----------- Abbrevations ----------------------------------------------
 \abbreviations
 
@@ -155,6 +165,7 @@ xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
 \textbf{FFT}    \> Fast Fourier Transform \\
 \textbf{DFT}    \> Discrete Fourier Transform \\
 \textbf{SSIM}   \> Structural Similarity Measure \\
+\textbf{PSF}   \> Point Spread Function \\
 \end{tabbing}
 
 \pagebreak
@@ -644,9 +655,9 @@ we are sending a new image, we would use the keywords \textbf{STIM} and
 \begin{lstlisting}[style=sharpclisting]
     // app_comsocket is the object representing the TCP connection.
     // app_comsocket.Send is used to send data over the connection.
-    app_comsocket.Send("STIM\n");  // Start token
+    app_comsocket.Send("STIM\n");   // Start token
     app_comsocket.Send(imdata);     // Image data
-    app_comsocket.Send("EDIM\n");  // End token
+    app_comsocket.Send("EDIM\n");   // End token
 \end{lstlisting}
 \end{singlespacing}
 
@@ -673,6 +684,58 @@ data and split it accordingly.
 As mentioned in \ref*{basic_theory:deconv}, blurring due to motion is
 not desirable and we wish to remove it. In this section, we will look at
 non blind and semi blind deconvolution techniques. 
+
+Prior to deblurring, we need to estimate the blur kernel. As mentioned in
+\ref{basic_theory:accel}, the accelerometer data can be used to estimate
+the trajectory of the camera and thus the PSF can be estimated. However,
+since we don't know the scene depth and there is a drift due to approximate
+value of gravity vector, we iterate through various possible depths and
+shifts to find the appropriate image. 
+
+\section{Constructing the kernel}
+\label{deblurring:kernel}
+Initially, we wanted to verify that the trajectory obtained from the 
+sensors can be used to construct a good kernel estimate. For this purpose,
+we took a long shot image of a single point light source. The image 
+obtained would represent the blur kernel. Hence, we could compare the 
+kernel we constructed and the kernel from the image. An example image
+and kernel pair have been presented below.
+\begin{figure}[H]
+\begin{center}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth1.png}}
+\caption{Actual image showing the point spread function, which acts as
+our ground truth measurement}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/constructed1.png}}
+\caption{Kernel constructed from sensors data. The scale is not appropriate.
+Further, there is no drift compensation.}
+\label{fig:kernel_ground_truth}
+\end{center}
+\end{figure}
+From the above figures, we see that the motion sensors data gives a good
+initial estimate for the PSF. Note that the scale hasn't been calculated
+and the drift hasn't been compensated. The scale and the drift information
+are available during the deblurring of the image. 
+
+The above example was a good case, where there was little drift. The 
+following example has a considerable drift, which gives rise to an 
+erroneous kernel.
+\begin{figure}[H]
+\begin{center}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth2.png}}
+\caption{Actual image showing the point spread function, which acts as
+our ground truth measurement}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/constructed2.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/im_0_004248_0_013347.png}}
+\caption{Plain kernel and the kernel corrected for drift}
+\label{fig:kernel_ground_truth}
+\end{center}
+\end{figure}
+As is visible from the above figures, there is a significant drift, which
+is visible in the first constructed image. We iterated through various
+possible drifts and found visually that the drift correction was
+$(0.004284, 0.013347)mm$, i.e, the final position is offset by this 
+amount. 
+
 \pagebreak
 %----------- Depth estimation ------------------------------------------
 \chapter{DEPTH ESTIMATION}
@@ -725,7 +788,7 @@ the kernel is very accurate, else the depth map will go wrong.
 To verify our algorithm, we first tried estimating depth map in a 
 sythetic case. We blurred an image with a known depth map
 and ran our algorithm. The following were the results obtained.
-\begin{figure}[htpb]
+\begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/preview_im.png}}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/saved_im.png}}
@@ -735,7 +798,7 @@ and ran our algorithm. The following were the results obtained.
 \caption {True depth map and estimated depth map}
 \label{fig:depth_synthetic}
 \end{center}
-\end{figure}\\
+\end{figure}
 The results verified that our was useful for estimating depth from 
 a scene. We then tried to test our algorithm for real cases. In our
  experiment, we found that the kernel can go to a maximum size of
