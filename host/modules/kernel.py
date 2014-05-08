@@ -51,7 +51,7 @@ def estimate_simple_pos(accel, start, end):
     x = (xaccel - gx)[start:end]
     y = (yaccel - gy)[start:end]
     z = (zaccel - gz)[start:end]
-<<<<<<< HEAD
+
     #raw_xpos = cumsum(cumsum(x))*T*T
     #raw_ypos = cumsum(cumsum(y))*T*T
     #raw_zpos = cumsum(cumsum(z))*T*T
@@ -60,11 +60,6 @@ def estimate_simple_pos(accel, start, end):
     raw_ypos = cumtrapz(cumtrapz(y))*T*T
     raw_zpos = cumtrapz(cumtrapz(z))*T*T    
 
-=======
-    raw_xpos = cumtrapz(cumtrapz(x))*T*T
-    raw_ypos = cumtrapz(cumtrapz(y))*T*T
-    raw_zpos = cumtrapz(cumtrapz(z))*T*T
->>>>>>> 848c7a7fca4a9f526cb6647caacca0b399ae4cac
     return raw_xpos, raw_ypos, raw_zpos
 
 def construct_kernel(xpos, ypos, d=1.0, interpolate_scale = 1):
