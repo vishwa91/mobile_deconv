@@ -141,14 +141,17 @@ the usefulness of having extra information from the motion sensors, which
 give a clue about camera motion. We could only prove marginally good 
 results. However, we showed that deconvolution with our kernel as the 
 intial estimate either converged quicker or produced good results for low
-texture images. The second problem we addresses was that of depth estimation using blurred and latent image pair method and depth from focus. In the former
-problem, we showed that with a good estimate of blur kernel from motion
+texture images. The second problem we addresses was that of depth
+estimation using blurred and latent image pair method and depth from
+focus. In the former problem, we showed that with a good estimate of 
+blur kernel from motion
 sensors, depth can be estimated very efficiently. The third problem 
 involved evaluation of image registration algorithms using the information
 from motion sensors. We showed that the registration results are very 
 accurate and the registration can be done very fast and efficiently even
 when one of the image in the image pair is blurred. At the end, we 
-evaluated some of the off the shelf multi frame image super resolution algorithms with data obtained from the mobile. Not much time was spent on
+evaluated some of the off the shelf multi frame image super resolution
+ algorithms with data obtained from the mobile. Not much time was spent on
 this part of the project. However, we showed that the super resolution
 algorithms, though slow produce better results than bicubic interpolation
 
@@ -769,7 +772,21 @@ of the graphs is attached below.
 \begin{center}
 \resizebox{120mm}{!} {\includegraphics *{images/live_sensor_log.png}}
 \caption{Screen shot of live sensor logging}
-\label{fig:kernel_ground_truth}
+\label{fig:live_sensors}
+\end{center}
+\end{figure}
+
+The second function is used for visualizing the attitude of the mobile
+for in plane motion. With the availability of only the accelerometer,
+we created a UI for showing the orientation and the jerk direction, 
+which is obtained by the velocity vector, both corresponding to in plane
+motion. The following is an example screenshot.
+
+\begin{figure}[H]
+\begin{center}
+\resizebox{120mm}{!} {\includegraphics *{images/attitude_ui.png}}
+\caption{Screen shot of attitude UI}
+\label{fig:attitude_ui}
 \end{center}
 \end{figure}
 
@@ -797,7 +814,6 @@ we took a long shot image of a single point light source. The image
 obtained would represent the blur kernel. Hence, we could compare the 
 kernel we constructed and the kernel from the image. An example image
 and kernel pair have been presented below.
-\begin{comment}
 \begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth1.png}}
@@ -809,7 +825,6 @@ Further, there is no drift compensation.}
 \label{fig:kernel_ground_truth}
 \end{center}
 \end{figure}
-\end{comment}
 From the above figures, we see that the motion sensors data gives a good
 initial estimate for the PSF. Note that the scale hasn't been calculated
 and the drift hasn't been compensated. The scale and the drift information
@@ -818,7 +833,6 @@ are available during the deblurring of the image.
 The above example was a good case, where there was little drift. The 
 following example has a considerable drift, which gives rise to an 
 erroneous kernel.
-\begin{comment}
 \begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth2.png}}
@@ -830,7 +844,6 @@ our ground truth measurement}
 \label{fig:kernel_ground_truth}
 \end{center}
 \end{figure}
-\end{comment}
 As is visible from the above figures, there is a significant drift, which
 is visible in the first constructed image. We iterated through various
 possible drifts and found visually that the drift correction was
@@ -842,19 +855,25 @@ amount.
 Once we have the approximate kernel, we can perform deblurring. Since we
 don't have the scene depth, we iterate through various depths. We assumed
 that our kernel was very accurate and tried estimating the latent image
-using a simple weiner filter. Some of the results are given below.
-% Picture here.
+using a simple weiner filter. Some of the results, along with blind
+deconvolution output by Jia et. al are given below.
 
-The results were not very good, as the edges blew up. We hence tried 
-regularized deconvolution but the results were similar. Since the kernel
-was only approximately correct, we then tried using off the shelf 
-deconvolution algorithm by Jia et al. and the following results were
-obtained.
-% Picture here.
-% Comments on the results.
+\begin{figure}[H]
+\begin{center}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/imblur.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/imdeblur.png}}
+\caption{Blurred image and the best deblurred output using wiener filter.}
+\resizebox{50mm}{!} {\includegraphics *{images/deblur/jia_blind_deconv.png}}
+\caption{Blind deconvolution by Jia et. al}
+\label{fig:deblur}
+\end{center}
+\end{figure}
+
+While there was some hint of restoration, the results were not very good,
+as the edges blew up. 
 
 To get better results, we used a blind deconvolution algorithm by Abhijit
-et al.. However, instead of a complete blind deconvolution, we used our
+et al.\cite{abhijith2014}. Instead of a complete blind deconvolution, we used our
 kernel as an initial guess and evaluated it against complete blind 
 deconvolution result. We found that for highly textured images, the 
 output was the same. However, the algorithm converged quickly when we 
@@ -863,6 +882,19 @@ very low textured images and found that the results were better than the
 blind case and it took the same time to converge. The results have been
 given below.
 
+\begin{figure}[H]
+\begin{center}
+\resizebox{70mm}{!} {\includegraphics *{images/semiblind/blurred.png}}
+\caption{Actual blurred image}
+\resizebox{70mm}{!} {\includegraphics *{images/semiblind/blind.png}}
+\caption{Deblurring using total blind method}
+\resizebox{70mm}{!} {\includegraphics *{images/semiblind/semi_blind.png}}
+\caption{Deblurring using our kernel as the initial estimate}
+\label{fig:semiblind}
+\end{center}
+\end{figure}
+As is visible from the images above, we find that the deblurring method
+with our kernel is as the initial estimate gives better results. 
 \pagebreak
 %----------- Depth estimation ------------------------------------------
 \chapter{DEPTH ESTIMATION}
@@ -932,7 +964,7 @@ a scene. We then tried to test our algorithm for real cases. In our
 $20\times20$ and hence we scaled the kernel size from $1\times1$ to 
 $20\times20$. We used a filter of size $32\times32$ for the error map.
 Some of the experimental results have been given below. 
-\begin{figure}[ht]
+\begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/preview_im.png}}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/saved_im.png}}
@@ -942,16 +974,27 @@ close up shot.}
 \caption {Estimated depth map. Objects at the front are brighter}
 \label{fig:depth_eg1}
 \end{center}
-\end{figure}\\
+\end{figure}
 Observe that the image pair are very well aligned already and the object
 is well textured. This made estimation of depth map accurate. However,
 the following example is a failure case for estimating depth.
 % Put a failure case here. Don't know which is a good idea.
-
+\begin{figure}[H]
+\begin{center}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/preview_im.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/saved_im.png}}
+\caption{Latent image and Blurred image pair. Note that there is a 
+misalignment between the images.}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/imdepth.png}}
+\caption {Bad depth map. While the depth calculation at the edges is 
+expected to be accurate, the obtained depth map has erroneous edge values.}
+\label{fig:depth_eg1}
+\end{center}
+\end{figure}
 To find out the reason for a bad depth map, we perturbed the kernel 
 while estimating depth in synthetic case. It was found that if the 
 images are misaligned or if the kernel is not accurate, the output depth
-map was no accurate. % Need to think if we need to write about SSIM.
+map was not accurate. % Need to think if we need to write about SSIM.
 
 \section{Depth from focus}
 \label{depth_estimation:focus}
@@ -1085,7 +1128,7 @@ The following images are example outputs of the algorithm. While the overlap
 is not exact, the finer registration can be done with more sophisticated
 algorithm. 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \begin{center}
 \includegraphics[width=300pt]{images/imreg/shift/eg1/imreg.png}
 \caption{Example 1: Registered image pairs}
@@ -1130,7 +1173,7 @@ is a highly blurred image. As is evident from the images, the algorithm
 performs very good. The third image is a small rotation case and our
 algorithm performs well for that case too.
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \begin{center}
 \includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
 \caption{Example 1: Very high blur and rotation}

@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
 	data = loadtxt(os.path.join(main_dir, acname))
 
-	xblur, yblur, z = estimate_simple_pos(data, 5, 60) # Blur
+	xblur, yblur, z = estimate_simple_pos(data, 10, 60) # Blur
 
 	dmax_blur = hypot(xblur, yblur).max()
 

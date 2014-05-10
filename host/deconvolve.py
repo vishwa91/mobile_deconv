@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
 	im = imread(os.path.join(main_dir, im_name), flatten=True)
 	data = loadtxt(os.path.join(main_dir, ac_name))
-	ypos, xpos, zpos = estimate_simple_pos(data, 10, 110)
+	xpos, ypos, zpos = estimate_simple_pos(data, 10, 40)
 
 	dmax = hypot(xpos, ypos).max()
 
@@ -35,12 +35,12 @@ if __name__ == '__main__':
 
 				kernel = construct_kernel(xtemp, ytemp, depth, 10)
 
-				#imout = real(wiener_deconv(kernel, im, alpha=0.005))
-				#Image.fromarray(imout.astype(uint8)).convert('RGB').save(
-				#	'tmp/deconv/im%d.bmp'%count)
-				cmd_op = non_blind_deconv(kernel, im, 
-				                'tmp/deconv/im%d.bmp'%count)
-				print cmd_op
+				imout = real(wiener_deconv(kernel, im, alpha=0.005))
+				Image.fromarray(imout.astype(uint8)).convert('RGB').save(
+					'tmp/deconv/im%d.bmp'%count)
+				#cmd_op = non_blind_deconv(kernel, im, 
+				#                'tmp/deconv/im%d.bmp'%count)
+				#print cmd_op
 				#imx = prewitt(imout, -1)
 				#imy = prewitt(imout, 0)
 				#imvar = hypot(imx, imy).sum()
