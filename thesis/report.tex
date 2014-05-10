@@ -5,6 +5,7 @@
 \usepackage{float}
 \usepackage{graphicx}
 \usepackage{epstopdf}
+\usepackage{verbatim}
 \usepackage[hypertex]{hyperref} % hyperlinks for references.
 \usepackage{amsmath} % easier math formulae, align, subequations \ldots
 
@@ -58,7 +59,7 @@
 \begin{document}
 %----------- Title page ------------------------------------------------
 \title{Analyzing motion sensors on mobile platform for image restoration}
-\author{Saragadam R V Vishwanath (EE10B035)}
+\author{\hspace{35pt} Saragadam R V Vishwanath \newline EE10B035}
 \date{MAY 2014}
 \department{ELECTRICAL ENGINEERING}
 \maketitle
@@ -113,7 +114,7 @@ I also thank all my lab mates for being extremely helpful and
 for their patience and guiding me through difficult tasks. I had the
 privilege of working with some of the best minds in the department.
 
-I would also like to thank my parents for being flexible giving me moral
+I would also like to thank my parents for being flexible and giving me moral
 support throughout my education. I believe that what I am today and what
 I will be tomorrow is a result of their wonderful upbringing. I  am also
 thankful to my brother, who constantly updates me with the latest trends
@@ -133,22 +134,29 @@ tough exams and quintessential assignments. I owe a lot to them.
 
 %----------- Abstract --------------------------------------------------
 \abstract
-We explore various image restoration and registration techniques using 
-data obtained from a mobile device. To evaluate the usability of the 
-mobile platform, we evaluate image deconvolution, image registration,
-depth estimation and image super resolution algorithms with the obtained
-image data. We compare the results to the state of the art algorithms
-to get a feel for the superiority of the mobile platform. Further, the
-report also gives an indepth discussion about the future of the project
-on computational photography on the mobile platform.
+We explored various image restoration and registration techniques using 
+data obtained from a mobile device. The first one was non-blind image
+deblurring using data obtained from motions sensors. We wanted to evaluate
+the usefulness of having extra information from the motion sensors, which
+give a clue about camera motion. We could only prove marginally good 
+results. However, we showed that deconvolution with our kernel as the 
+intial estimate either converged quicker or produced good results for low
+texture images. The second problem we addresses was that of depth estimation using blurred and latent image pair method and depth from focus. In the former
+problem, we showed that with a good estimate of blur kernel from motion
+sensors, depth can be estimated very efficiently. The third problem 
+involved evaluation of image registration algorithms using the information
+from motion sensors. We showed that the registration results are very 
+accurate and the registration can be done very fast and efficiently even
+when one of the image in the image pair is blurred. At the end, we 
+evaluated some of the off the shelf multi frame image super resolution algorithms with data obtained from the mobile. Not much time was spent on
+this part of the project. However, we showed that the super resolution
+algorithms, though slow produce better results than bicubic interpolation
 
 %----------- Table of content ------------------------------------------
 \begin{singlespace}
 \tableofcontents
 \thispagestyle{empty}
 
-\listoftables
-\addcontentsline{toc}{chapter}{LIST OF TABLES}
 \listoffigures
 \addcontentsline{toc}{chapter}{LIST OF FIGURES}
 \end{singlespace}
@@ -165,7 +173,7 @@ xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
 \textbf{FFT}    \> Fast Fourier Transform \\
 \textbf{DFT}    \> Discrete Fourier Transform \\
 \textbf{SSIM}   \> Structural Similarity Measure \\
-\textbf{PSF}   \> Point Spread Function \\
+\textbf{PSF}    \> Point Spread Function \\
 \end{tabbing}
 
 \pagebreak
@@ -181,7 +189,9 @@ xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
 \textbf{$\delta(x,y)$}  \> The discrete time 2D dirac delta function \\
 \textbf{$im{\Leftrightarrow}IM$} \> $IM$ and $im$ are the fourier transform 
 pairs, with $im$ being the spacial domain representation and $IM$ being
-the frequency domain representation.
+the frequency domain representation.\\
+\textbf{$|.|^2$} 	\> L2 norm squared of the vector\\
+\textbf{$E|.|^2$} 	\> Expectation value of the L2 norm
 \end{tabbing}
 \end{singlespace}
 
@@ -208,12 +218,34 @@ controllable focus and the ability to capture fast multiple images means
 that it is easy to implement multichannel super resolution or deblurring
 algorithms. 
 
-To understand the potential of a mobile for computational photography, 
-we choose to evaluate various algorithms on the mobile and evaluate the 
-performance. For this purpose, we have chosen the Nokia Lumia 520 mobile
-which features Windows Phone 8 operating system. 
+We wanted to evaluate some of the important algorithms in computational
+photography by using data obtained from the mobile. In particular, we 
+wanted to verify that the motion sensors greately enhance the efficiency
+and accuracy of the algorithms. While we did not port the algorithms to
+the mobile platform, we showed that the algorithms, due to their simplicity,
+can be ported with great ease to the mobile. 
 
-The project report consists of the following part. The chapter on 
+\section{Prior work}
+\label{intro:prior_work}
+The best known project involving the camera as an imaging device is the 
+Camera 2.0 project by the Computer Science department at Stanford. The
+project involved hacking the Nokia N900 firmware to write custom algorithms
+for focus. Further, the lab also built a custom camera called Frankencamera
+which runs linux and is completely programmable, making it highly flexible.
+The paper by \cite{vsindelavr2013image} discusses the usage of a smart
+phone for deblurring images which have been degraded by rotational blur.
+
+While computational imaging on a mobile platform is relatively new, there
+has been a lot of work on combining motion sensors with DSLR to perform
+accurate deblurring. \cite{joshi2010image} Combines a 3 axis accelerometer
+and 3 axis gyroscope with a DSLR. This paper is one of the main motivation
+for the part of image deblurring. \cite{bae2013accurate} builds upon
+\cite{joshi2010image} and explains how blind PSF estimation can be
+combined with motion sensors data to improve deblurring. 
+
+\section{Report layout}
+\label{intro:layout}
+The project report is arranged in a chronological manner. The chapter on 
 \textbf{THEORY} presents a brief background of the various algorithms
 and the mathematics involved in the project. \textbf{DEVICE} gives an
 in-depth account of the mobile platform, the application written for the
@@ -226,15 +258,17 @@ inertial sensor data can be used to reduce the search space of image
 registration process. Finally, \textbf{SUPER RESOLUTION} looks at how 
 multiple frames can be used to super resolve an image.
 
-The end of the project report has in-depth discussion regarding future
-usage of the mobile application as a general prototyping platform and a
-brief discussion of the \emph{github} version control system.
+At the end of the report, we give a brief discussion the future of the 
+project and how the algorithms can be taken forward. We concluded that
+though some of the experiments were not successful, they gave very
+interesting results, which pave way for future work.
 
 %----------- Basic Theory ----------------------------------------------
 \chapter{BASIC THEORY}
 \label{chap:basic_theory}
-In this chapter, we look briefly at the back ground which is necessary 
-to understand the forthecoming chapters. 
+This chapter will go through some of the basics which were crucial 
+throughout the project and which will be a primer to all the future 
+chapters.
 
 \section{Position from acceleration data}
 \label{basic_theory:accel}
@@ -243,7 +277,7 @@ from accelerometer data. In the current context, we assume that we have
 access to a 3-axis accelerometer alone. The 3-axis accelerometer 
 measures physical acceleration, which is a combination of the 
 acceleration due to gravity and any external force. Further, the 
-measured values are relative to the mobiel frame of reference. Hence, 
+measured values are relative to the mobile frame of reference. Hence, 
 we can model our measured acceleration as
 \begin{align*}
 \hat{a}_x= g_x + a_x + n_x\\
@@ -676,6 +710,69 @@ The communication from mobile to computer is done using the inbuilt
 encapsulated in keywords. These keywords are used to parse the incoming
 data and split it accordingly. 
 
+A number of functions have been written as part of host side software
+for data reception, interpretation and image processing. Some of the 
+main modules will be discussed in this section
+
+\subsection{TCP data handling}
+\label{device:host:tcp}
+The TCP data handling, as the name suggests is responsible for receiving
+data from the mobile, which includes images and motion sensors data. The
+main functions of this module involve receiving blur and latent image 
+pair, continuously receiving images and continuously receiving motion
+sensor data. For example, in order to receive a blurred and latent image
+pairs, we need to execute the function \verb|get_tcp_data()|, which
+in turn executes the following
+
+\begin{singlespacing}
+\begin{lstlisting}[style=pylisting]
+# Listen to the TCP socket and get data.
+dstring = tcp_listen();
+# Parse and save the data obtained from TCP		
+save_data(dstring);			
+# Return a handle to the data, which consists of images and the motion sensor data.
+return TCPDataHandle(dstring) 
+\end{lstlisting}
+\end{singlespacing}
+
+To do a continous reception of images, we use the following function 
+calls.
+
+\begin{singlespacing}
+\begin{lstlisting}[style=pylisting]
+# All the images are encapsulated in tokens. Further, all tokens are
+# Separated by the null character.
+strt_token = 'S\x00T\x00I\x00G\x00'
+end_token = 'E\x00D\x00I\x00G\x00'
+frame_token = 'S\x00T\x00I\x00M\x00'
+fstart = 'STIM'
+fend = 'EDIM'
+# First, receive the data from the mobile.
+continuous_recv(strt_token, end_token, frame_token, 'tmp/burst/tokens.dat')
+# Once we have all the data, split it and save the first 100 images.
+extract_images('tmp/burst/tokens.dat', 100, fstart, fend, 'tmp/burst/src')
+\end{lstlisting}
+\end{singlespacing}
+
+\subsection{Visualizing sensor data}
+\label{device:host:visu}
+Another important feature of the host software is the ability to visualize
+the sensor data dynamically. This is very useful for understanding the
+attitude of the device and how the motion sensor data can be used for
+operations like video stabilization. 
+
+There are two main functions for visualizing the data. The first function
+shows a continuous graph of the measured accelerometer value. A screenshot
+of the graphs is attached below.
+
+\begin{figure}[H]
+\begin{center}
+\resizebox{120mm}{!} {\includegraphics *{images/live_sensor_log.png}}
+\caption{Screen shot of live sensor logging}
+\label{fig:kernel_ground_truth}
+\end{center}
+\end{figure}
+
 \pagebreak
 
 %----------- Deblurring ------------------------------------------------
@@ -700,6 +797,7 @@ we took a long shot image of a single point light source. The image
 obtained would represent the blur kernel. Hence, we could compare the 
 kernel we constructed and the kernel from the image. An example image
 and kernel pair have been presented below.
+\begin{comment}
 \begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth1.png}}
@@ -711,6 +809,7 @@ Further, there is no drift compensation.}
 \label{fig:kernel_ground_truth}
 \end{center}
 \end{figure}
+\end{comment}
 From the above figures, we see that the motion sensors data gives a good
 initial estimate for the PSF. Note that the scale hasn't been calculated
 and the drift hasn't been compensated. The scale and the drift information
@@ -719,6 +818,7 @@ are available during the deblurring of the image.
 The above example was a good case, where there was little drift. The 
 following example has a considerable drift, which gives rise to an 
 erroneous kernel.
+\begin{comment}
 \begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth2.png}}
@@ -730,11 +830,38 @@ our ground truth measurement}
 \label{fig:kernel_ground_truth}
 \end{center}
 \end{figure}
+\end{comment}
 As is visible from the above figures, there is a significant drift, which
 is visible in the first constructed image. We iterated through various
 possible drifts and found visually that the drift correction was
 $(0.004284, 0.013347)mm$, i.e, the final position is offset by this 
 amount. 
+
+\section{Deblurring the image}
+\label{deblurring:deblurring}
+Once we have the approximate kernel, we can perform deblurring. Since we
+don't have the scene depth, we iterate through various depths. We assumed
+that our kernel was very accurate and tried estimating the latent image
+using a simple weiner filter. Some of the results are given below.
+% Picture here.
+
+The results were not very good, as the edges blew up. We hence tried 
+regularized deconvolution but the results were similar. Since the kernel
+was only approximately correct, we then tried using off the shelf 
+deconvolution algorithm by Jia et al. and the following results were
+obtained.
+% Picture here.
+% Comments on the results.
+
+To get better results, we used a blind deconvolution algorithm by Abhijit
+et al.. However, instead of a complete blind deconvolution, we used our
+kernel as an initial guess and evaluated it against complete blind 
+deconvolution result. We found that for highly textured images, the 
+output was the same. However, the algorithm converged quickly when we 
+used our kernel as an initial estimate. We also run our algorithm for 
+very low textured images and found that the results were better than the 
+blind case and it took the same time to converge. The results have been
+given below.
 
 \pagebreak
 %----------- Depth estimation ------------------------------------------
@@ -1037,7 +1164,7 @@ the trajectory of motion, thus making accurate registration very easy.
 Due to lack of time, we could not verify the usefulness of the accelerometer
 data. 
 
- Once the images are registered, the
+Once the images are registered, the
 super resolved image can be restored. Some of the methods include the
 interpolation methods like the bicubic method, spline interpolation or 
 even frequency methods. Simple methods like bicubic method would work 
@@ -1064,7 +1191,9 @@ From the figure, it is clear that the super resolution method gives a
 sharper output when compared to bicubic interpolation method. To quantify
 the output, we measured the SSIM between the two images and found it to
 be 0.997192, which is high, but says that the super resolved image contains
-more information as compared to the bicubic method. 
+more information as compared to the bicubic method. The disparity map 
+for the two images is shown below. Note that there is high disparity 
+at the edges.
 
 \begin{figure}[H]
 \begin{center}
@@ -1083,17 +1212,64 @@ fast enough. This part can be replaced by the information from the motion
 sensors to speed up the code. 
 \pagebreak
 
-%----------- Future work -----------------------------------------------
-\chapter{FUTURE WORK}
-\label{chap:future_work}
-
-\pagebreak
-
 %----------- Conclusion ------------------------------------------------
 \chapter{CONCLUSION}
 \label{chap:conclusion}
+We have evaluated some of the important image restoration and registaration
+algorithm with data from a mobile. Some of the results are very promising,
+while some of them weren't very good. In particular, estimating depth
+from focus, image registration and image super resolution have given 
+very good results. Depth estimation from blurred and latent image pair
+was good to a certain extent but was very sensitive to the accuracy of
+the kernel estimate. The results can be made better with the presense
+of a magnetometer, which would provide accurate orientation information,
+thus making the estimate of acceleration more accurate. Not much work
+was done on the image super resolution part, but the off the shelf code
+worked. The image deblurring, while proving interesting results like fast
+convergence and better results in case of low texture images, has good 
+scope for improvement.
 
+While all the codes were run offline for ease of research purpose, we 
+saw that the algorithms were very simple and efficient due to availability
+of information from motion sensors. Hence, porting these algorithms onto
+a mobile should not be a problem and they would work very fast.  
+
+\section{Future work}
+Along with the evaluation of major algorithms for registration and 
+restoration, the project has provided a good stage for future developments.
+All the discussed algorithms can be immediately ported to a mobile 
+platform with great ease, which would provide a very powerful 
+computational imaging device.
+
+Apart from the usefulness of our algorithms, the mobile application is a
+very versatile one and would serve well for future experiments with 
+different algorithms. With features like continuous logging of images, 
+continous logging of motion sensor data, capturing low exposure noisy 
+image and long exposure blurred image and freely changing parameters of 
+the camera, the device would prove very useful for working on 
+computational imaging on a mobile platform. With powerful processor and
+easy to use code, not much needs to be worried about porting existing 
+algorithms to make the mobile more powerful.
+
+Apart from the sunny side of the project, there were some parts which 
+were not addressed appropriately. Not much effort was put into writing 
+a more efficient semi-blind deconvolution algorithm. However, this was
+partly not possible due to absence of magnetometer on our device. Further,
+the mobile currently does all the job using a 10ms timer, which might
+be inefficent. Unloading the work onto a separate thread will not only
+make it neat, but it would make it much more efficient. 
+
+We are looking forward to open our code to public so that people who are
+interested can contribute. The code will be the property of the lab and 
+the author of the report would like to credit all the work to the lab.
 \pagebreak
 
-\end{document}
 
+%----------- Bibliography ----------------------------------------------
+\begin{singlespacing}
+	\bibliographystyle{IEEEtran}
+	\nocite{*}
+	\bibliography{refs}
+\end{singlespacing}
+
+\end{document}
