@@ -107,8 +107,9 @@ Dr. A. N. Rajagopalan for his invaluable support and guidance throughout
 my project duration. I have gained immense insight into computational
 photography and image processing in this one year, which I believe will 
 hold me in good stead in my future endeavors. I am indebted to him for
-patiently sitting with me at times when I could not see any path forward
-. 
+patiently sitting with me at times when I could not see any path forward. 
+I will always remember him as the professor who said ``There is nothing
+sacred about time or frequency''.
 
 I also thank all my lab mates for being extremely helpful and
 for their patience and guiding me through difficult tasks. I had the
@@ -136,12 +137,12 @@ tough exams and quintessential assignments. I owe a lot to them.
 \abstract
 We explored various image restoration and registration techniques using 
 data obtained from a mobile device. The first one was non-blind image
-deblurring using data obtained from motions sensors. We wanted to evaluate
+deblurring using data obtained from motion sensors. We wanted to evaluate
 the usefulness of having extra information from the motion sensors, which
 give a clue about camera motion. We could only prove marginally good 
 results. However, we showed that deconvolution with our kernel as the 
 intial estimate either converged quicker or produced good results for low
-texture images. The second problem we addresses was that of depth
+texture images. The second problem we addressed was that of depth
 estimation using blurred and latent image pair method and depth from
 focus. In the former problem, we showed that with a good estimate of 
 blur kernel from motion
@@ -150,10 +151,10 @@ involved evaluation of image registration algorithms using the information
 from motion sensors. We showed that the registration results are very 
 accurate and the registration can be done very fast and efficiently even
 when one of the image in the image pair is blurred. At the end, we 
-evaluated some of the off the shelf multi frame image super resolution
+evaluated some of the off-the-shelf multi-frame image super resolution
  algorithms with data obtained from the mobile. Not much time was spent on
 this part of the project. However, we showed that the super resolution
-algorithms, though slow produce better results than bicubic interpolation
+algorithms, though slow, produced better results than bicubic interpolation
 
 %----------- Table of content ------------------------------------------
 \begin{singlespace}
@@ -177,6 +178,7 @@ xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
 \textbf{DFT}    \> Discrete Fourier Transform \\
 \textbf{SSIM}   \> Structural Similarity Measure \\
 \textbf{PSF}    \> Point Spread Function \\
+\textbf{LPF} 	\> Low Pass Filter \\
 \end{tabbing}
 
 \pagebreak
@@ -191,8 +193,8 @@ xxxxxxxxxxx \= xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \kill
 \textbf{$im(x,y)$}  \> Image intensity at location (x, y) \\
 \textbf{$\delta(x,y)$}  \> The discrete time 2D dirac delta function \\
 \textbf{$im{\Leftrightarrow}IM$} \> $IM$ and $im$ are the fourier transform 
-pairs, with $im$ being the spacial domain representation and $IM$ being
-the frequency domain representation.\\
+pairs, with $im$ being the spacial domain\\
+ \> representation and $IM$ being the frequency domain representation.\\
 \textbf{$|.|^2$} 	\> L2 norm squared of the vector\\
 \textbf{$E|.|^2$} 	\> Expectation value of the L2 norm
 \end{tabbing}
@@ -209,7 +211,7 @@ the frequency domain representation.\\
 There has been a recent shift in computation from traditional computers
 to ubiquitous mobiles. With the ever increasing power of the mobiles, 
 executing many of the image processing algorithms on mobile has been 
-possible. Further, the many peripherals available for the mobile, like
+made easy. Further, the many peripherals available for the mobile, like
 the inertial sensors, controllable focus, TCP, bluetooth etc., 
 computational photography is greatly advanced. 
 
@@ -248,17 +250,17 @@ combined with motion sensors data to improve deblurring.
 
 \section{Report layout}
 \label{intro:layout}
-The project report is arranged in a chronological manner. The chapter on 
-\textbf{THEORY} presents a brief background of the various algorithms
+The project report is arranged in the following manner. The chapter on 
+\textbf{BASIC THEORY} presents a brief background of the various algorithms
 and the mathematics involved in the project. \textbf{DEVICE} gives an
 in-depth account of the mobile platform, the application written for the
 mobile platform and the host side software. \textbf{DEBLURRING} 
 explains the implementation of the deblurring algorithm using the data
-obtained from the mobile. \textbf{DEPTH ESTIMATION} has two parts, 
-\emph{Depth estimation using motion blur} and \emph{Depth estimation 
-using focus measure}. \textbf{IMAGE REGISTRATION} discusses about how
+obtained from the mobile. \textbf{IMAGE REGISTRATION} discusses about how
 inertial sensor data can be used to reduce the search space of image 
-registration process. Finally, \textbf{SUPER RESOLUTION} looks at how 
+registration process. \textbf{DEPTH ESTIMATION} has two parts, 
+\emph{Depth estimation using motion blur} and \emph{Depth estimation 
+using focus measure}. Finally, \textbf{SUPER RESOLUTION} looks at how 
 multiple frames can be used to super resolve an image.
 
 At the end of the report, we give a brief discussion the future of the 
@@ -281,7 +283,7 @@ access to a 3-axis accelerometer alone. The 3-axis accelerometer
 measures physical acceleration, which is a combination of the 
 acceleration due to gravity and any external force. Further, the 
 measured values are relative to the mobile frame of reference. Hence, 
-we can model our measured acceleration as
+we can model our measured acceleration as,
 \begin{align*}
 \hat{a}_x= g_x + a_x + n_x\\
 \hat{a}_y= g_y + a_y + n_y\\
@@ -293,28 +295,29 @@ these values, we need to subtract the acceleration due to gravity.
 However, we have no further information apart from the above equations.
 To get a good estimate of the required acceleration, we assume that the
 gravity vector is quasi-static when there is only translation in the 
-mobile device. Hence, we estimate our gravity vector as follows
+mobile device. Hence, we estimate our gravity vector as,
 \begin{align*}
 g_x= \alpha{g_x} + (1-\alpha)\hat{a}_x\\
 g_y= \alpha{g_y} + (1-\alpha)\hat{a}_y\\
 g_z= \alpha{g_z} + (1-\alpha)\hat{a}_z
 \end{align*}
+Where $\alpha$ is the LPF constant and lies between 0 and 1. 
 Once we have the device acceleration, the equation for finding the 
-trajectory of motion would be
+trajectory of motion would be,
 \begin{align*}
 x(t)=\int_0^{t}\int_0^{t}{a_x(t)dt}\\
 y(t)=\int_0^{t}\int_0^{t}{a_y(t)dt}\\
 z(t)=\int_0^{t}\int_0^{t}{a_z(t)dt}
 \end{align*}
-The discrete time approximation is
+The discrete time approximation is,
 \begin{align*}
-x[n]=({\sum}_{t}^{n}{\sum}_{t}^{n}a_x[n]){\times}T^2\\
-y[n]=({\sum}_{t}^{n}{\sum}_{t}^{n}a_y[n]){\times}T^2\\
-z[n]=({\sum}_{t}^{n}{\sum}_{t}^{n}a_z[n]){\times}T^2
+x[n]=({\sum_{t}^{n}}{\sum}_{t}^{n}a_x[n]){\times}T^2\\
+y[n]=({\sum_{t}^{n}}{\sum}_{t}^{n}a_y[n]){\times}T^2\\
+z[n]=({\sum_{t}^{n}}{\sum}_{t}^{n}a_z[n]){\times}T^2
 \end{align*}
 Though this gives a good estimate of the orientation of the device when
 there is no motion or the device acceleration when there is only
-translation, the method suffers from two drawbacks
+translation, the method suffers from two drawbacks:
 \begin{enumerate}
 \item The noise in measurement creates a random walk pattern. This might
 not be of major concern as it would only create a small disturbance in 
@@ -326,7 +329,7 @@ blows up as $t^2$ which can give rise to wrong trajectory.
 The following graph explains how the drift can be of serious concern when
 estimating the trajectory. 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \begin{center}
 \resizebox{150mm}{!} {\includegraphics *{images/drift_image.png}}
 \caption {Plot showing the effect of DC offset to acceleration value.
@@ -342,59 +345,12 @@ and make the estimate unreliable. In the forthecoming chapters, we will
 see the consequences of have a bad trajectory and possible ways to 
 rectify the problem.
 
-\section{Image registration}
-\label{basic_theory:registration}
-Image registration finds application in many areas like medical imaging,
-aerial photography and automated target recognition. In computational
-photography, image registration is used in a wide areas like panorama
-stitching, depth estimation using stereo vision and video stabilization.
-
-Image registration involves finding the transform between a pair of 
-images. The transform could be a simple translation and rotation or 
-complicated warping. For simple cases like translation only model or 
-rotation only model, many of the frequency based methods give good 
-results. For advanced models, feature based registration is used. The 
-SIFT based image registration, for example, identifies key points in
-each image. Once we have the corresponding points in both the images,
-the problem is of estimating the matrix that created this transform.
-
-Note that when there is not much information available or we have a 
-blurred and latent image pair, registration becomes difficult. Section
-\ref{chap:image_registration} has discussion about how this can be 
-simplified using data from accelerometer. In this section, we will look
-at a simple case of registering image pair which are transformed by shift
-alone. % And rotation and scale? It would be good because then we can
-% compare it in the image registration section.
-
-\subsection{Image registration using cross correlation}
-Let $im_1$ and $im_2$ be the image pairs. Since we are looking at a 
-translation only model, we have
-\begin{align*}
-im_2(x,y)=im_1(x-x_0, y-y_0)
-\end{align*}
-Given these two images, we wish to estimate $(x_0,y_0)$. A shift in the
-spacial domain reflects as a phase multiplication in the frequency domain.
-Hence, if $IM_1$ is the DFT of $im_1$, then,
-\begin{align*}
-IM_2(u,v) = IM_1(u,v)e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
-\end{align*}
-Let
-\begin{align*}
-H(u,v) = \frac{IM_1(u,v){\times}IM_2^*(u,v)}{|IM_1(u,v){\times}IM2(u,v)|}\\
-\implies H(u,v) = e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
-\end{align*}
-This gives,
-\begin{align*}
-h(x,y) = \delta(x_0, y_0)
-\end{align*}
-Hence, the location of peak in h(x,y) will give the shift between the 
-two images. 
 \section{Image blur}
 \label{basic_theory:image_blur}
 Image blur is equivalent to low pass filtering in 1D signals. While 
 image blur is desired in some applications like animation, it is 
 undesirable when taking still photos. Two types of blurs are of interest
-in this project, namely defocus blur and motion blur
+in this project, namely defocus blur and motion blur.
 
 \subsection{Defocus blur}
 \label{basic_theory:image_blur:optical}
@@ -404,7 +360,7 @@ when the focal length of the lens is finite and objects are at varied
 distances. 
 
 The blur that arises due to defocus can be modeled as a 2D gaussian
-filtering operation. Hence, the point spread function can be modeled as
+filtering operation. Hence, the point spread function can be modeled as,
 \begin{align*}
 h(x,y) = \frac{1}{2\pi\sigma^2}e^\frac{-(x^2+y^2)}{2\sigma^2}
 \end{align*}
@@ -413,9 +369,9 @@ given lens to sensor distance, $\sigma$ increases with increasing depth.
 
 The defocus blur can be used in the shape from focus method, which 
 varies one particular parameter of the system like the lens position or
-the object position to bring the object in focus. This variation gives 
-an estimate of the depth. Further discussion about shape from focus will
-be carried out in the chapter on Depth Estimation.
+the object position to bring the object in focus. The idea is to have a 
+\emph{focus measure}. \cite{pertuz2013analysis} gives a good outline of 
+various focus measures used commonly. Further discussion about shape from focus will be carried out in the chapter on Depth Estimation.
 
 \subsection{Motion blur}
 \label{basic_theory:image_blur:motion}
@@ -434,7 +390,7 @@ planar scene,
 where $\delta(x_t, y_t)$ is an impulse at $(x_t, y_t)$ and $\hat{im}$ is
 the observed image.
 
-This can be rewritten as
+This can be rewritten as,
 \begin{align*}
 \hat{im}(x,y) = (\sum_t\delta(x_t, y_t))*im(x,y)\\
 \implies \hat{im}(x,y) = h(x,y)*im(x,y)
@@ -451,7 +407,7 @@ we have,
 where $k(x,y)$ is the depth of the image at $(x,y)$. This space variant
 blurring operation can be used to calculate depth information from the 
 images, as objects at different depths will be blurred to a different
-extent. Calculating $k(x,y)$ gives the depth map of the image
+extent. Calculating $k(x,y)$ gives the depth map of the image.
 
 \section{Image deconvolution}
 \label{basic_theory:deconv}
@@ -461,10 +417,11 @@ blind. If the psf is known aprior, it is known as non-blind
 deconvolution and if it not know, it is called blind deconvolution. 
 Blind deconvolution is an ill-posed problem, as any combination of 
 latent image and psf can give rise to the observed image. Hence, various
-constraints are used when trying to retrieve the latent image. For 
-example, an image can be considered as piecewise smooth function with
+constraints are used when trying to retrieve the latent image\cite{fergus2006removing, krishnan2009fast, levin2007deconvolution,gupta2010single}.For example, an image can be considered as piecewise smooth function with
 sharp images. Hence, we can try to reduce the total variance of the 
-obtained latent image. % Should we write about TV stuff?
+obtained latent image\cite{money2006total,chan1998total}. If the blur
+is caused due to a straight line shaped PSF, analyzing the frequency
+domain of the image can help retrieving the PSF\cite{oliveira2007blind}.
 
 On the other hand, non-blind deconvolution is less ill posed than the
 blind case, as we have the psf estimate. As discussed in the previous 
@@ -534,7 +491,58 @@ with respect to $X$, we get
 X=\frac{H^*Y}{|H|^2+\alpha(G_x^2+G_y^2)}
 \end{align*}
 
-This is called regularized deconvolution. 
+This is called regularized deconvolution. Apart from the simple deblurring
+algorithms, there are other deconvolution methods, which work by reducing
+a certain cost function. Literature on some of these can be found at
+\cite{longrichardson,wang2009robust,bioucas2006total}
+
+\section{Image registration}
+\label{basic_theory:registration}
+Image registration finds application in many areas like medical imaging,
+aerial photography and automated target recognition. In computational
+photography, image registration is used in wide number of areas like panorama
+stitching, depth estimation using stereo vision and video stabilization.
+
+Image registration involves finding the transform between a pair of 
+images. The transform could be a simple translation and rotation or a
+complicated warping. For simple cases like translation only model or 
+rotation only model, many of the frequency based methods give good 
+results. For advanced models, feature based registration is used. The 
+SIFT based image registration, for example, identifies key points in
+each image. Once we have the corresponding points in both the images,
+the problem is of estimating the matrix that created this transform.
+
+Note that when there is not much information available or we have a 
+blurred and latent image pair, registration becomes difficult. Section
+\ref{chap:image_registration} has discussion about how this can be 
+simplified using data from accelerometer. In this section, we will look
+at a simple case of registering image pair which are transformed by shift
+alone. % And rotation and scale? It would be good because then we can
+% compare it in the image registration section.
+
+\subsection{Image registration using cross correlation}
+Let $im_1$ and $im_2$ be the image pairs. Since we are looking at a 
+translation only model, we have,
+\begin{align*}
+im_2(x,y)=im_1(x-x_0, y-y_0)
+\end{align*}
+Given these two images, we wish to estimate $(x_0,y_0)$. A shift in the
+spacial domain reflects as a phase multiplication in the frequency domain.
+Hence, if $IM_1$ is the DFT of $im_1$, then,
+\begin{align*}
+IM_2(u,v) = IM_1(u,v)e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
+\end{align*}
+Let,
+\begin{align*}
+H(u,v) = \frac{IM_1(u,v){\times}IM_2^*(u,v)}{|IM_1(u,v){\times}IM2(u,v)|}\\
+\implies H(u,v) = e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
+\end{align*}
+This gives,
+\begin{align*}
+h(x,y) = \delta(x_0, y_0)
+\end{align*}
+Hence, the location of peak in h(x,y) will give the shift between the 
+two images. 
 
 \pagebreak
 %----------- Device ----------------------------------------------------
@@ -571,7 +579,8 @@ alone.
 
 From the ease of usage perspective, the Windows Phone 8 SDK has a very
 simple interface with coding in C\# and GUI design using XAML script. 
-Visual Studio makes it very easy to create applications (apps) fast.
+Visual Studio makes it very easy to create applications (apps) fast. A
+number of code examples for developing WP8 apps are available at \cite{wp8:windowsphone8}
 
 % Device side application
 \section{Device side application}
@@ -896,6 +905,134 @@ given below.
 As is visible from the images above, we find that the deblurring method
 with our kernel is as the initial estimate gives better results. 
 \pagebreak
+
+%----------- Image registration ----------------------------------------
+\chapter{IMAGE REGISTRATION}
+\label{chap:image_registration}
+When taking multiple images, it is very likely that the subsequent 
+images will be shifted and rotated. Consider the case of simple shift. 
+In the absense of noise, we could use the normalized cross correlation
+to estimate this shift. However, this method would fail when one of the 
+image is blurred. A more sophisticated method would use feature matching
+to get a good estimate of a the shift. However, the drawback is that it
+is computationally intensive.
+
+To overcome this problem, we can use the inertial sensor data on the 
+mobile to get a good estimate of the change in orientation, since the 
+inertial sensors give direct information about the motion during the 
+photography period. 
+
+Before we go into the case of pure translation, we need to understand 
+the limitation of our current setup. We have a 3-axis accelerometer 
+giving us the acceleration along ${x, y}$ and $z$ axes, relative to
+the mobile frame of reference. Since our setup constrains that we have
+only in-plane motion, the acceleration along $z$ axis does not give 
+any information. Any generic motion in the plane can be represented by
+three entities, ${t_x, t_y}$ and $R_z$. Hence, we have three unknowns
+and only two equations from the two axes, which makes it an 
+indeterminate system. Hence, we constrain the system by saying that
+either the system goes through only translation or only rotation. Hence,
+we have the following equations:
+
+\begin{align*}
+t_{x_i}=\int{\int{a_x}}\\
+t_{y_i}=\int{\int{a_y}}\\
+or\\
+{\theta}_i=\tan^{-1}({a_y}/{a_x})\\
+\end{align*}
+
+We look at two cases, one of pure translation and another of pure 
+rotation.
+\section{Pure translation}
+\label{image_registration:pure_translation}
+As mentioned in \ref{device:device_app:cam}, we can determine the 
+trajectory of the device from the accelerometer data. To evaluate our
+algorithm, we take a pair of images, one without blur and one with blur
+with a 500ms duration between them. The accelerometer data will give a
+rough estimate of the final position moved given by:
+
+\begin{align*}
+x_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
+\int_{t=t_{init}}^{t_{final}}{a_xdt}\\
+y_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
+\int_{t=t_{init}}^{t_{final}}{a_ydt}
+\end{align*}
+The above final position is in mm and needs to be converted 
+into pixel dimension. However, we don't have the distance of the scene
+from the camera, which makes it an ill-posed problem. To overcome this, 
+we iterate through various scales and find out the correct scale using 
+RMS error. Hence,
+\begin{align*}
+(x_{shift}, y_{shift}) = argmin_k\{\sum_x\sum_y(im_1(x,y)
+-im_2(x-k*x_{final},y-k*y_{final}))^2\}
+\end{align*}
+Note that the maximum shift is bound due to the finite duration. Hence,
+our search space is drastically reduced from $360^o$ in the blind
+case to a small sector(it is not a straight line due to the drift 
+associated with the accelerometer readings) with the help of
+accelerometer data. 
+
+The following images are example outputs of the algorithm. While the overlap
+is not exact, the finer registration can be done with more sophisticated
+algorithm. 
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=300pt]{images/imreg/shift/eg1/imreg.png}
+\caption{Example 1: Registered image pairs}
+\includegraphics[width=300pt]{images/imreg/shift/eg2/imreg.png}
+\caption{Example 2: Registered image pairs}
+\end{center}
+\end{figure}
+
+\section{Pure rotation}
+\label{image_registration:pure_rotation}
+Assuming only in-plane rotation, we can relate the measured acceleration
+to world acceleration (in the absense of other forces) as
+\begin{align*}
+a_x=g\cos\theta\\
+a_y=g\sin\theta
+\end{align*}
+Where $\theta$ is the orientation of the device. Hence, the orientation
+of the mobile can be estimated as
+\begin{align*}
+\theta=\tan^{-1}(\frac{a_y}{a_x})
+\end{align*}
+As in the pure translation case, we take two images, one non-blurred and
+another blurred, both separated by 500ms duration. We only rotate the 
+device during this duration. Hence, we can use the acceleration values
+estimated during this time frame to correct for the rotation. Note that
+the process of rotation will also induce a small translation in the 
+image. This makes the RMS error method of finding the appropriate
+angle difficult. We hence use normalized cross correlation, which is 
+independent of the shift. Thus,
+\begin{align*}
+% Bonkers. This does not make sense. 
+\theta=argmax_t\big\{ifft(\frac{fft(im_1).fft(rotate(im_2,\theta_t))^*}
+{|fft(im_1).fft(rotate(im_2,\theta_t))|})\}
+\end{align*}
+Where $fft(.)$ is the 2D discrete fourier transform, $ifft(.)$ is the 2D 
+discrete inverse fourier transform and $rotate(im, \theta)$ rotates the
+ image by $\theta$ degrees.
+
+The following images serve as an example for the algorithm. In the first
+and second example, the first image, which is taken with long exposure
+is a highly blurred image. As is evident from the images, the algorithm
+performs very good. The third image is a small rotation case and our
+algorithm performs well for that case too.
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
+\caption{Example 1: Very high blur and rotation}
+\includegraphics[width=300pt]{images/imreg/rotation/eg2/imreg.png}
+\caption{Example 2: Moderate blur and rotation}
+\includegraphics[width=300pt]{images/imreg/rotation/eg3/imreg.png}
+\caption{Example 3: Very small blur and rotation}
+\end{center}
+\end{figure}
+
+\pagebreak
 %----------- Depth estimation ------------------------------------------
 \chapter{DEPTH ESTIMATION}
 \label{chap:depth_estimation}
@@ -1056,133 +1193,6 @@ results.
 From the depth map, we see that the objects have been segregated on the
 basis of depth. Further, the areas of low texture don't respond very
 well, as the SML operator is a high frequency measurement operator. 
-
-\pagebreak
-%----------- Image registration ----------------------------------------
-\chapter{IMAGE REGISTRATION}
-\label{chap:image_registration}
-When taking multiple images, it is very likely that the subsequent 
-images will be shifted and rotated. Consider the case of simple shift. 
-In the absense of noise, we could use the normalized cross correlation
-to estimate this shift. However, this method would fail when one of the 
-image is blurred. A more sophisticated method would use feature matching
-to get a good estimate of a the shift. However, the drawback is that it
-is computationally intensive.
-
-To overcome this problem, we can use the inertial sensor data on the 
-mobile to get a good estimate of the change in orientation, since the 
-inertial sensors give direct information about the motion during the 
-photography period. 
-
-Before we go into the case of pure translation, we need to understand 
-the limitation of our current setup. We have a 3-axis accelerometer 
-giving us the acceleration along ${x, y}$ and $z$ axes, relative to
-the mobile frame of reference. Since our setup constrains that we have
-only in-plane motion, the acceleration along $z$ axis does not give 
-any information. Any generic motion in the plane can be represented by
-three entities, ${t_x, t_y}$ and $R_z$. Hence, we have three unknowns
-and only two equations from the two axes, which makes it an 
-indeterminate system. Hence, we constrain the system by saying that
-either the system goes through only translation or only rotation. Hence,
-we have the following equations:
-
-\begin{align*}
-t_{x_i}=\int{\int{a_x}}\\
-t_{y_i}=\int{\int{a_y}}\\
-or\\
-{\theta}_i=tan^{-1}({a_y}/{a_x})\\
-\end{align*}
-
-We look at two cases, one of pure translation and another of pure 
-rotation.
-\section{Pure translation}
-\label{image_registration:pure_translation}
-As mentioned in \ref{device:device_app:cam}, we can determine the 
-trajectory of the device from the accelerometer data. To evaluate our
-algorithm, we take a pair of images, one without blur and one with blur
-with a 500ms duration between them. The accelerometer data will give a
-rough estimate of the final position moved given by:
-
-\begin{align*}
-x_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
-\int_{t=t_{init}}^{t_{final}}{a_xdt}\\
-y_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
-\int_{t=t_{init}}^{t_{final}}{a_ydt}
-\end{align*}
-The above final position is in mm and needs to be converted 
-into pixel dimension. However, we don't have the distance of the scene
-from the camera, which makes it an ill-posed problem. To overcome this, 
-we iterate through various scales and find out the correct scale using 
-RMS error. Hence,
-\begin{align*}
-(x_{shift}, y_{shift}) = argmin_k\{\sum_x\sum_y(im_1(x,y)
--im_2(x-k*x_{final},y-k*y_{final}))^2\}
-\end{align*}
-Note that the maximum shift is bound due to the finite duration. Hence,
-our search space is drastically reduced from $360^o$ in the blind
-case to a small sector(it is not a straight line due to the drift 
-associated with the accelerometer readings) with the help of
-accelerometer data. 
-
-The following images are example outputs of the algorithm. While the overlap
-is not exact, the finer registration can be done with more sophisticated
-algorithm. 
-
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=300pt]{images/imreg/shift/eg1/imreg.png}
-\caption{Example 1: Registered image pairs}
-\includegraphics[width=300pt]{images/imreg/shift/eg2/imreg.png}
-\caption{Example 2: Registered image pairs}
-\end{center}
-\end{figure}
-
-\section{Pure rotation}
-\label{image_registration:pure_rotation}
-Assuming only in-plane rotation, we can relate the measured acceleration
-to world acceleration (in the absense of other forces) as
-\begin{align*}
-a_x=gcos\theta\\
-a_y=gsin\theta
-\end{align*}
-Where $\theta$ is the orientation of the device. Hence, the orientation
-of the mobile can be estimated as
-\begin{align*}
-\theta=tan^{-1}(\frac{a_y}{a_x})
-\end{align*}
-As in the pure translation case, we take two images, one non-blurred and
-another blurred, both separated by 500ms duration. We only rotate the 
-device during this duration. Hence, we can use the acceleration values
-estimated during this time frame to correct for the rotation. Note that
-the process of rotation will also induce a small translation in the 
-image. This makes the RMS error method of finding the appropriate
-angle difficult. We hence use normalized cross correlation, which is 
-independent of the shift. Thus,
-\begin{align*}
-% Bonkers. This does not make sense. 
-\theta=argmax_t\big\{ifft(\frac{fft(im_1).fft(rotate(im_2,\theta_t))^*}
-{|fft(im_1).fft(rotate(im_2,\theta_t))|})\}
-\end{align*}
-Where $fft(.)$ is the 2D discrete fourier transform, $ifft(.)$ is the 2D 
-discrete inverse fourier transform and $rotate(im, \theta)$ rotates the
- image by $\theta$ degrees.
-
-The following images serve as an example for the algorithm. In the first
-and second example, the first image, which is taken with long exposure
-is a highly blurred image. As is evident from the images, the algorithm
-performs very good. The third image is a small rotation case and our
-algorithm performs well for that case too.
-
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
-\caption{Example 1: Very high blur and rotation}
-\includegraphics[width=300pt]{images/imreg/rotation/eg2/imreg.png}
-\caption{Example 2: Moderate blur and rotation}
-\includegraphics[width=300pt]{images/imreg/rotation/eg3/imreg.png}
-\caption{Example 3: Very small blur and rotation}
-\end{center}
-\end{figure}
 
 \pagebreak
 %----------- Image superresolution -------------------------------------
