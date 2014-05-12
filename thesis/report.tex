@@ -58,7 +58,7 @@
 
 \begin{document}
 %----------- Title page ------------------------------------------------
-\title{Analyzing motion sensors on mobile platform for image restoration}
+\title{Utilizing Motion Sensor Data For Some Image Processing Applications}
 \author{\hspace{35pt} Saragadam R V Vishwanath \newline EE10B035}
 \date{MAY 2014}
 \department{ELECTRICAL ENGINEERING}
@@ -70,8 +70,8 @@
 
 \vspace*{0.5in}
 
-\noindent This is to certify that the thesis titled {\bf Analyzing
- motion sensors on mobile platform for image restoration}, submitted by
+\noindent This is to certify that the thesis titled {\bf Utilizing Motion
+Sensor Data For Some Image Processing Applications}, submitted by
   {\bf Saragadam Raja Venkata Vishwanath}, 
   to the Indian Institute of Technology, Madras, for
 the award of the degree of {\bf Bachelor of Technology}, is a bona fide
@@ -131,7 +131,7 @@ throughout my undergraduate studies, with healthy debates, joyful times,
 tough exams and quintessential assignments. I owe a lot to them.
 
 % Need to write my name on the right side.
-\raggedright{Vishwanath}
+Vishwanath
 
 %----------- Abstract --------------------------------------------------
 \abstract
@@ -252,7 +252,7 @@ combined with motion sensors data to improve deblurring.
 \label{intro:layout}
 The project report is arranged in the following manner. The chapter on 
 \textbf{BASIC THEORY} presents a brief background of the various algorithms
-and the mathematics involved in the project. \textbf{DEVICE} gives an
+and the mathematics involved in the project. \textbf{THE DEVICE} gives an
 in-depth account of the mobile platform, the application written for the
 mobile platform and the host side software. \textbf{DEBLURRING} 
 explains the implementation of the deblurring algorithm using the data
@@ -297,9 +297,9 @@ To get a good estimate of the required acceleration, we assume that the
 gravity vector is quasi-static when there is only translation in the 
 mobile device. Hence, we estimate our gravity vector as,
 \begin{align*}
-g_x= \alpha{g_x} + (1-\alpha)\hat{a}_x\\
-g_y= \alpha{g_y} + (1-\alpha)\hat{a}_y\\
-g_z= \alpha{g_z} + (1-\alpha)\hat{a}_z
+g_x^t= \alpha{g_x^{t-1}} + (1-\alpha)\hat{a}_x^t\\
+g_y^t= \alpha{g_y^{t-1}} + (1-\alpha)\hat{a}_y^t\\
+g_z^t= \alpha{g_z^{t-1}} + (1-\alpha)\hat{a}_z^t
 \end{align*}
 Where $\alpha$ is the LPF constant and lies between 0 and 1. 
 Once we have the device acceleration, the equation for finding the 
@@ -311,9 +311,9 @@ z(t)=\int_0^{t}\int_0^{t}{a_z(t)dt}
 \end{align*}
 The discrete time approximation is,
 \begin{align*}
-x[n]=({\sum_{t}^{n}}{\sum}_{t}^{n}a_x[n]){\times}T^2\\
-y[n]=({\sum_{t}^{n}}{\sum}_{t}^{n}a_y[n]){\times}T^2\\
-z[n]=({\sum_{t}^{n}}{\sum}_{t}^{n}a_z[n]){\times}T^2
+x[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_x[n]){\times}T^2\\
+y[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_y[n]){\times}T^2\\
+z[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_z[n]){\times}T^2
 \end{align*}
 Though this gives a good estimate of the orientation of the device when
 there is no motion or the device acceleration when there is only
@@ -413,7 +413,7 @@ extent. Calculating $k(x,y)$ gives the depth map of the image.
 \label{basic_theory:deconv}
 The process of removing the blur in the image is known as image
 deconvolution. Deconvolution can be broadly of two types, blind and non-
-blind. If the psf is known aprior, it is known as non-blind 
+blind. If the psf is known apriori, it is known as non-blind 
 deconvolution and if it not know, it is called blind deconvolution. 
 Blind deconvolution is an ill-posed problem, as any combination of 
 latent image and psf can give rise to the observed image. Hence, various
@@ -545,8 +545,8 @@ Hence, the location of peak in h(x,y) will give the shift between the
 two images. 
 
 \pagebreak
-%----------- Device ----------------------------------------------------
-\chapter{DEVICE}
+%----------- The Device ------------------------------------------------
+\chapter{THE DEVICE}
 \label{chap:device}
 Primarily, we want the device to function as an acquisition system which
 would take pictures and measure some sensor values. While choosing the
@@ -903,7 +903,7 @@ given below.
 \end{center}
 \end{figure}
 As is visible from the images above, we find that the deblurring method
-with our kernel is as the initial estimate gives better results. 
+with our kernel as the initial estimate gives better results. 
 \pagebreak
 
 %----------- Image registration ----------------------------------------
@@ -911,7 +911,7 @@ with our kernel is as the initial estimate gives better results.
 \label{chap:image_registration}
 When taking multiple images, it is very likely that the subsequent 
 images will be shifted and rotated. Consider the case of simple shift. 
-In the absense of noise, we could use the normalized cross correlation
+In the absense of noise, we could use normalized cross correlation
 to estimate this shift. However, this method would fail when one of the 
 image is blurred. A more sophisticated method would use feature matching
 to get a good estimate of a the shift. However, the drawback is that it
@@ -935,8 +935,8 @@ either the system goes through only translation or only rotation. Hence,
 we have the following equations:
 
 \begin{align*}
-t_{x_i}=\int{\int{a_x}}\\
-t_{y_i}=\int{\int{a_y}}\\
+t_{x_i}=\int{\int{a_x}}dt\\
+t_{y_i}=\int{\int{a_y}}dt\\
 or\\
 {\theta}_i=\tan^{-1}({a_y}/{a_x})\\
 \end{align*}
@@ -1049,7 +1049,13 @@ about how every point in the image gets blurred by a different blur
 kernel due to the depth profile. If we neglect the parallax error, we 
 can see that the only variation in the blur kernel is the scale. Hence,
 estimating the depth profile boils down to estimating the scale of the 
-blur kernel at different points. 
+blur kernel at different points. Estimating depth from a blurred and 
+latent image has been discussed in \cite{paramanand2010unscented}. However,
+the method requires estimation of depth at every point, due to the 
+absence of any motion information. \cite{levin2007image} uses coded 
+aperture for extracting the depth profile from the image. However, the
+paper has good discussion about estimating depth from two images, which
+is more apt for our discussion.
 
 In this setup, we capture two images, one with very short exposure and
 another with long exposure. The short exposure image is captured by
@@ -1083,7 +1089,7 @@ the kernel is very accurate, else the depth map will go wrong.
 
 To verify our algorithm, we first tried estimating depth map in a 
 sythetic case. We blurred an image with a known depth map
-and ran our algorithm. The following were the results obtained.
+and ran our algorithm. The following results were obtained.
 \begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/preview_im.png}}
@@ -1095,7 +1101,7 @@ and ran our algorithm. The following were the results obtained.
 \label{fig:depth_synthetic}
 \end{center}
 \end{figure}
-The results verified that our was useful for estimating depth from 
+The results verified that our method was useful for estimating depth from 
 a scene. We then tried to test our algorithm for real cases. In our
  experiment, we found that the kernel can go to a maximum size of
 $20\times20$ and hence we scaled the kernel size from $1\times1$ to 
@@ -1181,7 +1187,7 @@ To evaluate our algorithm, we used a filter size of $32\times32$. Further,
 to confirm that our algorithm returns the correct depth map, we created
 an all focus image from the set of images. The following are the obtained
 results.
-\begin{figure}[ht]
+\begin{figure}[H]
 \begin{center}
 \resizebox{100mm}{!} {\includegraphics *{images/focus/eg1/imdepth.png}}
 \caption{Estimated depth map. Objects nearer are darker}
@@ -1189,7 +1195,7 @@ results.
 \caption{All focused image. }
 \label{fig:depth_focus}
 \end{center}
-\end{figure}\\
+\end{figure}
 From the depth map, we see that the objects have been segregated on the
 basis of depth. Further, the areas of low texture don't respond very
 well, as the SML operator is a high frequency measurement operator. 
