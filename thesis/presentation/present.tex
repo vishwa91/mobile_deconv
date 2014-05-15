@@ -38,7 +38,7 @@
 \author[Saragadam R V Vishwanath]%IIT Madras \hspace{25pt} EE11S063]
 {Saragadam R V Vishwanath (EE10B035)\\
 \vspace{3pt}
-\small{under the guidance of Prof.\ A. N. Rajagopalan}
+\small{Under the guidance of Prof.\ A. N. Rajagopalan}
 }
 %\vspace{15pt}
 \institute[IIT Madras]{
@@ -75,12 +75,15 @@ IIT Madras}
 % Motivation ------------------------------------------------------------------- 
 \begin{frame}{Motivation}
 \begin{itemize}
+	\item Hand held devices get shaken when held loosely. Image degradation
+	by motion blur. Can be used for various purposes.
 	\item Computational photography now moving to ubiquitous mobiles
 	\item Increased computational power. Hence, increased avenues.
 	\item Additional data in the form of motion sensors. Increased scope
 	of research.
 	\item Flexible programming on the mobile camera. Ability to implement
 	algorithms on the fly instead of offline computing.
+	\item Not much work done in this area.
 \end{itemize}
 \end{frame}
 
@@ -100,21 +103,30 @@ IIT Madras}
 		\item WiFi dongle to receive data wireless.
 	\end{itemize}
 \end{itemize}
-% Insert pictures here.
+\begin{center}
+	\resizebox{30mm}{!} {\includegraphics {setup.png}}
+\end{center}
 \end{frame}
 
-% What did we try --------------------------------------------------------------
-\begin{frame}{What did we try}
+% Work done --------------------------------------------------------------------
+\begin{frame}{Work Done}
 \begin{itemize}
+	\item Developing an application on mobile to send motion sensors 
+	data and images over TCP. 
+	\item Constructing a kernel with motion sensors data.
+	\begin{itemize}
+		\item Synchronizing the accelerometer with exposure time.
+		\item Separating gravity and acceleration due to external force using
+		low pass filtering.
+	\end{itemize}
 	\item Image deblurring using semi-blind methods.
 	\item Estimating depth using motion blur and shape from focus.
 	\item Image registration for pure translation and pure rotation cases.
-	\item A little of the image super-resolution.
 \end{itemize}
 \end{frame}
 
 % Image deblurring -------------------------------------------------------------
-\begin{frame}{Image Deblurring -- Primer}
+\begin{frame}{Image Deblurring}{Primer}
 \begin{itemize}
 	\item Blur induced due to shake of the hand held camera. 
 	\item Ill-posed if no more information is available.
@@ -130,20 +142,15 @@ IIT Madras}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Image Deblurring -- Results}
+\begin{frame}{Image Deblurring}{Results}
 
 Results of non-blind deconvolution using wiener deconvolution
-\begin{figure}
+
+\begin{figure}[H]
 \begin{center}
-	\begin{subfigure}{Blurred image.}
-		\resizebox{20mm}{!} {\includegraphics {../images/deblur/imblur.png}}
-	\end{subfigure}
-	\begin{subfigure}{Image deblurred using wiener deconvolution.}
-		\resizebox{20mm}{!} {\includegraphics {../images/deblur/imdeblur.png}}
-	\end{subfigure}
-	\begin{subfigure}{Image deblurred using state of the art deconvolution algorithm.}
-		\resizebox{20mm}{!} {\includegraphics {../images/deblur/jia_blind_deconv.png}}
-	\end{subfigure}
+	\resizebox{30mm}{!} {\includegraphics {../images/deblur/imblur.png}}
+	\resizebox{30mm}{!} {\includegraphics {../images/deblur/imdeblur.png}}
+	\resizebox{30mm}{!} {\includegraphics {../images/deblur/jia_blind_deconv.png}}
 \end{center}
 \end{figure}
 
@@ -151,14 +158,205 @@ Results of semi-blind deconvolution using Punnappurath et al's code.
 
 \begin{figure}[H]
 \begin{center}
-\resizebox{20mm}{!} {\includegraphics {../images/semiblind/blurred.png}}
-\resizebox{20mm}{!} {\includegraphics {../images/semiblind/blind.png}}
-\resizebox{20mm}{!} {\includegraphics {../images/semiblind/semi_blind.png}}
-\caption{Blurred image, image deconvolved by total blind method and image 
-deconvolved by using our kernel as initial estimate.}
+\resizebox{30mm}{!} {\includegraphics {../images/semiblind/blurred.png}}
+\resizebox{30mm}{!} {\includegraphics {../images/semiblind/blind.png}}
+\resizebox{30mm}{!} {\includegraphics {../images/semiblind/semi_blind.png}}
 \end{center}
 \end{figure}
 
+\end{frame}
+
+\begin{frame}{Image Deblurring}{Inference}
+\textbf{Pros}
+\begin{itemize}
+	\item Simple computation as we have enough data.
+	\item Semi-blind performs same for high textured images. Converges
+	quickly. Performs well for low textured images.
+\end{itemize}
+\textbf{Cons}
+\begin{itemize}
+	\item If only accelerometer data is available, PSF can go completely wrong.
+	\item No information from the image used.
+\end{itemize}
+\textbf{Improvements}
+\begin{itemize}
+	\item Estimate a blind PSF and fuse it with calculated trajectory.
+	\item Better estimation of kernel using other motion sensors data.
+\end{itemize}
+\end{frame}
+
+% Depth estimation -------------------------------------------------------------
+\begin{frame}{Depth Estimation}{Primer}
+\begin{itemize}
+	\item Depth estimation using motion blur
+	\begin{itemize}
+		\item Each pixel gets blurred by a different scale of the blur kernel,
+		assuming no parallax
+		\item We have a sharp image, blurred image and the PSF estimate. Need to
+		estimate scale at each point.
+	\end{itemize}
+	\vspace{0.4cm}
+	\item Depth estimation using shape from focus
+	\begin{itemize}
+		\item Farther the point from focus, more blurred the object becomes.
+		\item Need a \emph{focus measure} which would peak when a region is 
+		completely focused. We use Sum Modified Laplacian.
+	\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Depth Estimation}{Results -- Motion blur}
+
+\textbf{Depth from motion blur -- Good case}
+
+\begin{figure}[H]
+\begin{center}
+\resizebox{30mm}{!} {\includegraphics {../images/depth/eg1/preview_im_gray.png}}
+\resizebox{30mm}{!} {\includegraphics {../images/depth/eg1/saved_im_gray.png}}
+\resizebox{30mm}{!} {\includegraphics {../images/depth/eg1/imdepth.png}}
+\caption{\scriptsize{Sharp image, blurred image and estimated depth. Brighter parts are closer to the camera.}}
+\end{center}
+\end{figure}
+\vspace{-0.1cm}
+\textbf{Depth from motion blur -- Bad case}
+
+\begin{figure}[H]
+\begin{center}
+\resizebox{30mm}{!} {\includegraphics {../images/depth/eg3/preview_im.png}}
+\resizebox{30mm}{!} {\includegraphics {../images/depth/eg3/saved_im_gray.png}}
+\resizebox{30mm}{!} {\includegraphics {../images/depth/eg3/imdepth.png}}
+\end{center}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Depth Estimation}{Results -- Shape from focus}
+
+\textbf{Depth using shape from focus}
+\begin{figure}[H]
+\begin{center}
+\resizebox{35mm}{!} {\includegraphics {../images/focus/eg1/im3.png}}
+\resizebox{35mm}{!} {\includegraphics {../images/focus/eg1/imdepth.png}}
+\resizebox{35mm}{!} {\includegraphics {../images/focus/eg1/imfocus.png}}
+\caption{\scriptsize{First image in the set. Estimated depth map and fully
+focused image. Darker regions are closer to the camera.}}
+\end{center}
+\end{figure}
+
+\end{frame}
+
+\begin{frame}{Depth Estimation}{Inference}
+\textbf{Depth from motion blur}
+\begin{itemize}
+	\item Pros
+		\begin{itemize}
+			\item Low computational complexity.
+			\item Not much data needed. Only two images and motion sensor
+			data. Easily available on the mobile platform.
+			\item Depth map is reliable with good kernel estimate.
+		\end{itemize}
+	\item Cons
+		\begin{itemize}
+			\item Shift in image pair or wrong kernel estimate gives a 
+			very bad depth map.
+		\end{itemize}
+	\item Improvements
+		\begin{itemize}
+			\item Segmenting image for more reliability.
+			\item A better metric than $L_2$ norm for comparing 
+			blurred and the reblurred image.
+		\end{itemize}
+\end{itemize}
+\vspace{0.2cm}
+\textbf{Depth using shape from focus}
+\begin{itemize}
+	\item Need better focus operator for low frequency areas.
+\end{itemize}
+\end{frame}
+
+% Image registration -----------------------------------------------------------
+\begin{frame}{Image Registration}{Primer}
+\begin{itemize}
+	\item When capturing two images, we need the trajectory between the
+	two positions.
+	\item Simple registration may not work when one of the images is blurred.
+	\item Motion sensors give the exact trajectory and can be used for registration.
+	\item Even thoug hwe know the displacement in mm, we don't know in pixels, hence
+	we iterate through a certain depths.
+	\item With only accelerometer, we can either know the translation or rotation. Hence we see both the cases separately.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Image Registration}{Results}
+\textbf{Translation case}
+\begin{figure}[H]
+\begin{center}
+	\resizebox{70mm}{!} {\includegraphics {../images/imreg/shift/eg1/imreg.png}}
+\end{center}
+\end{figure}
+\textbf{Rotation case}
+\begin{figure}[H]
+\begin{center}
+	\resizebox{70mm}{!} {\includegraphics {../images/imreg/rotation/eg2/imreg.png}}
+\end{center}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Image Registration}{Inference}
+\textbf{Translation}
+\begin{itemize}
+	\item Pros
+		\begin{itemize}
+			\item Low computational complexity.
+			\item Search space drastically reduced to a small sector
+		\end{itemize}
+	\item Cons
+		\begin{itemize}
+			\item Bad calculated trajectory still a problem.
+		\end{itemize}
+\end{itemize}
+\vspace{0.2cm}
+\textbf{Rotation}
+\begin{itemize}
+	\item Pros
+		\begin{itemize}
+			\item Low computational complexity.
+			\item Very robust for blurred images also
+		\end{itemize}
+	\item Cons
+		\begin{itemize}
+			\item Need to search for multiple positions in the exposure time,
+			as the exposure time and accelerometer data are not synchronized.
+			\item Does not compensate for translation.
+		\end{itemize}
+	\item Improvements
+		\begin{itemize}
+			\item Adding gyroscope can aid in translational registration also.
+		\end{itemize}
+\end{itemize}
+\end{frame}
+
+% Future developments ----------------------------------------------------------
+\begin{frame}{Future Developments}
+\begin{itemize}
+	\item Mobile application is very versatile. Can be used for developing
+	computational photography algorithms like video stabilization and super 
+	resolution
+	\item All the algorithms we implemented are computationally cheap. Can be
+	ported to the mobile platform with ease.
+	\item Lot more can be done in deblurring by developing semi-blind algorithms
+	or multi-channel algorithms. 
+\end{itemize}
+\end{frame}
+
+% Conclusion -------------------------------------------------------------------
+\begin{frame}{Conclusion}
+\begin{itemize}
+	\item Mobile is a very versatile platform.
+	\item Motion sensors very useful for various image processing applications.
+	More accuracy and lesser computational load.
+	\item Project has a lot of future scope for development.
+\end{itemize}
 \end{frame}
 % End
 \end{document}

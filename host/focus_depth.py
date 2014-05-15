@@ -11,8 +11,10 @@ if __name__ == '__main__':
     frame_token = 'S\x00T\x00F\x00R\x00'
     fstart = 'STFR'
     fend = 'EDFR'
-    #continuous_recv(strt_token, end_token, frame_token, 'tmp/focus/tokens.dat')
-    #extract_images('tmp/focus/tokens.dat', 100, fstart, fend, 'tmp/focus/src')
+    
+    continuous_recv(strt_token, end_token, frame_token, 'tmp/focus/tokens.dat')
+    extract_images('tmp/focus/tokens.dat', 100, fstart, fend, 'tmp/focus/src')
+    
     imdepth, imfocus = sml_focus_depth('tmp/focus/src', 'tmp/focus/sml', 3, 100)
     immask = abs(laplace(imfocus))
     immask = 1.0 - immask/immask.max()

@@ -1,5 +1,8 @@
 % Use the IITM Dissertion class
 \documentclass[BTech]{iitmdiss}
+\usepackage{ifthen}
+\usepackage{amsfonts}
+\usepackage{natbib}
 \usepackage{times}
 \usepackage{t1enc}
 \usepackage{float}
@@ -8,6 +11,9 @@
 \usepackage{verbatim}
 \usepackage[hypertex]{hyperref} % hyperlinks for references.
 \usepackage{amsmath} % easier math formulae, align, subequations \ldots
+
+% Enable two sided
+\setboolean{@twoside}{true}
 
 % Enable code snippets coloring
 \usepackage{listings}
@@ -111,9 +117,8 @@ patiently sitting with me at times when I could not see any path forward.
 I will always remember him as the professor who said ``There is nothing
 sacred about time or frequency''.
 
-I also thank all my lab mates for being extremely helpful and
-for their patience and guiding me through difficult tasks. I had the
-privilege of working with some of the best minds in the department.
+I also thank all my lab mates Vijay, Abhijith, Sahana, Swarun, Karthik and 
+Poorna for being extremely helpful and for their patience and guiding me through difficult tasks. I had the privilege of working with some of the best minds in the department.
 
 I would also like to thank my parents for being flexible and giving me moral
 support throughout my education. I believe that what I am today and what
@@ -135,26 +140,12 @@ Vishwanath
 
 %----------- Abstract --------------------------------------------------
 \abstract
-We explored various image restoration and registration techniques using 
-data obtained from a mobile device. The first one was non-blind image
-deblurring using data obtained from motion sensors. We wanted to evaluate
-the usefulness of having extra information from the motion sensors, which
-give a clue about camera motion. We could only prove marginally good 
-results. However, we showed that deconvolution with our kernel as the 
-intial estimate either converged quicker or produced good results for low
-texture images. The second problem we addressed was that of depth
-estimation using blurred and latent image pair method and depth from
-focus. In the former problem, we showed that with a good estimate of 
-blur kernel from motion
-sensors, depth can be estimated very efficiently. The third problem 
-involved evaluation of image registration algorithms using the information
-from motion sensors. We showed that the registration results are very 
-accurate and the registration can be done very fast and efficiently even
-when one of the image in the image pair is blurred. At the end, we 
-evaluated some of the off-the-shelf multi-frame image super resolution
- algorithms with data obtained from the mobile. Not much time was spent on
-this part of the project. However, we showed that the super resolution
-algorithms, though slow, produced better results than bicubic interpolation
+We explore various image restoration and registration techniques using 
+data obtained from a mobile device. The first one is non-blind image
+deblurring. We evaluate the usefulness of having extra information from the motion sensors, which give a clue about camera motion. We
+show that deconvolution with our kernel as the 
+initial estimate either converged quicker or produced better results for low
+texture images when compared to a complete blind deconvolution. The second problem we address is that of depth estimation using blurred and latent image pair and depth from focus. In the former problem, we show that with a good estimate of blur kernel from motion sensors, depth can be estimated very efficiently. The third problem involves evaluation of image registration algorithms using the information from motion sensors. We show that the registration results are very accurate and the registration can be done very fast and efficiently even when one of the images is blurred.
 
 %----------- Table of content ------------------------------------------
 \begin{singlespace}
@@ -166,6 +157,7 @@ algorithms, though slow, produced better results than bicubic interpolation
 \end{singlespace}
 \pagebreak
 
+\begin{comment}
 %----------- Abbrevations ----------------------------------------------
 \abbreviations
 
@@ -201,7 +193,7 @@ pairs, with $im$ being the spacial domain\\
 \end{singlespace}
 
 \pagebreak
-
+\end{comment}
 % Start numbering the pages from now.
 \pagenumbering{arabic}
 
@@ -209,26 +201,32 @@ pairs, with $im$ being the spacial domain\\
 \chapter{INTRODUCTION}
 \label{chap:intro}
 There has been a recent shift in computation from traditional computers
-to ubiquitous mobiles. With the ever increasing power of the mobiles, 
+to ubiquitous mobile phones. With the ever increasing power of the mobiles, 
 executing many of the image processing algorithms on mobile has been 
-made easy. Further, the many peripherals available for the mobile, like
-the inertial sensors, controllable focus, TCP, bluetooth etc., 
+made easy. Further, with the many peripherals available for the mobile, such as
+the inertial sensors, controllable focus, TCP and the bluetooth, 
 computational photography is greatly advanced. 
 
-Using the mobile platform for computational photography has the unique
-advantages of capturing motion during exposure time, which can be used
-for estimating the blur kernel or estimating the direction of motion
-for reducing the search space of image registration. Further, 
-controllable focus and the ability to capture fast multiple images means
-that it is easy to implement multichannel super resolution or deblurring
-algorithms. 
+Photography using mobile has the innate problem of shake, which tends to
+blur the images. Recovering the sharp image, given only the blurred image
+is a difficult task due to the ill-posed nature of the problem. Any
+information about the motion during the exposure time can help solve
+the problem with ease. Data from motion sensors serves this purpose by
+providing the approximate trajectory of motion. Even when taking multiple
+photographs which need to be aligned, like in the case of HDR images from
+multiple normal exposure images, sensors data can be utilized to find
+the accurate motion between the two shots. 
 
-We wanted to evaluate some of the important algorithms in computational
-photography by using data obtained from the mobile. In particular, we 
-wanted to verify that the motion sensors greately enhance the efficiency
-and accuracy of the algorithms. While we did not port the algorithms to
-the mobile platform, we showed that the algorithms, due to their simplicity,
-can be ported with great ease to the mobile. 
+A recent advancement in the field of computational photography is light
+field photography. Instead of a single focused image, multiple images
+are taken and various regions of the image can be refocused. A mobile
+platform, which has the ability to capture multiple images very fast
+with variable focus would pave way for research in this area. 
+
+We evaluate some of the important algorithms in computational
+photography by using data obtained from the mobile. The aim is to prove
+that the extra information available from the motion sensors aides in
+increasing the efficiency of the image processing algorithms. 
 
 \section{Prior work}
 \label{intro:prior_work}
@@ -236,34 +234,49 @@ The best known project involving the camera as an imaging device is the
 Camera 2.0 project by the Computer Science department at Stanford. The
 project involved hacking the Nokia N900 firmware to write custom algorithms
 for focus. Further, the lab also built a custom camera called Frankencamera
-which runs linux and is completely programmable, making it highly flexible.
-The paper by \cite{vsindelavr2013image} discusses the usage of a smart
-phone for deblurring images which have been degraded by rotational blur.
+which runs Linux and is completely programmable, making it highly flexible.
 
 While computational imaging on a mobile platform is relatively new, there
 has been a lot of work on combining motion sensors with DSLR to perform
-accurate deblurring. \cite{joshi2010image} Combines a 3 axis accelerometer
+accurate deblurring. \citet{joshi2010image} Combines a 3 axis accelerometer
 and 3 axis gyroscope with a DSLR. This paper is one of the main motivation
-for the part of image deblurring. \cite{bae2013accurate} builds upon
-\cite{joshi2010image} and explains how blind PSF estimation can be
-combined with motion sensors data to improve deblurring. 
+for the image deblurring part. \citet{bae2013accurate} builds upon
+\citet{joshi2010image} and explains how blind PSF estimation can be
+combined with motion sensors data to improve deblurring. \citet{vsindelavr2013image} discusses the usage of a smart phone for deblurring
+images which have been degraded by rotational blur. We try to use some
+of the ideas in this paper for deblurring for translational blur.
+
+Depth estimation, a well researched topic is of a lot of interest, 
+especially in devices for gaming like Kinect. A lot of literature exists
+on depth estimation using stereo vision. A recent foray into this area
+is to estimate depth from a sharp and blurred image pair. While most of 
+the methods estimate it by estimating PSF from individual regions, not
+much work has been done on fusing the image data with motion sensors 
+data. We present some of the methods for estimating depth using motion
+sensors data along with sharp and blurred images. 
+
+Image registration exists for sharp images but not much literature exists
+on registering blurred images. Registration for symmetric blur
+has been discussed by \citet{ojansivu2007image}, which is more applicable
+to the case of defocus blur. We deal with a more non-symmetric case of
+motion blur and show that inertial sensors gives accurate registration 
+results.
 
 \section{Report layout}
 \label{intro:layout}
-The project report is arranged in the following manner. The chapter on 
-\textbf{BASIC THEORY} presents a brief background of the various algorithms
-and the mathematics involved in the project. \textbf{THE DEVICE} gives an
+The project report is organized in the following manner. The chapter on 
+\emph{Basic Theory} presents a brief account of the various algorithms
+and the mathematics involved in the project. The chapter on \emph{The Device} gives an
 in-depth account of the mobile platform, the application written for the
-mobile platform and the host side software. \textbf{DEBLURRING} 
+mobile platform and the host side software. The chapter on \emph{Deblurring} 
 explains the implementation of the deblurring algorithm using the data
-obtained from the mobile. \textbf{IMAGE REGISTRATION} discusses about how
+obtained from the mobile. \emph{Image Registration} discusses about how
 inertial sensor data can be used to reduce the search space of image 
-registration process. \textbf{DEPTH ESTIMATION} has two parts, 
+registration process. \emph{Depth Estimation} has two parts, 
 \emph{Depth estimation using motion blur} and \emph{Depth estimation 
-using focus measure}. Finally, \textbf{SUPER RESOLUTION} looks at how 
-multiple frames can be used to super resolve an image.
+using focus measure}.
 
-At the end of the report, we give a brief discussion the future of the 
+At the end of the report, we give a brief discussion about the future of the 
 project and how the algorithms can be taken forward. We concluded that
 though some of the experiments were not successful, they gave very
 interesting results, which pave way for future work.
@@ -271,77 +284,82 @@ interesting results, which pave way for future work.
 %----------- Basic Theory ----------------------------------------------
 \chapter{BASIC THEORY}
 \label{chap:basic_theory}
-This chapter will go through some of the basics which were crucial 
-throughout the project and which will be a primer to all the future 
-chapters.
+We discuss the basics of some of the image processing algorithms in this
+chapter to gain an understanding of the theory behind the project.
 
-\section{Position from acceleration data}
+\section{Position from Acceleration Data}
 \label{basic_theory:accel}
 A major part of the project involves estimating the trajectory of motion
 from accelerometer data. In the current context, we assume that we have
-access to a 3-axis accelerometer alone. The 3-axis accelerometer 
+access to a three-axis accelerometer alone. The three-axis accelerometer 
 measures physical acceleration, which is a combination of the 
 acceleration due to gravity and any external force. Further, the 
-measured values are relative to the mobile frame of reference. Hence, 
-we can model our measured acceleration as,
+measured values are relative to the mobile frame of reference. Define
+${a_x, a_y, a_z}$ as the acceleration due to external force,
+${g_x, g_y, g_z}$ as the acceleration due to gravity from the mobile's
+frame of reference and ${\hat{a}_x, \hat{a}_y, \hat{a}_z}$ as the measured
+acceleration. Hence, measured acceleration is modeled as
 \begin{align*}
 \hat{a}_x= g_x + a_x + n_x\\
 \hat{a}_y= g_y + a_y + n_y\\
-\hat{a}_z= g_z + a_z + n_z
+\hat{a}_z= g_z + a_z + n_z,
 \end{align*}
-Where $n_x, n_y$ and $n_z$ are noise in measurements.For calculating
- the trajectory, we need $\{a_x,a_y,a_z\}$. To obtain 
+where $n_x, n_y$ and $n_z$ are noise in measurements.For calculating
+the trajectory, we need $\{a_x,a_y,a_z\}$. To obtain 
 these values, we need to subtract the acceleration due to gravity. 
 However, we have no further information apart from the above equations.
 To get a good estimate of the required acceleration, we assume that the
 gravity vector is quasi-static when there is only translation in the 
-mobile device. Hence, we estimate our gravity vector as,
+mobile device. Hence, we estimate the gravity vector as
 \begin{align*}
 g_x^t= \alpha{g_x^{t-1}} + (1-\alpha)\hat{a}_x^t\\
 g_y^t= \alpha{g_y^{t-1}} + (1-\alpha)\hat{a}_y^t\\
-g_z^t= \alpha{g_z^{t-1}} + (1-\alpha)\hat{a}_z^t
+g_z^t= \alpha{g_z^{t-1}} + (1-\alpha)\hat{a}_z^t,
 \end{align*}
-Where $\alpha$ is the LPF constant and lies between 0 and 1. 
+where $\alpha$ is the LPF constant and lies between 0 and 1. Higher
+$\alpha$ gives rise to slower variation in the gravity vector. We found
+empirically that $0.8$ was a good value for the constant.
+
 Once we have the device acceleration, the equation for finding the 
-trajectory of motion would be,
+trajectory of motion would be
 \begin{align*}
-x(t)=\int_0^{t}\int_0^{t}{a_x(t)dt}\\
-y(t)=\int_0^{t}\int_0^{t}{a_y(t)dt}\\
-z(t)=\int_0^{t}\int_0^{t}{a_z(t)dt}
+x(t)=\iint_0^{t}{a_x(t)dt}\\
+y(t)=\iint_0^{t}{a_y(t)dt}\\
+z(t)=\iint_0^{t}{a_z(t)dt}.
 \end{align*}
-The discrete time approximation is,
+The discrete time approximation is
 \begin{align*}
 x[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_x[n]){\times}T^2\\
 y[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_y[n]){\times}T^2\\
-z[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_z[n]){\times}T^2
+z[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_z[n]){\times}T^2,
 \end{align*}
+where T is the sampling time of the motion sensors.
 Though this gives a good estimate of the orientation of the device when
 there is no motion or the device acceleration when there is only
 translation, the method suffers from two drawbacks:
 \begin{enumerate}
-\item The noise in measurement creates a random walk pattern. This might
-not be of major concern as it would only create a small disturbance in 
-the over all trajectory.
+\item The noise in measurement creates a random walk pattern. However, 
+this might not be of major concern as it would only create a small disturbance in the over all trajectory.
 \item If the estimate of gravity vector is not correct, it would create
-a DC offset to the device acceleration. This gives rise to drift, which
-blows up as $t^2$ which can give rise to wrong trajectory.
+a constant offset to the device acceleration. This gives rise to drift, which
+will grow as $t^2$, giving rise to wrong trajectory.
 \end{enumerate}
-The following graph explains how the drift can be of serious concern when
+Fig.\ref{fig:drift_example} explains how the drift can be of serious concern when
 estimating the trajectory. 
 
 \begin{figure}[H]
 \begin{center}
 \resizebox{150mm}{!} {\includegraphics *{images/drift_image.png}}
-\caption {Plot showing the effect of DC offset to acceleration value.
+\caption {Plot showing the effect of constant offset to acceleration value.
 The drift was iterated from -1\% to 1\% of the maximum acceleration 
-value.}
+value. With even a small error in the estimate, the calculated trajectory goes off the actual trajectory.}
 \label{fig:drift_example}
 \end{center}
 \end{figure}
 
 Due to lack of information regarding the orientation of the mobile, which
 gives rise to a bad estimate of gravity vector, the drift will exist 
-and make the estimate unreliable. In the forthecoming chapters, we will
+and make the estimate unreliable. In section \ref{chap:deblurring}, we will
 see the consequences of have a bad trajectory and possible ways to 
 rectify the problem.
 
@@ -354,45 +372,45 @@ in this project, namely defocus blur and motion blur.
 
 \subsection{Defocus blur}
 \label{basic_theory:image_blur:optical}
-Defocus blur is caused when the image plane does not match with the 
-optical plane of the object. This arises only in real aperture cases
+Defocus blur is caused when the image of the object is not focussed on 
+the sensor. This arises only in real aperture cases
 when the focal length of the lens is finite and objects are at varied
 distances. 
 
 The blur that arises due to defocus can be modeled as a 2D gaussian
-filtering operation. Hence, the point spread function can be modeled as,
+filtering operation. Hence, the point spread function is given by
 \begin{align*}
-h(x,y) = \frac{1}{2\pi\sigma^2}e^\frac{-(x^2+y^2)}{2\sigma^2}
+h(x,y) = \frac{1}{2\pi\sigma^2}e^\frac{-(x^2+y^2)}{2\sigma^2},
 \end{align*}
-Where $\sigma$ depends on the depth of the object from the lens. For a 
-given lens to sensor distance, $\sigma$ increases with increasing depth.
+where $\sigma$ depends on the depth of the object from the lens. 
 
 The defocus blur can be used in the shape from focus method, which 
 varies one particular parameter of the system like the lens position or
 the object position to bring the object in focus. The idea is to have a 
-\emph{focus measure}. \cite{pertuz2013analysis} gives a good outline of 
-various focus measures used commonly. Further discussion about shape from focus will be carried out in the chapter on Depth Estimation.
+\emph{focus measure}. \citet{pertuz2013analysis} gives a good outline of 
+various focus measures used commonly. Further discussion about shape
+from focus will be carried out in section \ref{chap:depth_estimation}.
 
 \subsection{Motion blur}
 \label{basic_theory:image_blur:motion}
 Motion blur occurs due to relative motion between the scene and the 
-camera during the exposure time. This could mean the object in the scene
-is moving or there is a camera shake. This report deals with the problem
-of camera shake.
+camera during the exposure time. The motion could either be the moving 
+object or the motion induced due to camera shake. This report deals with
+the problem of camera shake.
 
 The process of camera shake can be considered as an averaging of 
 multiple sharp images shifted due to the camera motion. Hence for a 
 planar scene, 
 \begin{align*}
-\hat{im}(x,y) = \sum_tim(x-x_t,y-y_t)\\
-\implies\hat{im}(x,y) = \sum_t\delta(x_t, y_t)*im(x,y)
+\hat{im}(x,y) = \frac{1}{N}\sum_k^Nim(x-x_k,y-y_k)\\
+\implies\hat{im}(x,y) = \frac{1}{N}\sum_k^N\delta(x_k, y_k)*im(x,y)
 \end{align*}
-where $\delta(x_t, y_t)$ is an impulse at $(x_t, y_t)$ and $\hat{im}$ is
+where $\delta(x_k, y_k)$ is the Kronecker delta and $\hat{im}$ is
 the observed image.
 
 This can be rewritten as,
 \begin{align*}
-\hat{im}(x,y) = (\sum_t\delta(x_t, y_t))*im(x,y)\\
+\hat{im}(x,y) = (\frac{1}{N}\sum_k^N\delta(x_k, y_k))*im(x,y)\\
 \implies \hat{im}(x,y) = h(x,y)*im(x,y)
 \end{align*}
 
@@ -402,53 +420,54 @@ due to the camera shake. If we assume that there is no parallax error,
 we have,
 % Do we need to write about why they move by different lengths?
 \begin{align*}
-\hat{im}(x,y) = \sum_t\delta(x_t.k(x,y), y_t.k(x,y))*im(x,y)
+\hat{im}(x,y) = \sum_t\delta(\frac{x_t}{d(x,y)}, \frac{y_t}{d(x,y)})*im(x,y)
 \end{align*}
-where $k(x,y)$ is the depth of the image at $(x,y)$. This space variant
+where $d(x,y)$ is the depth of the image at $(x,y)$. This space variant
 blurring operation can be used to calculate depth information from the 
 images, as objects at different depths will be blurred to a different
-extent. Calculating $k(x,y)$ gives the depth map of the image.
+extent. Calculating $d(x,y)$ gives the depth map of the image.
 
 \section{Image deconvolution}
 \label{basic_theory:deconv}
 The process of removing the blur in the image is known as image
 deconvolution. Deconvolution can be broadly of two types, blind and non-
-blind. If the psf is known apriori, it is known as non-blind 
-deconvolution and if it not know, it is called blind deconvolution. 
-Blind deconvolution is an ill-posed problem, as any combination of 
-latent image and psf can give rise to the observed image. Hence, various
-constraints are used when trying to retrieve the latent image\cite{fergus2006removing, krishnan2009fast, levin2007deconvolution,gupta2010single}.For example, an image can be considered as piecewise smooth function with
+blind. If the PSF is known \emph{a priori}, it is known as non-blind 
+deconvolution, else, it is known as blind deconvolution. 
+Blind deconvolution is an ill-posed problem, as an infinite combinations of 
+latent image and PSF can give rise to the observed image. Hence, various
+constraints are used when trying to retrieve the latent image\citet{fergus2006removing, krishnan2009fast, levin2007deconvolution,gupta2010single}.For example, an image can be considered as piecewise smooth function with
 sharp images. Hence, we can try to reduce the total variance of the 
-obtained latent image\cite{money2006total,chan1998total}. If the blur
+obtained latent image\citet{money2006total,chan1998total}. If the blur
 is caused due to a straight line shaped PSF, analyzing the frequency
 domain of the image can help retrieving the PSF\cite{oliveira2007blind}.
 
 On the other hand, non-blind deconvolution is less ill posed than the
-blind case, as we have the psf estimate. As discussed in the previous 
+blind case, as we have the PSF estimate. As discussed in the previous 
 section, the blurred image can be represented as the convolution of 
-the psf and the latent image in case of a planar scene. This 
-transforms into multiplication in the frequency domain. Hence, we can
-simply divide the image's fourier transform with the psf's fourier
-transform to get the original image. i.e,
+the PSF and the latent image in case of a planar scene. This 
+transforms into multiplication in the frequency domain. Hence, we divide
+the image's Fourier transform with the PSF's Fourier
+transform to get the original image. i.e
 \begin{align*}
-IM_{latent} = \frac{\hat{IM}}{PSF}
+IM_{latent}(u,v) = \frac{\hat{IM}(u,v)}{H(u,v)},
 \end{align*}
-Where $IM$ is the discreet fourier transform of $im$. However, the 
+where H(u,v) is the DFT of the PSF $h(x,y)$. However, the 
 observed image is further degraded by noise. Hence, the actual model of
 the observed image is
 \begin{align*}
-\hat{im}(x,y) = h(x,y)*im(x,y) + n(x,y) 
+\hat{im}(x,y) = h(x,y)*im(x,y) + n(x,y),
 \end{align*}
-Where $n(x,y)$ is the noise. Hence, the equation in the frequency domain
+where $n(x,y)$ is the noise. The equation in the frequency domain
 can be loosely expressed as
 \begin{align*}
-\hat{IM} = H.IM + N\\
-IM_{latent} = \frac{\hat{IM}}{H}\\
-\implies IM_{latent} = IM + \frac{N}{H}
+\hat{IM}(u,v) = H(u,v).IM(u,v) + N(u,v)\\
+IM_{latent}(u,v) = \frac{\hat{IM}(u,v)}{H(u,v)}\\
+\implies IM_{latent}(u,v) = IM(u,v) + \frac{N(u,v)}{H(u,v)}
 \end{align*}
 Note that $h(x,y)$ has a low frequency structure and noise has a high 
-frequency structure. Hence, the division will blow up the calculated 
-image. 
+frequency structure. Hence, the obtained image will have very high values
+in the high frequency region due to the zeros of $h(x,y)$ in the high
+frequency region.
 
 \subsection*{Wiener deconvolution}
 \label{basic_theory:deconv:wiener}
@@ -457,29 +476,21 @@ filter which when convolved with the observed image would return the
 latent image. Further, we wish to reduce the error between the latent
 image and the image obtained by filtering the observed image, i.e
 \begin{align*}
-minimize \hspace*{4mm} E|im(x,y)-f(x,y)*\hat{im}(x,y)|^2
+\min \hspace*{4mm} \mathbb{E}|IM(u,v)-F.\hat{IM}(u,v)|^2\\
+\hat{IM}(u,v)=IM(u,v).H(u,v) + N(u,v),
 \end{align*}
-Where $f(x,y)$ is the desired filter and $E|.|$ is the expectation
-operator. Changing to frequency domain, we
-have
+where $\mathbb{E}|.|$ is the expectation operator. Differentiating with respect to $F$, we get
 \begin{align*}
-minimize \hspace*{4mm} E|IM-F.\hat{IM}|^2\\
-\hat{IM}=IM.H + N
+F(u,v) = \frac{H^*(u,v)}{|H(u,v)|^2 + \alpha}\\
+\implies IM_{latent}(u,v) = \hat{IM}(u,v).F(u,v)\\
+=\frac{H^*(u,v).\hat{IM}(u,v)}{|H(u,v)|^2 + \alpha}
 \end{align*}
-Differentiating with respect to $F$, we get
-\begin{align*}
-F = \frac{H^*}{|H|^2 + \alpha}\\
-\implies IM_{latent} = \hat{IM}.F\\
-=\frac{H^*.\hat{IM}}{|H|^2 + \alpha}
-\end{align*}
-Where $\alpha$ is the inverse signal to noise ratio of the image.
-% Very vague. Is that ok?
+where $H^*(u,v)$ is the complex conjugate of $H(u,v)$ and $\alpha$ is the inverse signal to noise ratio of the image.
 
 \subsection{Regularized deconvolution}
 \label{basic_theory:deconv:reg}
-% bleh, I have no clue what to write
 Since we know that the image blows up at the edges, we can impose a 
-penality on the edge weights. Let $g_x$ and $g_y$ be the 
+penalty on the edge weights. Let $g_x$ and $g_y$ be the 
 horizontal and vertical differentiation filters . Then, we need
 \begin{align*}
 minimize \hspace*{4mm} |y-h*x|^2 + \alpha|g_x*x|^2 + \alpha|g_x*x|^2\\
@@ -505,16 +516,16 @@ stitching, depth estimation using stereo vision and video stabilization.
 
 Image registration involves finding the transform between a pair of 
 images. The transform could be a simple translation and rotation or a
-complicated warping. For simple cases like translation only model or 
-rotation only model, many of the frequency based methods give good 
-results. For advanced models, feature based registration is used. The 
+complicated warping. For simple cases which involves only translation or
+only rotation, many of the frequency based methods give good 
+results. For advanced warping, feature based registration is used. The 
 SIFT based image registration, for example, identifies key points in
 each image. Once we have the corresponding points in both the images,
 the problem is of estimating the matrix that created this transform.
 
-Note that when there is not much information available or we have a 
-blurred and latent image pair, registration becomes difficult. Section
-\ref{chap:image_registration} has discussion about how this can be 
+Note that when there is a large motion between the two images or one of 
+the image pairs is highly blurred, registration becomes difficult. Section
+\ref{chap:image_registration} discusses about how registration can be 
 simplified using data from accelerometer. In this section, we will look
 at a simple case of registering image pair which are transformed by shift
 alone. % And rotation and scale? It would be good because then we can
@@ -550,8 +561,7 @@ two images.
 \label{chap:device}
 Primarily, we want the device to function as an acquisition system which
 would take pictures and measure some sensor values. While choosing the
-mobile platform, we wanted to look at the following
-features
+mobile platform, we considered the following features
 \begin{itemize}
 \item The device should be low cost. We are looking at a mobile which
 would not cost above Rs. 15,000. This gave us the option to choose 
@@ -559,8 +569,7 @@ Android mobiles or the low end Windows Phone Mobiles.
 \item The device should have a good Software Development Kit. Android
 and Windows Phone both have a very good SDK.
 \item The device should have accelerometer, gyroscope and manual focus
-ability. Almost all the mobiles which come today have these features 
-and hence was not very critical.
+ability. 
 \item The device should have easy image handling capabilities. Here, 
 Windows Phone was a clear winner due to the powerful Nokia Imaging SDK.
 \item The device should have TCP/Bluetooth capability. Again, every 
@@ -568,14 +577,13 @@ smart phone available today has these features.
 \end{itemize}
  
 With the above points in mind and considering the low cost, we chose to
-go for Nokia Lumia 520 (henceforth called 520) which features a 5 MP
-camera, 3-axis accelerometer, WiFi and Blutooth support. However, the 
-tradeoff was that we could not get a gyroscope on the mobile. This 
-would be a serious hinderance for handling rotation of the mobile along
+go for Nokia Lumia 520 which features a 5 MP
+camera, three-axis accelerometer, WiFi and Bluetooth support. However, the 
+trade off was that we could not get a gyroscope on the mobile. This 
+would be a serious hindrance for handling rotation of the mobile along
 with translation. However, since we were only evaluating the 
 possibilities of computational photography on the mobile platform, we
-chose to ignore it and see what can be done with the accelerometer 
-alone. 
+chose to evaluate the mobile platform with the accelerometer alone. 
 
 From the ease of usage perspective, the Windows Phone 8 SDK has a very
 simple interface with coding in C\# and GUI design using XAML script. 
@@ -586,17 +594,17 @@ number of code examples for developing WP8 apps are available at \cite{wp8:windo
 \section{Device side application}
 \label{device:device_app}
 The app is mainly used for logging information to the computer so that
-algorithms can be tested offline. The major advantage of this method is
+algorithms can be tested off line. The major advantage of this method is
 that it gives the power of the computer along with the flexibility to 
-experiment with various methods. 
+experiment with different kinds of algorithms. 
  
 To make the application versatile and useful for future development, we
 added multiple features to capture images. A screenshot of the 
-application is given below.
-\begin{figure}[htpb]
+application is given in Fig.\ref{fig:app_screenshot}.
+\begin{figure}[H]
     \begin{center}
         \resizebox{100mm}{!} {\includegraphics *{images/app_screenshot.png}}
-        \caption {A screenshot of the application}
+        \caption {A screen shot of the application.}
         \label{fig:app_screenshot}
     \end{center}
 \end{figure}
@@ -604,14 +612,14 @@ The top right, \textbf{Information block} serves as a debugging block
 during the image capturing process. For example, when taking images with
 long exposure, it indicates the number of samples of accelerometer data
 obtained. The \textbf{Debug section} box indicates the focus position and other
-debug information. The focus position can be controlled by the yellow
+debug information. The focus position can be controlled by the 
 slide bar which is situated at the bottom of the application. 
 
 The \textbf{Accelerometer} box indicates the
 current value of the accelerometer. The button titled \textbf{Click} is 
 used for capturing a single long exposure image. \textbf{Connect} button
-is used for connecting to the computer using the TCP protocol. The Host
-and the port can be selected in the fields at the right bottom of the 
+is used for connecting to the computer using TCP. The Host
+and the port can be selected in the fields at the bottom right of the 
 application screen. Apart from these features, the following features 
 add versatility to the application
 
@@ -639,7 +647,7 @@ sending it over TCP to understand the intricacies involved.
 % Logging accelerometer data during exposure
 \subsection{Logging accelerometer data during exposure}
 \label{device:device_app:cam}
-When the \textbf{Click} button is toggled, a camera capture sequence
+When the \textbf{Click} button is clicked, a camera capture sequence
 is started, which is programmed to take a picture with an exposure time
 of 200ms (adjustable). However, by default, this suspends all other 
 thread activities and is only released once the capture is complete. 
@@ -679,7 +687,7 @@ If an exposure time of 200ms is used, 20 accelerometer values are
 expected with a 10ms timer. However, close to 70 readings are obtained.
 This is due to the transfer time of the image data also included in the
 capture time. To overcome this problem, a fast moving image of a single
-point light source is taken. Frames of 20 out of 70 samples of the
+point light source is taken. Frames of 20 samples out of 70 samples of the
 accelerometer data is used for estimating the best start and end times.
 We use these start and end times for all the future kernel estimates.
 %% We could add an image for reference here.
@@ -690,10 +698,10 @@ We use these start and end times for all the future kernel estimates.
 The TCP communication enables a communication stream between the mobile
 device and the computer. With the stream open, it can be treated as a 
 continuous information channel, with no prior information about the size
-of the data being sent. To works with this \emph{asynchronous} type of
+of the data being sent. To retrieve data with this \emph{asynchronous} type of
 data transmission, we encapsulate the data in keywords which is known to
-the computer. This would boil down the problem to searching for the 
-starting and ending keyword for each data type received. For example, if
+the computer. This would boil down the problem to searching for 
+starting and ending keywords for each data type received. For example, if
 we are sending a new image, we would use the keywords \textbf{STIM} and
 \textbf{EDIM} to encapsulate the image data. An example: 
 
@@ -710,31 +718,31 @@ we are sending a new image, we would use the keywords \textbf{STIM} and
 % Host side application
 \section{Host side application}
 \label{device:host}
-Most of the host side application is written in python. The reason for 
+Most of the host side application is written in Python. The reason for 
 choosing python is the vast support available for scientific computing,
 communication protocols, image processing support and above all, python
 being free software. However, some of the deblurring codes and 
-super resolution are in Matlab.
+super resolution are in MATLAB.
 
 The communication from mobile to computer is done using the inbuilt
-\emph{socket} module in python. As mentioned in 
-\ref{device:device_app:tcp}, the data from the mobile is sent
-encapsulated in keywords. These keywords are used to parse the incoming
+\emph{socket} module in python. As mentioned in section
+\ref{device:device_app:tcp}, the data from the mobile is encapsulated and
+sent in keywords. These keywords are used to parse the incoming
 data and split it accordingly. 
 
 A number of functions have been written as part of host side software
 for data reception, interpretation and image processing. Some of the 
-main modules will be discussed in this section
+main software modules are discussed below.
 
 \subsection{TCP data handling}
 \label{device:host:tcp}
 The TCP data handling, as the name suggests is responsible for receiving
 data from the mobile, which includes images and motion sensors data. The
-main functions of this module involve receiving blur and latent image 
+main functions of this module involve receiving sharp and blurred image 
 pair, continuously receiving images and continuously receiving motion
-sensor data. For example, in order to receive a blurred and latent image
-pairs, we need to execute the function \verb|get_tcp_data()|, which
-in turn executes the following
+sensor data. For example, in order to receive a sharp and blurred image
+pair, we need to execute the function \verb|get_tcp_data()|, which
+in turn executes the following:
 
 \begin{singlespacing}
 \begin{lstlisting}[style=pylisting]
@@ -747,7 +755,7 @@ return TCPDataHandle(dstring)
 \end{lstlisting}
 \end{singlespacing}
 
-To do a continous reception of images, we use the following function 
+For continuous reception of images, we use the following function 
 calls.
 
 \begin{singlespacing}
@@ -775,12 +783,12 @@ operations like video stabilization.
 
 There are two main functions for visualizing the data. The first function
 shows a continuous graph of the measured accelerometer value. A screenshot
-of the graphs is attached below.
+of the graph is shown in Fig.\ref{fig:live_sensors}.
 
 \begin{figure}[H]
 \begin{center}
 \resizebox{120mm}{!} {\includegraphics *{images/live_sensor_log.png}}
-\caption{Screen shot of live sensor logging}
+\caption{Screen shot of live sensor logging.}
 \label{fig:live_sensors}
 \end{center}
 \end{figure}
@@ -788,13 +796,15 @@ of the graphs is attached below.
 The second function is used for visualizing the attitude of the mobile
 for in plane motion. With the availability of only the accelerometer,
 we created a UI for showing the orientation and the jerk direction, 
-which is obtained by the velocity vector, both corresponding to in plane
-motion. The following is an example screenshot.
+obtained from the velocity vector, both corresponding to in plane
+motion. Fig.\ref{fig:attitude_ui} an example screen shot.
 
 \begin{figure}[H]
 \begin{center}
 \resizebox{120mm}{!} {\includegraphics *{images/attitude_ui.png}}
-\caption{Screen shot of attitude UI}
+\caption{Screen shot of attitude UI. The upper circular graph represents
+the orientation of the mobile device and the lower rectangular graph
+represents the direction of translational motion.}
 \label{fig:attitude_ui}
 \end{center}
 \end{figure}
@@ -804,7 +814,7 @@ motion. The following is an example screenshot.
 %----------- Deblurring ------------------------------------------------
 \chapter{DEBLURRING}
 \label{chap:deblurring}
-As mentioned in \ref*{basic_theory:deconv}, blurring due to motion is
+As mentioned in section \ref*{basic_theory:deconv}, blurring due to motion is
 not desirable and we wish to remove it. In this section, we will look at
 non blind and semi blind deconvolution techniques. 
 
@@ -817,26 +827,27 @@ shifts to find the appropriate image.
 
 \section{Constructing the kernel}
 \label{deblurring:kernel}
-Initially, we wanted to verify that the trajectory obtained from the 
+Initially, we verify that the trajectory obtained from the 
 sensors can be used to construct a good kernel estimate. For this purpose,
 we took a long shot image of a single point light source. The image 
 obtained would represent the blur kernel. Hence, we could compare the 
 kernel we constructed and the kernel from the image. An example image
-and kernel pair have been presented below.
+and kernel pair are given in Fig.\ref{fig:kernel_ground_truth}.
 \begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth1.png}}
 \caption{Actual image showing the point spread function, which acts as
-our ground truth measurement}
+our ground truth measurement.}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/constructed1.png}}
-\caption{Kernel constructed from sensors data. The scale is not appropriate.
-Further, there is no drift compensation.}
+\caption{Kernel constructed from sensors data. The scale is not exact.
+Further, there was no drift compensation.}
 \label{fig:kernel_ground_truth}
 \end{center}
 \end{figure}
-From the above figures, we see that the motion sensors data gives a good
-initial estimate for the PSF. Note that the scale hasn't been calculated
-and the drift hasn't been compensated. The scale and the drift information
+From the above figures, we see that the trajectory estimated from inertial
+sensors data gives a good
+initial estimate for the PSF. Note that the scale has not been calculated
+and the drift has not been compensated. The scale and the drift information
 are available during the deblurring of the image. 
 
 The above example was a good case, where there was little drift. The 
@@ -846,16 +857,14 @@ erroneous kernel.
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/ground_truth2.png}}
 \caption{Actual image showing the point spread function, which acts as
-our ground truth measurement}
+our ground truth measurement.}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/constructed2.png}}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/im_0_004248_0_013347.png}}
-\caption{Plain kernel and the kernel corrected for drift}
-\label{fig:kernel_ground_truth}
+\caption{Plain kernel and the kernel corrected for drift.}
+\label{fig:kernel_ground_truth_drift}
 \end{center}
 \end{figure}
-As is visible from the above figures, there is a significant drift, which
-is visible in the first constructed image. We iterated through various
-possible drifts and found visually that the drift correction was
+Fig.\ref{fig:kernel_ground_truth_drift} shows that there is a significant drift in the trajectory, which is visible in the first constructed image. We iterated through various possible drifts and found visually that the drift correction was
 $(0.004284, 0.013347)mm$, i.e, the final position is offset by this 
 amount. 
 
@@ -865,7 +874,7 @@ Once we have the approximate kernel, we can perform deblurring. Since we
 don't have the scene depth, we iterate through various depths. We assumed
 that our kernel was very accurate and tried estimating the latent image
 using a simple weiner filter. Some of the results, along with blind
-deconvolution output by Jia et. al are given below.
+deconvolution output by \citet{xu2010two} are given below.
 
 \begin{figure}[H]
 \begin{center}
@@ -873,32 +882,32 @@ deconvolution output by Jia et. al are given below.
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/imdeblur.png}}
 \caption{Blurred image and the best deblurred output using wiener filter.}
 \resizebox{50mm}{!} {\includegraphics *{images/deblur/jia_blind_deconv.png}}
-\caption{Blind deconvolution by Jia et. al}
+\caption{Blind deconvolution by \citet{xu2010two}.}
 \label{fig:deblur}
 \end{center}
 \end{figure}
 
-While there was some hint of restoration, the results were not very good,
-as the edges blew up. 
+The method by \citet{xu2010two} did not restore the image to a great
+extent. Using Wiener filter restored the image to a more sharper form
+but the intensity at the edges increased drastically. 
 
-To get better results, we used a blind deconvolution algorithm by Abhijit
-et al.\cite{abhijith2014}. Instead of a complete blind deconvolution, we used our
-kernel as an initial guess and evaluated it against complete blind 
+As an alternate approach, we used the blind deconvolution algorithm by \citet{abhijith2014}. Instead of a complete blind deconvolution, we used our
+kernel as an initial estimate and evaluate it against complete blind 
 deconvolution result. We found that for highly textured images, the 
 output was the same. However, the algorithm converged quickly when we 
-used our kernel as an initial estimate. We also run our algorithm for 
+used our kernel as an initial estimate. We also ran our algorithm for 
 very low textured images and found that the results were better than the 
 blind case and it took the same time to converge. The results have been
-given below.
+given in Fig.\ref{fig:semiblind}.
 
 \begin{figure}[H]
 \begin{center}
 \resizebox{70mm}{!} {\includegraphics *{images/semiblind/blurred.png}}
-\caption{Actual blurred image}
+\caption{Actual blurred image.}
 \resizebox{70mm}{!} {\includegraphics *{images/semiblind/blind.png}}
-\caption{Deblurring using total blind method}
+\caption{Deblurring using total blind method.}
 \resizebox{70mm}{!} {\includegraphics *{images/semiblind/semi_blind.png}}
-\caption{Deblurring using our kernel as the initial estimate}
+\caption{Deblurring using our kernel as the initial estimate.}
 \label{fig:semiblind}
 \end{center}
 \end{figure}
@@ -911,7 +920,7 @@ with our kernel as the initial estimate gives better results.
 \label{chap:image_registration}
 When taking multiple images, it is very likely that the subsequent 
 images will be shifted and rotated. Consider the case of simple shift. 
-In the absense of noise, we could use normalized cross correlation
+In the absence of noise, we could use normalized cross correlation
 to estimate this shift. However, this method would fail when one of the 
 image is blurred. A more sophisticated method would use feature matching
 to get a good estimate of a the shift. However, the drawback is that it
@@ -920,7 +929,7 @@ is computationally intensive.
 To overcome this problem, we can use the inertial sensor data on the 
 mobile to get a good estimate of the change in orientation, since the 
 inertial sensors give direct information about the motion during the 
-photography period. 
+exposure time. 
 
 Before we go into the case of pure translation, we need to understand 
 the limitation of our current setup. We have a 3-axis accelerometer 
@@ -928,15 +937,14 @@ giving us the acceleration along ${x, y}$ and $z$ axes, relative to
 the mobile frame of reference. Since our setup constrains that we have
 only in-plane motion, the acceleration along $z$ axis does not give 
 any information. Any generic motion in the plane can be represented by
-three entities, ${t_x, t_y}$ and $R_z$. Hence, we have three unknowns
-and only two equations from the two axes, which makes it an 
+three entities, translation in the two axes in the plane of motion, namely ${t_x, t_y}$ and rotation in the perpendicular axis, namely, $R_z$. Hence, we have three unknowns and only two equations from the two axes, which makes it an 
 indeterminate system. Hence, we constrain the system by saying that
 either the system goes through only translation or only rotation. Hence,
 we have the following equations:
 
 \begin{align*}
-t_{x_i}=\int{\int{a_x}}dt\\
-t_{y_i}=\int{\int{a_y}}dt\\
+t_{x_i}=\iint{a_x}dt\\
+t_{y_i}=\iint{a_y}dt\\
 or\\
 {\theta}_i=\tan^{-1}({a_y}/{a_x})\\
 \end{align*}
@@ -946,18 +954,19 @@ rotation.
 \section{Pure translation}
 \label{image_registration:pure_translation}
 As mentioned in \ref{device:device_app:cam}, we can determine the 
-trajectory of the device from the accelerometer data. To evaluate our
-algorithm, we take a pair of images, one without blur and one with blur
-with a 500ms duration between them. The accelerometer data will give a
-rough estimate of the final position moved given by:
-
+trajectory of the device from the accelerometer data, which is given by
 \begin{align*}
-x_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
-\int_{t=t_{init}}^{t_{final}}{a_xdt}\\
-y_{\text{\emph{final}}}=\int_{t=t_{init}}^{t_{final}}
-\int_{t=t_{init}}^{t_{final}}{a_ydt}
+x_{\text{\emph{final}}}=\int_{t_{init}}^{t_{final}}
+\int_{t_{init}}^{t_{final}}{a_xdt}\\
+y_{\text{\emph{final}}}=\int_{t_{init}}^{t_{final}}
+\int_{t_{init}}^{t_{final}}{a_ydt}.
 \end{align*}
-The above final position is in mm and needs to be converted 
+We wish to find the shifts ${x_{shift}, y_{shift}}$ such that the RMS difference between the first image and the shifted second image is
+reduced. i.e
+\begin{align*}
+\min \vspace{4mm} ||im_1(x,y)-im2(x-x_{shift},y-y_{shift})||^2
+\end{align*}
+The calculated final position is in mm and needs to be converted 
 into pixel dimension. However, we don't have the distance of the scene
 from the camera, which makes it an ill-posed problem. To overcome this, 
 we iterate through various scales and find out the correct scale using 
@@ -972,23 +981,29 @@ case to a small sector(it is not a straight line due to the drift
 associated with the accelerometer readings) with the help of
 accelerometer data. 
 
-The following images are example outputs of the algorithm. While the overlap
-is not exact, the finer registration can be done with more sophisticated
-algorithm. 
+Fig.\ref{fig:shift_reg} shows example outputs of the algorithm.
 
 \begin{figure}[H]
 \begin{center}
 \includegraphics[width=300pt]{images/imreg/shift/eg1/imreg.png}
-\caption{Example 1: Registered image pairs}
+\caption{Example 1: Registered image pairs.}
 \includegraphics[width=300pt]{images/imreg/shift/eg2/imreg.png}
-\caption{Example 2: Registered image pairs}
+\caption{Example 2: Registered image pairs.}
+\label{fig:shift_reg}
 \end{center}
 \end{figure}
+
+Observe that the images are registered very accurately even when one of
+the images is blurred. The algorithm was very fast and ran in less than
+10s for both the cases. Further, as we have a good estimate of the 
+direction of motion, finer registration can be done by increasing the
+search space, after performing coarse registration using the above mentioned
+method.
 
 \section{Pure rotation}
 \label{image_registration:pure_rotation}
 Assuming only in-plane rotation, we can relate the measured acceleration
-to world acceleration (in the absense of other forces) as
+to world acceleration (in the absence of other forces) as
 \begin{align*}
 a_x=g\cos\theta\\
 a_y=g\sin\theta
@@ -1007,40 +1022,47 @@ image. This makes the RMS error method of finding the appropriate
 angle difficult. We hence use normalized cross correlation, which is 
 independent of the shift. Thus,
 \begin{align*}
-% Bonkers. This does not make sense. 
-\theta=argmax_t\big\{ifft(\frac{fft(im_1).fft(rotate(im_2,\theta_t))^*}
-{|fft(im_1).fft(rotate(im_2,\theta_t))|})\}
+\theta=argmax_t\big\{\mathcal{F}^{-1}\left(\frac{\mathcal{F}(im_1).\mathcal{F}(\mathcal{R}(im_2,\theta_t))^*}
+{|\mathcal{F}(im_1).\mathcal{F}(\mathcal{R}(im_2,\theta_t))|}\right)\}
 \end{align*}
-Where $fft(.)$ is the 2D discrete fourier transform, $ifft(.)$ is the 2D 
-discrete inverse fourier transform and $rotate(im, \theta)$ rotates the
- image by $\theta$ degrees.
+Where $\mathcal{F}(.)$ is the 2D discrete Fourier transform,
+$\mathcal{F}^{-1}(.)$ is the 2D 
+discrete inverse Fourier transform and $\mathcal{R}(im, \theta)$ rotates the
+image by $\theta$ degrees.
 
-The following images serve as an example for the algorithm. In the first
+Fig.\ref{fig:rotate_reg} gives three examples of registration using the
+proposed method. 
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
+\caption{Example 1: Very high blur and rotation.}
+\includegraphics[width=300pt]{images/imreg/rotation/eg2/imreg.png}
+\caption{Example 2: Moderate blur and rotation.}
+\includegraphics[width=300pt]{images/imreg/rotation/eg3/imreg.png}
+\caption{Example 3: Very small blur and rotation.}
+\label{fig:rotate_reg}
+\end{center}
+\end{figure}
+
+In the first
 and second example, the first image, which is taken with long exposure
 is a highly blurred image. As is evident from the images, the algorithm
 performs very good. The third image is a small rotation case and our
 algorithm performs well for that case too.
 
-\begin{figure}[H]
-\begin{center}
-\includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
-\caption{Example 1: Very high blur and rotation}
-\includegraphics[width=300pt]{images/imreg/rotation/eg2/imreg.png}
-\caption{Example 2: Moderate blur and rotation}
-\includegraphics[width=300pt]{images/imreg/rotation/eg3/imreg.png}
-\caption{Example 3: Very small blur and rotation}
-\end{center}
-\end{figure}
+The shift is not accounted for in the above figures. This is due to the
+absence of any further information from the motion sensors. The availability
+of a gyroscope could give the direction of shift and hence help in 
+further registration.
 
 \pagebreak
 %----------- Depth estimation ------------------------------------------
 \chapter{DEPTH ESTIMATION}
 \label{chap:depth_estimation}
-When taking picture, due to the variable depth of the scene, the amount 
-of blur induced due to defocus or motion of the camera is different. 
-When estimating depth, we use this fact that one of the parameters of 
-the image is sensitive to depth. We particularly look at two types of 
-depth estimation, namely depth from motion blur and shape from focus.
+When taking an image, due to the variable depth of the scene, the amount 
+of blur induced at every pixel due to defocus or motion of the camera is different. We use this information to estimate the depth from images using
+two methods, namely depth from motion blur and depth from focus.
 
 \section{Depth from motion blur}
 \label{depth_estimation:motion}
@@ -1057,20 +1079,15 @@ aperture for extracting the depth profile from the image. However, the
 paper has good discussion about estimating depth from two images, which
 is more apt for our discussion.
 
-In this setup, we capture two images, one with very short exposure and
-another with long exposure. The short exposure image is captured by
-copying the image buffer. While a better choice would be to take capture
-an image with very short exposure, it will tend to slow down the process
-and induce more delay between the two images. 
-
+In the experimental setup, we capture two images, one with very short exposure and another with long exposure. 
 Further, along with the two images, the motion of the camera is 
 estimated by logging the accelerometer values. Thus, we have the latent
 image, the blurred image and the blur kernel. We need to estimate the 
 scale of the blur kernel at each point. Prior to estimating the depth,
 it is very important that the two images are aligned. We would show that
 misalignment could be a major reason for wrong depth profiles. However,
-for small shifts, we found that image registration using cross 
-correlation gave good results
+for small shifts, we found that iterating through a small space to search
+for the right shifts was enough.
 
 To estimate the depth at each point, we iterate through various blur
 kernel sizes and calculate the difference between the blurred image and
@@ -1088,8 +1105,8 @@ when there is good texture in the image. Further, it is necessary that
 the kernel is very accurate, else the depth map will go wrong. 
 
 To verify our algorithm, we first tried estimating depth map in a 
-sythetic case. We blurred an image with a known depth map
-and ran our algorithm. The following results were obtained.
+synthetic case. We blurred an image with a known depth map
+and ran our algorithm. The results in Fig.\ref{fig:depth_synthetic} were obtained.
 \begin{figure}[H]
 \begin{center}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/preview_im.png}}
@@ -1097,24 +1114,25 @@ and ran our algorithm. The following results were obtained.
 \caption{Latent image and synthetic lurred image pair.}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/depth.png}}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg0/imdepth.png}}
-\caption {True depth map and estimated depth map}
+\caption {True depth map and estimated depth map.}
 \label{fig:depth_synthetic}
 \end{center}
 \end{figure}
-The results verified that our method was useful for estimating depth from 
-a scene. We then tried to test our algorithm for real cases. In our
- experiment, we found that the kernel can go to a maximum size of
+The obtained depth map was close to the ground truth depth map. We then
+tested our algorithm for real cases. In our
+experiment, we found that the kernel can go to a maximum size of
 $20\times20$ and hence we scaled the kernel size from $1\times1$ to 
 $20\times20$. We used a filter of size $32\times32$ for the error map.
-Some of the experimental results have been given below. 
+Some of the experimental results have been in Fig.\ref{fig:depth_eg1}. 
 \begin{figure}[H]
 \begin{center}
-\resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/preview_im.png}}
-\resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/saved_im.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/preview_im_gray.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/saved_im_gray.png}}
 \caption{Latent image and Blurred image pair. This is an example of 
 close up shot.}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg1/imdepth.png}}
-\caption {Estimated depth map. Objects at the front are brighter}
+\caption {Estimated depth map. Brighter area represents scene closer to
+the camera.}
 \label{fig:depth_eg1}
 \end{center}
 \end{figure}
@@ -1124,8 +1142,8 @@ the following example is a failure case for estimating depth.
 % Put a failure case here. Don't know which is a good idea.
 \begin{figure}[H]
 \begin{center}
-\resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/preview_im.png}}
-\resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/saved_im.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/preview_im_gray.png}}
+\resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/saved_im_gray.png}}
 \caption{Latent image and Blurred image pair. Note that there is a 
 misalignment between the images.}
 \resizebox{50mm}{!} {\includegraphics *{images/depth/eg2/imdepth.png}}
@@ -1177,22 +1195,24 @@ The following image pair is the first and the last image in the 100 images.
 \begin{center}
 \resizebox{60mm}{!} {\includegraphics *{images/focus/eg1/im3.png}}
 \resizebox{60mm}{!} {\includegraphics *{images/focus/eg1/im99.png}}
-\caption{First and the last image of the 100 images. Scale hasn't been
-corrected.}
+\caption{First and last image of the 100 images. Note that in the first 
+image, the screw driver handle is in complete focus and in the last image,
+the book is in complete focus.}
 \label{fig:focus_first_last}
 \end{center}
 \end{figure}\\
 
 To evaluate our algorithm, we used a filter size of $32\times32$. Further,
 to confirm that our algorithm returns the correct depth map, we created
-an all focus image from the set of images. The following are the obtained
-results.
+an all focus image from the set of images. Fig.\ref{fig:depth_focus} shows
+the obtained results.
 \begin{figure}[H]
 \begin{center}
 \resizebox{100mm}{!} {\includegraphics *{images/focus/eg1/imdepth.png}}
-\caption{Estimated depth map. Objects nearer are darker}
+\caption{Estimated depth map. Objects nearer to the camera are darker. 
+Observe how the objects have been segregated.}
 \resizebox{100mm}{!} {\includegraphics *{images/focus/eg1/imfocus.png}}
-\caption{All focused image. }
+\caption{All focused image.}
 \label{fig:depth_focus}
 \end{center}
 \end{figure}
@@ -1202,6 +1222,7 @@ well, as the SML operator is a high frequency measurement operator.
 
 \pagebreak
 %----------- Image superresolution -------------------------------------
+\begin{comment}
 \chapter{IMAGE SUPERRESOLUTION}
 \label{chap:image_superresolution}
 Image super resolution involves taking multiple low resolution images
@@ -1247,10 +1268,10 @@ below
 \end{figure}
 
 From the figure, it is clear that the super resolution method gives a 
-sharper output when compared to bicubic interpolation method. To quantify
+sharper output when compared to bi-cubic interpolation method. To quantify
 the output, we measured the SSIM between the two images and found it to
 be 0.997192, which is high, but says that the super resolved image contains
-more information as compared to the bicubic method. The disparity map 
+more information as compared to the bi-cubic method. The disparity map 
 for the two images is shown below. Note that there is high disparity 
 at the edges.
 
@@ -1270,53 +1291,54 @@ absence of additional data, the optical flow calculation method was not
 fast enough. This part can be replaced by the information from the motion
 sensors to speed up the code. 
 \pagebreak
-
+\end{comment}
 %----------- Conclusion ------------------------------------------------
 \chapter{CONCLUSION}
 \label{chap:conclusion}
-We have evaluated some of the important image restoration and registaration
+We have evaluated some of the important image restoration and registration
 algorithm with data from a mobile. Some of the results are very promising,
 while some of them weren't very good. In particular, estimating depth
-from focus, image registration and image super resolution have given 
+from focus, and image registration  have given 
 very good results. Depth estimation from blurred and latent image pair
 was good to a certain extent but was very sensitive to the accuracy of
-the kernel estimate. The results can be made better with the presense
+the kernel estimate. The results can be made better with the presence
 of a magnetometer, which would provide accurate orientation information,
-thus making the estimate of acceleration more accurate. Not much work
-was done on the image super resolution part, but the off the shelf code
-worked. The image deblurring, while proving interesting results like fast
+thus making the estimate of trajectory of motion more accurate. The image deblurring, while proving interesting results like fast
 convergence and better results in case of low texture images, has good 
 scope for improvement.
 
 While all the codes were run offline for ease of research purpose, we 
 saw that the algorithms were very simple and efficient due to availability
 of information from motion sensors. Hence, porting these algorithms onto
-a mobile should not be a problem and they would work very fast.  
+a mobile should be an easy task.  
 
 \section{Future work}
 Along with the evaluation of major algorithms for registration and 
-restoration, the project has provided a good stage for future developments.
+restoration, the project has provided a good stage for future development.
 All the discussed algorithms can be immediately ported to a mobile 
 platform with great ease, which would provide a very powerful 
 computational imaging device.
 
-Apart from the usefulness of our algorithms, the mobile application is a
+Along from the usefulness of our algorithms, the mobile application is a
 very versatile one and would serve well for future experiments with 
 different algorithms. With features like continuous logging of images, 
-continous logging of motion sensor data, capturing low exposure noisy 
+continuous logging of motion sensor data, capturing low exposure noisy 
 image and long exposure blurred image and freely changing parameters of 
 the camera, the device would prove very useful for working on 
-computational imaging on a mobile platform. With powerful processor and
-easy to use code, not much needs to be worried about porting existing 
-algorithms to make the mobile more powerful.
+computational imaging on a mobile platform. 
 
 Apart from the sunny side of the project, there were some parts which 
 were not addressed appropriately. Not much effort was put into writing 
 a more efficient semi-blind deconvolution algorithm. However, this was
 partly not possible due to absence of magnetometer on our device. Further,
 the mobile currently does all the job using a 10ms timer, which might
-be inefficent. Unloading the work onto a separate thread will not only
+be inefficient. Unloading the work onto a separate thread will not only
 make it neat, but it would make it much more efficient. 
+
+We also started working on multi-frame super-resolution but were not able
+to go further due to time constraints. As registration
+forms a major part of super-resolution, the data from the inertial
+ sensors can greatly aide in reducing the complexity of this step. 
 
 We are looking forward to open our code to public so that people who are
 interested can contribute. The code will be the property of the lab and 
@@ -1326,7 +1348,6 @@ the author of the report would like to credit all the work to the lab.
 
 %----------- Bibliography ----------------------------------------------
 \begin{singlespacing}
-	\bibliographystyle{IEEEtran}
 	\nocite{*}
 	\bibliography{refs}
 \end{singlespacing}

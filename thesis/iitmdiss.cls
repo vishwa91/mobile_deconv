@@ -104,7 +104,7 @@
 % with the iitm.bst makes things perfect.
 %\RequirePackage[authoryear,round]{natbib} 
 %\RequirePackage[numbers,square]{natbib} 
-%\bibliographystyle{iitm}
+\bibliographystyle{iitm}
 
 %\newcommand{\bibstyle@iitm}{\bibpunct{(}{)}{;}{a}{,}{,}%
 %     \gdef\NAT@biblabel##1{##1. }}
