@@ -141,7 +141,7 @@ Vishwanath
 %----------- Abstract --------------------------------------------------
 \abstract
 We explore various image restoration and registration techniques using 
-data obtained from a mobile device. The first one is non-blind image
+data obtained from a mobile device. The device we used is a Nokia Lumia 520 which is based on the Windows Phone 8 operating system. The device captures sharp and blurred images, variable focus images and motion sensor data which we use for evaluating some important image processing algorithms. The first one is non-blind image
 deblurring. We evaluate the usefulness of having extra information from the motion sensors, which give a clue about camera motion. We
 show that deconvolution with our kernel as the 
 initial estimate either converged quicker or produced better results for low
@@ -223,10 +223,21 @@ are taken and various regions of the image can be refocused. A mobile
 platform, which has the ability to capture multiple images very fast
 with variable focus would pave way for research in this area. 
 
+\section{Goal of the project}
+\label{intro:goal}
 We evaluate some of the important algorithms in computational
 photography by using data obtained from the mobile. The aim is to prove
 that the extra information available from the motion sensors aides in
 increasing the efficiency of the image processing algorithms. 
+
+The scope of the project extends to some of the consumer photography utilities. For example, deblurring can be used to correcting images which have been
+degraded by motion blur and would hence prevent a retake of the photo. Similarly, image registration can be used for stabilizing video when the
+camera is hand held. Further, this can prove useful when the mobile
+device is fixed on top of a moving vehicle and we need a stabilized video.
+
+Throughout the project, we have assumed the availability of an accelerometer
+alone as a motion sensor. While most part of the project has worked with data only from accelerometer, we show that availability of other motion sensors
+like magnetometer and gyroscope will make the algorithms more robust.
 
 \section{Prior work}
 \label{intro:prior_work}
@@ -299,11 +310,11 @@ ${a_x, a_y, a_z}$ as the acceleration due to external force,
 ${g_x, g_y, g_z}$ as the acceleration due to gravity from the mobile's
 frame of reference and ${\hat{a}_x, \hat{a}_y, \hat{a}_z}$ as the measured
 acceleration. Hence, measured acceleration is modeled as
-\begin{align*}
+\begin{align}
 \hat{a}_x= g_x + a_x + n_x\\
 \hat{a}_y= g_y + a_y + n_y\\
 \hat{a}_z= g_z + a_z + n_z,
-\end{align*}
+\end{align}
 where $n_x, n_y$ and $n_z$ are noise in measurements.For calculating
 the trajectory, we need $\{a_x,a_y,a_z\}$. To obtain 
 these values, we need to subtract the acceleration due to gravity. 
@@ -311,28 +322,28 @@ However, we have no further information apart from the above equations.
 To get a good estimate of the required acceleration, we assume that the
 gravity vector is quasi-static when there is only translation in the 
 mobile device. Hence, we estimate the gravity vector as
-\begin{align*}
+\begin{align}
 g_x^t= \alpha{g_x^{t-1}} + (1-\alpha)\hat{a}_x^t\\
 g_y^t= \alpha{g_y^{t-1}} + (1-\alpha)\hat{a}_y^t\\
 g_z^t= \alpha{g_z^{t-1}} + (1-\alpha)\hat{a}_z^t,
-\end{align*}
+\end{align}
 where $\alpha$ is the LPF constant and lies between 0 and 1. Higher
 $\alpha$ gives rise to slower variation in the gravity vector. We found
 empirically that $0.8$ was a good value for the constant.
 
 Once we have the device acceleration, the equation for finding the 
 trajectory of motion would be
-\begin{align*}
+\begin{align}
 x(t)=\iint_0^{t}{a_x(t)dt}\\
 y(t)=\iint_0^{t}{a_y(t)dt}\\
 z(t)=\iint_0^{t}{a_z(t)dt}.
-\end{align*}
+\end{align}
 The discrete time approximation is
-\begin{align*}
+\begin{align}
 x[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_x[n]){\times}T^2\\
 y[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_y[n]){\times}T^2\\
 z[n]=({\sum_{t}^{n}}{\sum_{t}^{n}}a_z[n]){\times}T^2,
-\end{align*}
+\end{align}
 where T is the sampling time of the motion sensors.
 Though this gives a good estimate of the orientation of the device when
 there is no motion or the device acceleration when there is only
@@ -343,6 +354,22 @@ this might not be of major concern as it would only create a small disturbance i
 \item If the estimate of gravity vector is not correct, it would create
 a constant offset to the device acceleration. This gives rise to drift, which
 will grow as $t^2$, giving rise to wrong trajectory.
+
+To understand drift, let us define $\hat{a}$ as the measured acceleration
+and $a$ as the actual acceleration. Let the two quantities be related by
+the following equation:
+\begin{align}
+\hat{a}(t) = a(t) + \epsilon,
+\end{align}
+where $\epsilon$ is a small constant when compared to $a(t)$. From the equation of the trajectory, we get
+\begin{align}
+\hat{x}(t) = \iint\hat{a}(t)dt\\
+\implies \hat{x}(t) = \iint(a(t)+\epsilon)dt\\
+\implies \hat{x}(t) = {\iint}a(t)dt+\iint{\epsilon}dt\\
+\implies \hat{x}(t) = x(t)+{\epsilon}t^2\\
+\end{align},
+where $\hat{x}(t)$ is the calculated trajectory, $x(t)$ is the actual 
+trajectory and ${\epsilon}t^2$ is the drift in the trajectory.
 \end{enumerate}
 Fig.\ref{fig:drift_example} explains how the drift can be of serious concern when
 estimating the trajectory. 
@@ -351,8 +378,9 @@ estimating the trajectory.
 \begin{center}
 \resizebox{150mm}{!} {\includegraphics *{images/drift_image.png}}
 \caption {Plot showing the effect of constant offset to acceleration value.
-The drift was iterated from -1\% to 1\% of the maximum acceleration 
-value. With even a small error in the estimate, the calculated trajectory goes off the actual trajectory.}
+The first trajectory has been calculated using actual acceleration values and 
+the trajectories in the second plot have been calculated by adding a small
+offset to the actual acceleration values.}
 \label{fig:drift_example}
 \end{center}
 \end{figure}
@@ -379,9 +407,9 @@ distances.
 
 The blur that arises due to defocus can be modeled as a 2D gaussian
 filtering operation. Hence, the point spread function is given by
-\begin{align*}
+\begin{align}
 h(x,y) = \frac{1}{2\pi\sigma^2}e^\frac{-(x^2+y^2)}{2\sigma^2},
-\end{align*}
+\end{align}
 where $\sigma$ depends on the depth of the object from the lens. 
 
 The defocus blur can be used in the shape from focus method, which 
@@ -401,27 +429,27 @@ the problem of camera shake.
 The process of camera shake can be considered as an averaging of 
 multiple sharp images shifted due to the camera motion. Hence for a 
 planar scene, 
-\begin{align*}
+\begin{align}
 \hat{im}(x,y) = \frac{1}{N}\sum_k^Nim(x-x_k,y-y_k)\\
 \implies\hat{im}(x,y) = \frac{1}{N}\sum_k^N\delta(x_k, y_k)*im(x,y)
-\end{align*}
+\end{align}
 where $\delta(x_k, y_k)$ is the Kronecker delta and $\hat{im}$ is
 the observed image.
 
 This can be rewritten as,
-\begin{align*}
+\begin{align}
 \hat{im}(x,y) = (\frac{1}{N}\sum_k^N\delta(x_k, y_k))*im(x,y)\\
 \implies \hat{im}(x,y) = h(x,y)*im(x,y)
-\end{align*}
+\end{align}
 
 $h(x,y)$ is called the point spread function. If the image is not a 
 planar scene, then every point in the scene moves by a different amount
 due to the camera shake. If we assume that there is no parallax error,
 we have,
 % Do we need to write about why they move by different lengths?
-\begin{align*}
+\begin{align}
 \hat{im}(x,y) = \sum_t\delta(\frac{x_t}{d(x,y)}, \frac{y_t}{d(x,y)})*im(x,y)
-\end{align*}
+\end{align}
 where $d(x,y)$ is the depth of the image at $(x,y)$. This space variant
 blurring operation can be used to calculate depth information from the 
 images, as objects at different depths will be blurred to a different
@@ -448,22 +476,22 @@ the PSF and the latent image in case of a planar scene. This
 transforms into multiplication in the frequency domain. Hence, we divide
 the image's Fourier transform with the PSF's Fourier
 transform to get the original image. i.e
-\begin{align*}
+\begin{align}
 IM_{latent}(u,v) = \frac{\hat{IM}(u,v)}{H(u,v)},
-\end{align*}
+\end{align}
 where H(u,v) is the DFT of the PSF $h(x,y)$. However, the 
 observed image is further degraded by noise. Hence, the actual model of
 the observed image is
-\begin{align*}
+\begin{align}
 \hat{im}(x,y) = h(x,y)*im(x,y) + n(x,y),
-\end{align*}
+\end{align}
 where $n(x,y)$ is the noise. The equation in the frequency domain
 can be loosely expressed as
-\begin{align*}
+\begin{align}
 \hat{IM}(u,v) = H(u,v).IM(u,v) + N(u,v)\\
 IM_{latent}(u,v) = \frac{\hat{IM}(u,v)}{H(u,v)}\\
 \implies IM_{latent}(u,v) = IM(u,v) + \frac{N(u,v)}{H(u,v)}
-\end{align*}
+\end{align}
 Note that $h(x,y)$ has a low frequency structure and noise has a high 
 frequency structure. Hence, the obtained image will have very high values
 in the high frequency region due to the zeros of $h(x,y)$ in the high
@@ -475,16 +503,16 @@ Instead of simple division, we reformulate our problem as finding a
 filter which when convolved with the observed image would return the
 latent image. Further, we wish to reduce the error between the latent
 image and the image obtained by filtering the observed image, i.e
-\begin{align*}
+\begin{align}
 \min \hspace*{4mm} \mathbb{E}|IM(u,v)-F.\hat{IM}(u,v)|^2\\
 \hat{IM}(u,v)=IM(u,v).H(u,v) + N(u,v),
-\end{align*}
+\end{align}
 where $\mathbb{E}|.|$ is the expectation operator. Differentiating with respect to $F$, we get
-\begin{align*}
+\begin{align}
 F(u,v) = \frac{H^*(u,v)}{|H(u,v)|^2 + \alpha}\\
 \implies IM_{latent}(u,v) = \hat{IM}(u,v).F(u,v)\\
 =\frac{H^*(u,v).\hat{IM}(u,v)}{|H(u,v)|^2 + \alpha}
-\end{align*}
+\end{align}
 where $H^*(u,v)$ is the complex conjugate of $H(u,v)$ and $\alpha$ is the inverse signal to noise ratio of the image.
 
 \subsection{Regularized deconvolution}
@@ -492,15 +520,15 @@ where $H^*(u,v)$ is the complex conjugate of $H(u,v)$ and $\alpha$ is the invers
 Since we know that the image blows up at the edges, we can impose a 
 penalty on the edge weights. Let $g_x$ and $g_y$ be the 
 horizontal and vertical differentiation filters . Then, we need
-\begin{align*}
+\begin{align}
 minimize \hspace*{4mm} |y-h*x|^2 + \alpha|g_x*x|^2 + \alpha|g_x*x|^2\\
 \implies minimize \hspace*{4mm} |Y-HX|^2 + \alpha|G_xX|^2 + \alpha|G_xX|^2\\
-\end{align*}
+\end{align}
 Where $X$ represents the DFT of $x$. Differentiating the above equation
 with respect to $X$, we get
-\begin{align*}
+\begin{align}
 X=\frac{H^*Y}{|H|^2+\alpha(G_x^2+G_y^2)}
-\end{align*}
+\end{align}
 
 This is called regularized deconvolution. Apart from the simple deblurring
 algorithms, there are other deconvolution methods, which work by reducing
@@ -534,24 +562,24 @@ alone. % And rotation and scale? It would be good because then we can
 \subsection{Image registration using cross correlation}
 Let $im_1$ and $im_2$ be the image pairs. Since we are looking at a 
 translation only model, we have,
-\begin{align*}
+\begin{align}
 im_2(x,y)=im_1(x-x_0, y-y_0)
-\end{align*}
+\end{align}
 Given these two images, we wish to estimate $(x_0,y_0)$. A shift in the
 spacial domain reflects as a phase multiplication in the frequency domain.
 Hence, if $IM_1$ is the DFT of $im_1$, then,
-\begin{align*}
+\begin{align}
 IM_2(u,v) = IM_1(u,v)e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
-\end{align*}
+\end{align}
 Let,
-\begin{align*}
+\begin{align}
 H(u,v) = \frac{IM_1(u,v){\times}IM_2^*(u,v)}{|IM_1(u,v){\times}IM2(u,v)|}\\
 \implies H(u,v) = e^{-j(\frac{2{\pi}x_0u}{M}+\frac{2{\pi}y_0u}{N})}
-\end{align*}
+\end{align}
 This gives,
-\begin{align*}
+\begin{align}
 h(x,y) = \delta(x_0, y_0)
-\end{align*}
+\end{align}
 Hence, the location of peak in h(x,y) will give the shift between the 
 two images. 
 
@@ -942,12 +970,12 @@ indeterminate system. Hence, we constrain the system by saying that
 either the system goes through only translation or only rotation. Hence,
 we have the following equations:
 
-\begin{align*}
+\begin{align}
 t_{x_i}=\iint{a_x}dt\\
 t_{y_i}=\iint{a_y}dt\\
 or\\
 {\theta}_i=\tan^{-1}({a_y}/{a_x})\\
-\end{align*}
+\end{align}
 
 We look at two cases, one of pure translation and another of pure 
 rotation.
@@ -955,26 +983,26 @@ rotation.
 \label{image_registration:pure_translation}
 As mentioned in \ref{device:device_app:cam}, we can determine the 
 trajectory of the device from the accelerometer data, which is given by
-\begin{align*}
+\begin{align}
 x_{\text{\emph{final}}}=\int_{t_{init}}^{t_{final}}
 \int_{t_{init}}^{t_{final}}{a_xdt}\\
 y_{\text{\emph{final}}}=\int_{t_{init}}^{t_{final}}
 \int_{t_{init}}^{t_{final}}{a_ydt}.
-\end{align*}
+\end{align}
 We wish to find the shifts ${x_{shift}, y_{shift}}$ such that the RMS difference between the first image and the shifted second image is
 reduced. i.e
-\begin{align*}
+\begin{align}
 \min \vspace{4mm} ||im_1(x,y)-im2(x-x_{shift},y-y_{shift})||^2
-\end{align*}
+\end{align}
 The calculated final position is in mm and needs to be converted 
 into pixel dimension. However, we don't have the distance of the scene
 from the camera, which makes it an ill-posed problem. To overcome this, 
 we iterate through various scales and find out the correct scale using 
 RMS error. Hence,
-\begin{align*}
+\begin{align}
 (x_{shift}, y_{shift}) = argmin_k\{\sum_x\sum_y(im_1(x,y)
 -im_2(x-k*x_{final},y-k*y_{final}))^2\}
-\end{align*}
+\end{align}
 Note that the maximum shift is bound due to the finite duration. Hence,
 our search space is drastically reduced from $360^o$ in the blind
 case to a small sector(it is not a straight line due to the drift 
@@ -985,8 +1013,27 @@ Fig.\ref{fig:shift_reg} shows example outputs of the algorithm.
 
 \begin{figure}[H]
 \begin{center}
+\includegraphics[width=150pt]{images/imreg/shift/eg1/saved_im.png}
+\includegraphics[width=150pt]{images/imreg/shift/eg1/preview_im.png}
+\caption{Example 1: Input image set}
 \includegraphics[width=300pt]{images/imreg/shift/eg1/imreg.png}
 \caption{Example 1: Registered image pairs.}
+\end{center}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=400pt]{images/imreg/shift/eg1/sift_based.png}
+\caption{Corresponding feature points calculated using SIFT based registration
+by \citet{pyimreg}. The algorithm ran into error since not enough points were found.}
+\end{center}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=150pt]{images/imreg/shift/eg2/saved_im.png}
+\includegraphics[width=150pt]{images/imreg/shift/eg2/preview_im.png}
+\caption{Example 2: Input image set}
 \includegraphics[width=300pt]{images/imreg/shift/eg2/imreg.png}
 \caption{Example 2: Registered image pairs.}
 \label{fig:shift_reg}
@@ -998,21 +1045,22 @@ the images is blurred. The algorithm was very fast and ran in less than
 10s for both the cases. Further, as we have a good estimate of the 
 direction of motion, finer registration can be done by increasing the
 search space, after performing coarse registration using the above mentioned
-method.
+method. On the other hand, the SIFT based image registration ran into error
+due to very less matching feature points.
 
 \section{Pure rotation}
 \label{image_registration:pure_rotation}
 Assuming only in-plane rotation, we can relate the measured acceleration
 to world acceleration (in the absence of other forces) as
-\begin{align*}
+\begin{align}
 a_x=g\cos\theta\\
 a_y=g\sin\theta
-\end{align*}
+\end{align}
 Where $\theta$ is the orientation of the device. Hence, the orientation
 of the mobile can be estimated as
-\begin{align*}
+\begin{align}
 \theta=\tan^{-1}(\frac{a_y}{a_x})
-\end{align*}
+\end{align}
 As in the pure translation case, we take two images, one non-blurred and
 another blurred, both separated by 500ms duration. We only rotate the 
 device during this duration. Hence, we can use the acceleration values
@@ -1021,10 +1069,10 @@ the process of rotation will also induce a small translation in the
 image. This makes the RMS error method of finding the appropriate
 angle difficult. We hence use normalized cross correlation, which is 
 independent of the shift. Thus,
-\begin{align*}
+\begin{align}
 \theta=argmax_t\big\{\mathcal{F}^{-1}\left(\frac{\mathcal{F}(im_1).\mathcal{F}(\mathcal{R}(im_2,\theta_t))^*}
 {|\mathcal{F}(im_1).\mathcal{F}(\mathcal{R}(im_2,\theta_t))|}\right)\}
-\end{align*}
+\end{align}
 Where $\mathcal{F}(.)$ is the 2D discrete Fourier transform,
 $\mathcal{F}^{-1}(.)$ is the 2D 
 discrete inverse Fourier transform and $\mathcal{R}(im, \theta)$ rotates the
@@ -1035,20 +1083,39 @@ proposed method.
 
 \begin{figure}[H]
 \begin{center}
+\includegraphics[width=150pt]{images/imreg/rotation/eg1/saved_im.png}
+\includegraphics[width=150pt]{images/imreg/rotation/eg1/preview_im.png}
+\caption{Example 1: Input image set}
 \includegraphics[width=300pt]{images/imreg/rotation/eg1/imreg.png}
-\caption{Example 1: Very high blur and rotation.}
-\includegraphics[width=300pt]{images/imreg/rotation/eg2/imreg.png}
-\caption{Example 2: Moderate blur and rotation.}
+\caption{Example 1: Registered images with very high blur and rotation.}
+\includegraphics[width=400pt]{images/imreg/rotation/eg1/sift_based.png}
+\vspace{-2cm}
+\caption{Corresponding feature between the two images, calculated using SIFT based image registration by \citet{pyimreg}.}
+\vspace{0.5cm}
+\includegraphics[width=150pt]{images/imreg/rotation/eg1/sift_output.png}
+\caption{Registed sharp image. Observe that the image is a little distorted
+along the horizontal axis.}
+\end{center}
+\end{figure}
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=150pt]{images/imreg/rotation/eg3/saved_im.png}
+\includegraphics[width=150pt]{images/imreg/rotation/eg3/preview_im.png}
+\caption{Example 3: Input image set}
 \includegraphics[width=300pt]{images/imreg/rotation/eg3/imreg.png}
-\caption{Example 3: Very small blur and rotation.}
+\caption{Example 3: Registered images with very small blur and rotation.}
 \label{fig:rotate_reg}
 \end{center}
 \end{figure}
 
-In the first
-and second example, the first image, which is taken with long exposure
+In the first example, the first image, which is taken with long exposure
 is a highly blurred image. As is evident from the images, the algorithm
-performs very good. The third image is a small rotation case and our
+performs very good. The SIFT based method returns comparable results but
+has resulted in distorted output. Further, the SIFT based method took a lot
+of time for calculating the feature points and finding the corresponding 
+points between the two images. The third image is a small rotation case and our
 algorithm performs well for that case too.
 
 The shift is not accounted for in the above figures. This is due to the
@@ -1095,9 +1162,9 @@ the blurred latent image for each scale of the kernel. If the scale is
 correct at a given position, the error at that point will be the least
 and that would be assigned as the depth value. Hence, we can formulate
 our algorithm as
-\begin{align*}
+\begin{align}
 k(x,y) = argmin_d\{|im(x,y)_{blurred}-h(x,y,d)*im_{latent}(x,y)|^2\}
-\end{align*}
+\end{align}
 Where $h(x,y,d)$ is the kernel with scale value of $d$. While this works
 for the ideal case, the real depth map is very noisy. Hence, we low pass
 filter the error map with a box filter. This algorithm works very well
@@ -1163,20 +1230,22 @@ Estimating depth from focus is termed as Structure From Focus (SFF). As
 discussed in \ref{basic_theory:image_blur:optical}, varying a parameter
 of the camera system changes the quality of the image at different depth.
 We are interested in varying the focus of the camera to vary the 
-\emph{sharpness} of the image. The sharpness of the image is measured 
+\emph{sharpness} of the image. Since the notion of sharpness comes from
+the high frequency component of the image, we need an operator which peaks
+when the gradients are the maximum. The sharpness of the image is measured 
 using the focus operator. A very popular and easily implementable focus 
 operator is the Sum Modified Laplacian (SML). The Modified Laplacian 
 operator is defined as
-\begin{align*}
+\begin{align}
 \Delta_mI = |I*G_x| + |I*G_y|\\
 G_x= [\begin{array}{ccc}-1 & 2 & -1\end{array}],  G_y = G_x^T
-\end{align*}
+\end{align}
 The Sum Modified Laplacian operator does a average of the Modified
 Laplacian over the neighbors. Thus,
-\begin{align*}
+\begin{align}
 \phi(x,y) = \sum_{i=-N}^{N}\sum_{j=-N}^{N}\Delta_mI(x-i,y-i)
-\end{align*}
-When a region is in focus, the SML value is the highest. The experiment
+\end{align}
+When a region is in focus, i.e, the region is sharp, the SML value is the highest. The experiment
 consists of taking 100 images with focus varying from minimum to maximum.
 For each image, the SML operator is applied and the appropriate depth
 for each pixel is when the focus operation peaks.
@@ -1204,7 +1273,14 @@ the book is in complete focus.}
 
 To evaluate our algorithm, we used a filter size of $32\times32$. Further,
 to confirm that our algorithm returns the correct depth map, we created
-an all focus image from the set of images. Fig.\ref{fig:depth_focus} shows
+an all focus image from the set of images. For getting the all focus 
+image, we retain the pixel value from the set of images which corresponds
+to the highest value of the SML operator. i.e:
+\begin{align}
+I_{focussed}(x,y) = \{I_k(x,y): \phi_k(x,y) = \max_i\{\phi_i(x,y)\}\}
+\label{eqn:focus}
+\end{align}
+Fig.\ref{fig:depth_focus} shows
 the obtained results.
 \begin{figure}[H]
 \begin{center}
@@ -1212,7 +1288,7 @@ the obtained results.
 \caption{Estimated depth map. Objects nearer to the camera are darker. 
 Observe how the objects have been segregated.}
 \resizebox{100mm}{!} {\includegraphics *{images/focus/eg1/imfocus.png}}
-\caption{All focused image.}
+\caption{All focused image obtained using equation.\ref{eqn:focus}.}
 \label{fig:depth_focus}
 \end{center}
 \end{figure}
