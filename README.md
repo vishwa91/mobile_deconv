@@ -14,3 +14,9 @@ The project aims at using a mobile platform for testing various image processing
 - LICENSE: License file
 
 The Windows Phone 8 app was written for Nokia Lumia 520. Hence, the app should work on any Windows Phone 8 platform. To get a good overview of the project, the report in the thesis folder can be used. To get in-depth details about code, the comments in the file should suffice. 
+
+Affiliation: Image Processing and Computer Vision Lab, Dept. of EE, IITM.
+
+Authors:
+1. Prof. A N Rajagopalan (Professor, Dept. of EE, IITM)
+2. Vishwanath Saragadam (PhD candidate, Dept. of ECE, CMU)
